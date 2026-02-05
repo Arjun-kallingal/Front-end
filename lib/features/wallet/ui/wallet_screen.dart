@@ -7,7 +7,9 @@ class WalletScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BaseAppBar(title: 'Wallet'),
+      appBar: const BaseAppBar(title: 'Wallet',
+      ),
+    
       body: const Center(child: Text('Wallet Screen')),
     );
   }
