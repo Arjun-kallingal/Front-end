@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
-// ✅ IMPORT YOUR SCREENS
+// ✅ IMPORT SCREENS
 import '../features/wallet/ui/wallet_screen.dart';
 import '../features/transactions/ui/transactions_screen.dart';
+import '../features/analytics/ui/analytics_dashboardscreen.dart';
 import '../features/debt/ui/debtors_screen.dart';
 import '../features/profile/ui/profile_screen.dart';
-// import '../features/analytics/ui/analytics_dashboardscreen.dart;
-
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -18,11 +17,10 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  // ✅ Correct & recommended
   final List<Widget> _screens = const [
     WalletScreen(),
     TransactionsScreen(),
-    // AnalyticsDashboardScreen(),
+    AnalyticsDashboardScreen(),
     DebtScreen(),
     ProfileScreen(),
   ];
