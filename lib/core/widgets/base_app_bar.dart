@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 
-class BaseAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final List<Widget>? actions;
-
-  const BaseAppBar({
-    super.key,
-    required this.title,
-    this.actions,
-  });
+class WalletScreen extends StatelessWidget {
+  const WalletScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      title: Text(title),
-      centerTitle: true,
-      elevation: 1,
-      actions: actions,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Wallet'),
+        centerTitle: true,
+        elevation: 1,
+        backgroundColor: Colors.red,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: const Center(
+        child: Text('Wallet Screen'),
+      ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

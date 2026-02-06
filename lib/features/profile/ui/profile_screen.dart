@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/widgets/base_app_bar.dart';
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BaseAppBar(
-        title: 'Profile',
+      appBar: AppBar(
+        title: const Text('Profile'),
+          backgroundColor: Colors.red,
+          centerTitle: true,
         actions: [
-          Icon(Icons.settings),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // TODO: open settings
+            },
+          ),
         ],
       ),
-      body: const Center(child: Text('Profile & Settings')),
+      body: const Center(
+        child: Text('Profile & Settings'),
+      ),
     );
   }
 }

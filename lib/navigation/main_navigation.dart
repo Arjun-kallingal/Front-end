@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 
-import '../features/wallet/ui/wallet_screen.dart';
+import '../features/home/ui/home_screen.dart';
 import '../features/transactions/ui/transactions_screen.dart';
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
-import '../features/debt/ui/debtors_screen.dart';
+// import '../features/debt/ui/debtors_screen.dart';
 import '../features/profile/ui/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -21,7 +21,7 @@ class _MainNavigationState extends State<MainNavigation> {
     WalletScreen(),
     TransactionsScreen(),
     AnalyticsDashboardScreen(),
-    DebtScreen(),
+    // DebtScreen(),
     ProfileScreen(),
   ];
 
@@ -43,8 +43,8 @@ class _MainNavigationState extends State<MainNavigation> {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: 'Wallet',
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
@@ -54,10 +54,10 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.pie_chart),
             label: 'Analytics',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Debt',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.people),
+          //   label: 'Debt',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
