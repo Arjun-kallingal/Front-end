@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'signup_screen.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +18,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -25,45 +31,48 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 40),
 
+              /// LOGO
               Center(
                 child: Column(
-                  children: const [
+                  children: [
                     Icon(
                       Icons.shield_outlined,
                       size: 64,
+                      color: colors.primary,
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Text(
                       'Wallet Care',
-                      style: TextStyle(
-                        fontSize: 26,
+                      style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 6),
-                    Text('Secure Financial Management'),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Secure Financial Management',
+                      style: textTheme.bodyMedium,
+                    ),
                   ],
                 ),
               ),
 
               const SizedBox(height: 40),
 
-              const Text('Email Address'),
+              /// EMAIL
+              Text('Email Address', style: textTheme.labelLarge),
               const SizedBox(height: 8),
               TextField(
                 controller: emailController,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.email_outlined),
+                decoration: const InputDecoration(
                   hintText: 'alex@example.com',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              const Text('Password'),
+              /// PASSWORD
+              Text('Password', style: textTheme.labelLarge),
               const SizedBox(height: 8),
               TextField(
                 controller: passwordController,
@@ -82,14 +91,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       });
                     },
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
                 ),
               ),
 
               const SizedBox(height: 12),
 
+              /// REMEMBER + FORGOT
               Row(
                 children: [
                   Checkbox(
@@ -111,38 +118,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
+              /// SIGN IN
               ElevatedButton(
                 onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  'Sign In',
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: const Text('Sign In'),
               ),
 
               const SizedBox(height: 30),
 
-              const Center(
-                child: Text('NEW TO WALLET CARE?'),
+              Center(
+                child: Text(
+                  'NEW TO WALLET CARE?',
+                  style: textTheme.labelMedium,
+                ),
               ),
 
               const SizedBox(height: 12),
 
+              /// CREATE ACCOUNT
               OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text('Create Account'),
-              ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SignupScreen(),
+      ),
+    );
+  },
+  child: const Text('Create Account'),
+),
+
             ],
           ),
         ),
