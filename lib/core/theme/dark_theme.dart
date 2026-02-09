@@ -1,3 +1,58 @@
+// import 'package:flutter/material.dart';
+// import '../constants/app_colors.dart';
+
+// class DarkTheme {
+//   static ThemeData get theme {
+//     return ThemeData(
+//       brightness: Brightness.dark,
+//       fontFamily: 'Inter',
+
+//       scaffoldBackgroundColor: const Color.fromARGB(255, 19, 226, 64),
+//       primaryColor: AppColors.primaryRed,
+
+//       colorScheme: const ColorScheme.dark(
+//         primary: AppColors.primaryRed,
+//         background: AppColors.bgPrimary,
+//         surface: AppColors.bgSecondary,
+//         error: AppColors.error,
+//       ),
+
+//       appBarTheme: const AppBarTheme(
+//         backgroundColor: AppColors.bgPrimary,
+//         elevation: 0,
+//       ),
+
+//       inputDecorationTheme: InputDecorationTheme(
+//         filled: true,
+//         fillColor: AppColors.bgSecondary,
+//         hintStyle: const TextStyle(color: AppColors.textHint),
+//         border: OutlineInputBorder(
+//           borderRadius: BorderRadius.circular(14),
+//           borderSide: const BorderSide(color: AppColors.border),
+//         ),
+//         enabledBorder: OutlineInputBorder(
+//           borderRadius: BorderRadius.circular(14),
+//           borderSide: const BorderSide(color: AppColors.border),
+//         ),
+//         focusedBorder: OutlineInputBorder(
+//           borderRadius: BorderRadius.circular(14),
+//           borderSide: const BorderSide(color: AppColors.primaryRed),
+//         ),
+//       ),
+
+//       elevatedButtonTheme: ElevatedButtonThemeData(
+//         style: ElevatedButton.styleFrom(
+//           backgroundColor: AppColors.primaryRed,
+//           foregroundColor: Colors.white,
+//           minimumSize: const Size.fromHeight(52),
+//           shape: RoundedRectangleBorder(
+//             borderRadius: BorderRadius.circular(16),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
@@ -8,18 +63,27 @@ class DarkTheme {
       fontFamily: 'Inter',
 
       scaffoldBackgroundColor: AppColors.bgPrimary,
-      primaryColor: AppColors.primaryRed,
 
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primaryRed,
         background: AppColors.bgPrimary,
-        surface: AppColors.bgSecondary,
+        surface: AppColors.containerBg, // 👈 cards / containers
         error: AppColors.error,
       ),
 
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.bgPrimary,
         elevation: 0,
+        titleTextStyle: TextStyle(
+          color: AppColors.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+
+      textTheme: const TextTheme(
+        bodyMedium: TextStyle(color: AppColors.textPrimary),
+        bodySmall: TextStyle(color: AppColors.textSecondary),
       ),
 
       inputDecorationTheme: InputDecorationTheme(
@@ -29,14 +93,6 @@ class DarkTheme {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryRed),
         ),
       ),
 

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'navigation/navigation_service.dart';
 
+
+
 void main() {
   runApp(
     ChangeNotifierProvider(
@@ -10,7 +12,14 @@ void main() {
       child: const WalletCareApp(),
     ),
   );
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const WalletCareApp(),
+    ),
+  );
 }
+
 
 class WalletCareApp extends StatelessWidget {
   const WalletCareApp({super.key});
@@ -21,6 +30,7 @@ class WalletCareApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: context.watch<ThemeProvider>().theme,
        home: MainNavigation(),
+      
       
     );
   }
