@@ -9,6 +9,13 @@ class AppColors {
   static const Color bgPrimary = Color(0xFF0B0B0B);
   static const Color bgSecondary = Color(0xFF151515);
 
+  // Containers (dark + transparent)
+  static const Color containerBg =
+      Color(0xA81A1A1A); // ~66% opacity dark
+
+  static const Color containerBorder =
+      Color(0x402A2A2A); // subtle transparent border
+
   // Text
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFF9E9E9E);
