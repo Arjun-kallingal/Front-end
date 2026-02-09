@@ -9,7 +9,7 @@ class BalanceCard extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.red,
+        // color: Colors.red,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -18,15 +18,15 @@ class BalanceCard extends StatelessWidget {
           Text(
             'Available Balance',
             style: TextStyle(
-              color: Colors.white70,
+              // color: Colors.black,
               fontSize: 14,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 20),
           Text(
             '₹ 25,450.00',
             style: TextStyle(
-              color: Colors.white,
+              // color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),

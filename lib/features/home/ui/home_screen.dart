@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'balance_card.dart';
-import 'quick_action.dart';
+// import 'quick_action.dart';
 
 
 class WalletScreen extends StatelessWidget {
@@ -10,16 +10,16 @@ class WalletScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
-        backgroundColor: Colors.red,
-        centerTitle: true,
+        title: const Text('Welcome Irfan'),
+        // backgroundColor: Colors.red,
+        // centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: const [
             BalanceCard(),
             SizedBox(height: 16),
-            QuickActionsRow(),
+            // QuickActionsRow(),
           ],
         ),
       ),
