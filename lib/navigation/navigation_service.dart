@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/constants/app_colors.dart';
 
 import '../features/home/ui/home_screen.dart';
 import '../features/transactions/ui/transactionlist_screen.dart';
@@ -35,11 +36,15 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: AppColors.navBg,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        // selectedItemColor: Colors.green,
-        // unselectedItemColor: Colors.grey,
+        selectedItemColor: AppColors.navActive,
+        unselectedItemColor: AppColors.navInactive,
+        selectedIconTheme: const IconThemeData(size: 26),
+        unselectedIconTheme: const IconThemeData(size: 24),
+        showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -53,10 +58,6 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.pie_chart),
             label: 'Analytics',
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.people),
-          //   label: 'Debt',
-          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
