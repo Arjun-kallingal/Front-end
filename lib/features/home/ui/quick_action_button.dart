@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -12,22 +13,25 @@ class QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 26,
-        //   backgroundColor: Colors.red.withOpacity(0.1),
-          child: Icon(
-            icon,
-            // color: Colors.red,
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

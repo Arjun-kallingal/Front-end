@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'balance_card.dart';
-// import 'quick_action.dart';
+import 'quick_action.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -35,7 +35,7 @@ class WalletScreen extends StatelessWidget {
           children: const [
             BalanceCard(),
             SizedBox(height: 16),
-            // QuickActionsRow(),
+             QuickActionsRow(),
           ],
         ),
       ),

@@ -106,7 +106,7 @@ class _BalanceCardState extends State<BalanceCard> {
           Text(
             _isBalanceVisible ? '₹ 1,550' : '••••••••',
             style: textTheme.titleMedium?.copyWith(
-              color: AppColors.warning,
+              color: AppColors.savingsPrimary,
             ),
           ),
 
