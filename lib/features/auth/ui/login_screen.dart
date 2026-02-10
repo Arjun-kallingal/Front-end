@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
+import 'forgot_password.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -97,26 +98,31 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 12),
 
               /// REMEMBER + FORGOT
-              Row(
-                children: [
-                  Checkbox(
-                    value: rememberMe,
-                    onChanged: (value) {
-                      setState(() {
-                        rememberMe = value ?? false;
-                      });
-                    },
-                  ),
-                  const Text('Remember me'),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Forgot password?'),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
+             Row(
+  children: [
+    Checkbox(
+      value: rememberMe,
+      onChanged: (value) {
+        setState(() {
+          rememberMe = value ?? false;
+        });
+      },
+    ),
+    const Text('Remember me'),
+    const Spacer(),
+    TextButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ForgotPasswordScreen(),
+          ),
+        );
+      },
+      child: const Text('Forgot password?'),
+    ),
+  ],
+),
 
               /// SIGN IN
               ElevatedButton(
