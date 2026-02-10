@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
 
-class BalanceCard extends StatelessWidget {
+class BalanceCard extends StatefulWidget {
   const BalanceCard({super.key});
+
+  @override
+  State<BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<BalanceCard> {
+  bool _isBalanceVisible = true;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity, // full width of screen
-      margin: const EdgeInsets.all(16),
+      width: double.infinity,
+      margin: const EdgeInsets.all(30),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            // color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -34,31 +40,47 @@ class BalanceCard extends StatelessWidget {
                   Text(
                     'Total Balance',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w200,
                     ),
                   ),
                 ],
               ),
-              const Icon(Icons.visibility),
+
+              /// Eye icon (tap to hide/show)
+              IconButton(
+                icon: Icon(
+                  _isBalanceVisible
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isBalanceVisible = !_isBalanceVisible;
+                  });
+                },
+              ),
             ],
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 25),
 
-          /// Balance amount
-          const Text(
-            '₹ 25,450.00',
-            style: TextStyle(
+          /// Balance text (toggle)
+          Text(
+            _isBalanceVisible ? '₹ 25,450.00' : '••••••••',
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
+
+          const SizedBox(height: 25),
+
+          const Text(
             'Available funds in wallet',
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w300,
+              fontSize: 13,
+              fontWeight: FontWeight.w200,
             ),
           ),
         ],

@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 
-class LightTheme {
-  static ThemeData get theme {
-    return ThemeData.light();
-  }
-}
+// class LightTheme {
+//   static ThemeData get theme {
+//     return ThemeData.light();
+//   }
+// }
