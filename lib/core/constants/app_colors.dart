@@ -4,7 +4,7 @@ class AppColors {
   // ==================================================
   // BRAND / PRIMARY
   // ==================================================
-  static const Color primaryRed = Color(0xFFE53935);
+  static const Color primary = Color(0xFFE53935);
   static const Color primaryRedDark = Color(0xFFC62828);
   static const Color accentOrange = Color(0xFFFF9800);
 
@@ -112,6 +112,8 @@ class AppColors {
   // ==================================================
   // DIVIDERS / BORDERS
   // ==================================================
-  static const Color divider = Color(0xFF1F1F1F);
+    static const Color divider = Color(0xFF1F1F1F);
   static const Color border = Color(0xFF2A2A2A);
 }
+
+

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'core/theme/dark_theme.dart';
+import 'pages/demo_page.dart';
 
-class WalletCareApp extends StatelessWidget {
-  const WalletCareApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: DarkTheme.theme,
-      home: const Placeholder(), // temporary
+      home: DemoPage(),
     );
   }
 }
