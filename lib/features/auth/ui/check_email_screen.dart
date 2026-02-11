@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front_end/core/widgets/custom_button.dart';
 
 
 class CheckEmailScreen extends StatelessWidget {
@@ -12,6 +13,8 @@ class CheckEmailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colors = theme.colorScheme;
 
     return Scaffold(
       body: SafeArea(
@@ -23,36 +26,47 @@ class CheckEmailScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  /// ICON
+                  Icon(
                     Icons.mark_email_read_outlined,
                     size: 64,
+                    color: colors.primary,
                   ),
+
                   const SizedBox(height: 20),
 
+                  /// TITLE
                   Text(
                     'Check Your Email',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+
                   const SizedBox(height: 10),
 
+                  /// SUBTITLE
                   Text(
                     "We've sent password reset instructions to",
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium,
+                    style: textTheme.bodyMedium,
                   ),
+
                   const SizedBox(height: 6),
 
+                  /// EMAIL
                   Text(
                     email,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
 
                   const SizedBox(height: 30),
 
+                  /// CARD
                   Card(
                     elevation: 3,
                     shape: RoundedRectangleBorder(
@@ -66,16 +80,18 @@ class CheckEmailScreen extends StatelessWidget {
                             'Click the link in the email to reset your password. '
                             'The link will expire in 2 minutes.',
                             textAlign: TextAlign.center,
-                            style: theme.textTheme.bodySmall,
+                            style: textTheme.bodySmall,
                           ),
+
                           const SizedBox(height: 16),
 
+                          /// TRY AGAIN
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 "Didn't receive the email? ",
-                                style: theme.textTheme.bodySmall,
+                                style: textTheme.bodySmall,
                               ),
                               TextButton(
                                 onPressed: () {
@@ -86,20 +102,17 @@ class CheckEmailScreen extends StatelessWidget {
                             ],
                           ),
 
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
 
-                          SizedBox(
-                            width: double.infinity,
-                            height: 46,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.popUntil(
-                                  context,
-                                  (route) => route.isFirst,
-                                );
-                              },
-                              child: const Text('Back to Sign In'),
-                            ),
+                          /// BACK TO SIGN IN (navigation unchanged)
+                          CustomButton(
+                            text: 'Back to Sign In',
+                            onPressed: () {
+                              Navigator.popUntil(
+                                context,
+                                (route) => route.isFirst,
+                              );
+                            },
                           ),
                         ],
                       ),

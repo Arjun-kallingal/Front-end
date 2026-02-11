@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:front_end/core/widgets/custom_button.dart';
+
+
 class VerificationScreen extends StatefulWidget {
   final String email;
 
@@ -44,7 +47,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
     if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter complete verification code')),
+        const SnackBar(
+          content: Text('Enter complete verification code'),
+        ),
       );
       return;
     }
@@ -55,6 +60,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colors = theme.colorScheme;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -67,39 +76,45 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // Icon
-                  const Icon(Icons.shield_outlined, size: 56),
+                  /// ICON
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 56,
+                    color: colors.primary,
+                  ),
+
                   const SizedBox(height: 16),
 
-                  // Title
-                  const Text(
+                  /// TITLE
+                  Text(
                     'Verify Your Email',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22,
+                    style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 8),
 
                   Text(
                     "We've sent a 6-digit code to",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14),
+                    style: textTheme.bodyMedium,
                   ),
+
                   const SizedBox(height: 4),
 
                   Text(
                     widget.email,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
 
                   const SizedBox(height: 30),
 
-                  // OTP fields
+                  /// OTP INPUTS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(
@@ -110,11 +125,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           controller: _controllers[index],
                           focusNode: _focusNodes[index],
                           keyboardType: TextInputType.number,
-                          maxLength: 1,
                           textAlign: TextAlign.center,
+                          maxLength: 1,
                           decoration: const InputDecoration(
                             counterText: '',
-                            border: OutlineInputBorder(),
                           ),
                           onChanged: (v) => _onChanged(v, index),
                         ),
@@ -124,11 +138,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Resend
+                  /// RESEND
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Didn't receive the code? "),
+                      Text(
+                        "Didn't receive the code? ",
+                        style: textTheme.bodySmall,
+                      ),
                       TextButton(
                         onPressed: () {
                           // TODO: resend OTP
@@ -138,36 +155,30 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // Verify button
-                  SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _verifyCode,
-                      child: const Text('Verify & Continue'),
-                    ),
+                  /// VERIFY BUTTON
+                  CustomButton(
+                    text: 'Verify & Continue',
+                    onPressed: _verifyCode,
                   ),
 
                   const SizedBox(height: 12),
 
-                  // Back button
-                  SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Back'),
-                    ),
+                  /// BACK (navigation unchanged)
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Back'),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Timer text (static for now)
-                  const Text(
+                  /// TIMER TEXT
+                  Text(
                     'Code expires in 1 minute',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12),
+                    style: textTheme.bodySmall,
                   ),
                 ],
               ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'verification.dart';
 
+import 'package:front_end/features/auth/ui/verification.dart';
+import 'package:front_end/core/widgets/custom_button.dart';
+import 'package:front_end/core/widgets/custom_text_field.dart';
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -11,15 +13,14 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
+  bool agreeTerms = false;
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
-  bool agreeTerms = false;
 
   @override
   void dispose() {
@@ -35,9 +36,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (!agreeTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please accept Terms & Privacy Policy'),
-        ),
+        const SnackBar(content: Text('Please accept Terms & Privacy Policy')),
       );
       return;
     }
@@ -68,9 +67,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 10),
-
-                    const Icon(Icons.shield, size: 56),
+                    const SizedBox(height: 12),
+                    const Icon(Icons.shield_outlined, size: 56),
                     const SizedBox(height: 16),
 
                     Text(
@@ -80,16 +78,15 @@ class _SignupScreenState extends State<SignupScreen> {
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
-
                     Text(
                       'Start your financial journey',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium,
                     ),
+
                     const SizedBox(height: 28),
 
                     Card(
-                      elevation: 3,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -97,45 +94,31 @@ class _SignupScreenState extends State<SignupScreen> {
                         padding: const EdgeInsets.all(20),
                         child: Column(
                           children: [
-                            _inputField(
+                            CustomTextField(
+                              hintText: 'Full Name',
                               controller: nameController,
-                              label: 'Full Name',
-                              icon: Icons.person_outline,
-                              validator: (v) =>
-                                  v!.isEmpty ? 'Name required' : null,
                             ),
                             const SizedBox(height: 14),
 
-                            _inputField(
+                            CustomTextField(
+                              hintText: 'Email Address',
                               controller: emailController,
-                              label: 'Email Address',
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (v) =>
-                                  v!.contains('@') ? null : 'Invalid email',
                             ),
                             const SizedBox(height: 14),
 
-                            _passwordField(
+                            CustomTextField(
+                              hintText: 'Password',
                               controller: passwordController,
-                              label: 'Password',
-                              obscure: obscurePassword,
-                              toggle: () => setState(
-                                  () => obscurePassword = !obscurePassword),
+                              obscureText: obscurePassword,
                             ),
                             const SizedBox(height: 14),
 
-                            _passwordField(
+                            CustomTextField(
+                              hintText: 'Confirm Password',
                               controller: confirmPasswordController,
-                              label: 'Confirm Password',
-                              obscure: obscureConfirmPassword,
-                              toggle: () => setState(() =>
-                                  obscureConfirmPassword =
-                                      !obscureConfirmPassword),
-                              validator: (v) => v != passwordController.text
-                                  ? 'Passwords do not match'
-                                  : null,
+                              obscureText: obscureConfirmPassword,
                             ),
+
                             const SizedBox(height: 16),
 
                             Row(
@@ -143,7 +126,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 Checkbox(
                                   value: agreeTerms,
                                   onChanged: (v) =>
-                                      setState(() => agreeTerms = v!),
+                                      setState(() => agreeTerms = v ?? false),
                                 ),
                                 Expanded(
                                   child: Text(
@@ -153,15 +136,12 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                               ],
                             ),
+
                             const SizedBox(height: 20),
 
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: _submit,
-                                child: const Text('Create Account'),
-                              ),
+                            CustomButton(
+                              text: 'Create Account',
+                              onPressed: _submit,
                             ),
                           ],
                         ),
@@ -203,57 +183,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  // ---------- reusable widgets ----------
-
-  Widget _inputField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  Widget _passwordField({
-    required TextEditingController controller,
-    required String label,
-    required bool obscure,
-    required VoidCallback toggle,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      validator:
-          validator ?? (v) => v!.length < 6 ? 'Minimum 6 characters' : null,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.lock_outline),
-        suffixIcon: IconButton(
-          icon: Icon(
-            obscure ? Icons.visibility_off : Icons.visibility,
-          ),
-          onPressed: toggle,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );

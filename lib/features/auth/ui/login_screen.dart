@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'package:front_end/core/widgets/custom_button.dart';
+import 'package:front_end/core/widgets/custom_text_field.dart';
 import 'signup_screen.dart';
 import 'forgot_password.dart';
 
@@ -60,25 +63,30 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 40),
 
               /// EMAIL
-              Text('Email Address', style: textTheme.labelLarge),
+              Text(
+                'Email Address',
+                style: textTheme.labelLarge,
+              ),
               const SizedBox(height: 8),
-              TextField(
+              CustomTextField(
+                hintText: 'alex@example.com',
                 controller: emailController,
-                decoration: const InputDecoration(
-                  hintText: 'alex@example.com',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
               ),
 
               const SizedBox(height: 20),
 
               /// PASSWORD
-              Text('Password', style: textTheme.labelLarge),
+              Text(
+                'Password',
+                style: textTheme.labelLarge,
+              ),
               const SizedBox(height: 8),
+
               TextField(
                 controller: passwordController,
                 obscureText: obscurePassword,
                 decoration: InputDecoration(
+                  hintText: 'Enter your password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -98,36 +106,43 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 12),
 
               /// REMEMBER + FORGOT
-             Row(
-  children: [
-    Checkbox(
-      value: rememberMe,
-      onChanged: (value) {
-        setState(() {
-          rememberMe = value ?? false;
-        });
-      },
-    ),
-    const Text('Remember me'),
-    const Spacer(),
-    TextButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const ForgotPasswordScreen(),
-          ),
-        );
-      },
-      child: const Text('Forgot password?'),
-    ),
-  ],
-),
+              Row(
+                children: [
+                  Checkbox(
+                    value: rememberMe,
+                    onChanged: (value) {
+                      setState(() {
+                        rememberMe = value ?? false;
+                      });
+                    },
+                  ),
+                  Text(
+                    'Remember me',
+                    style: textTheme.bodyMedium,
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Forgot password?'),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
 
               /// SIGN IN
-              ElevatedButton(
-                onPressed: () {},
-                child: const Text('Sign In'),
+              CustomButton(
+                text: 'Sign In',
+                onPressed: () {
+                  // TODO: /auth/login API call
+                },
               ),
 
               const SizedBox(height: 30),
@@ -141,19 +156,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 12),
 
-              /// CREATE ACCOUNT
+              /// CREATE ACCOUNT (navigation unchanged)
               OutlinedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SignupScreen(),
-      ),
-    );
-  },
-  child: const Text('Create Account'),
-),
-
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SignupScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Create Account'),
+              ),
             ],
           ),
         ),

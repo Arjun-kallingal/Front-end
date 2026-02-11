@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:front_end/core/widgets/custom_button.dart';
 import 'check_email_screen.dart';
+
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -33,6 +35,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colors = theme.colorScheme;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -47,31 +53,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   children: [
                     const SizedBox(height: 20),
 
-                    const Icon(
+                    /// ICON
+                    Icon(
                       Icons.shield_outlined,
                       size: 56,
+                      color: colors.primary,
                     ),
 
                     const SizedBox(height: 16),
 
-                    const Text(
+                    /// TITLE
+                    Text(
                       'Forgot Password?',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 22,
+                      style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
 
                     const SizedBox(height: 6),
 
-                    const Text(
+                    /// SUBTITLE
+                    Text(
                       'No worries, we’ll send you reset instructions',
                       textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium,
                     ),
 
                     const SizedBox(height: 30),
 
+                    /// CARD
                     Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
@@ -82,36 +93,37 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
+                            Text(
                               'Email Address',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                              style: textTheme.labelLarge,
                             ),
                             const SizedBox(height: 8),
 
+                            /// EMAIL FIELD
                             TextFormField(
                               controller: emailController,
                               keyboardType: TextInputType.emailAddress,
                               validator: (v) =>
-                                  v!.contains('@') ? null : 'Enter valid email',
+                                  v != null && v.contains('@')
+                                      ? null
+                                      : 'Enter valid email',
                               decoration: const InputDecoration(
                                 hintText: 'alex@example.com',
                                 prefixIcon: Icon(Icons.email_outlined),
-                                border: OutlineInputBorder(),
                               ),
                             ),
 
                             const SizedBox(height: 20),
 
-                            SizedBox(
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: _sendResetLink,
-                                child: const Text('Send Reset Link'),
-                              ),
+                            /// SEND RESET LINK
+                            CustomButton(
+                              text: 'Send Reset Link',
+                              onPressed: _sendResetLink,
                             ),
 
                             const SizedBox(height: 16),
 
+                            /// BACK TO LOGIN
                             OutlinedButton.icon(
                               onPressed: () => Navigator.pop(context),
                               icon: const Icon(Icons.arrow_back),
@@ -124,14 +136,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                     const SizedBox(height: 18),
 
+                    /// FOOTER INFO
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.lock_outline, size: 14),
-                        SizedBox(width: 6),
+                      children: [
+                        const Icon(Icons.lock_outline, size: 14),
+                        const SizedBox(width: 6),
                         Text(
                           'Password reset link will be valid for 15 minutes',
-                          style: TextStyle(fontSize: 12),
+                          style: textTheme.bodySmall,
                         ),
                       ],
                     ),
