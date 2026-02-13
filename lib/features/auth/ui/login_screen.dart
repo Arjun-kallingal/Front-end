@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 12),
 
-              /// CREATE ACCOUNT (navigation unchanged)
+              /// CREATE ACCOUNT
               OutlinedButton(
                 onPressed: () {
                   Navigator.push(
