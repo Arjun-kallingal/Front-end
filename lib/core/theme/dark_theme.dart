@@ -8,10 +8,12 @@ class DarkTheme {
       fontFamily: 'Inter',
 
       scaffoldBackgroundColor: AppColors.bgPrimary,
-      primaryColor: AppColors.primaryRed,
+      primaryColor: AppColors.primary
+,
 
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryRed,
+        primary: AppColors.primaryRedDark
+,
         background: AppColors.bgPrimary,
         surface: AppColors.bgSecondary,
         error: AppColors.error,
@@ -36,13 +38,15 @@ class DarkTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryRed),
+          borderSide: const BorderSide(color: AppColors.primary
+),
         ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryRed,
+          backgroundColor: AppColors.primary
+,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
