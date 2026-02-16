@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:front_end/core/widgets/custom_button.dart';
 
+import 'package:front_end/navigation/navigation_service.dart';
+
+
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -43,19 +46,28 @@ class _VerificationScreenState extends State<VerificationScreen> {
   }
 
   void _verifyCode() {
-    final code = _controllers.map((e) => e.text).join();
+  final code = _controllers.map((e) => e.text).join();
 
-    if (code.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter complete verification code'),
-        ),
-      );
-      return;
-    }
+  if (code.length < 6) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Enter complete verification code'),
+      ),
+    );
+    return;
+  }
 
     // TODO: verify OTP with API
-    debugPrint('Entered Code: $code');
+    
+   debugPrint('Entered Code: $code');
+
+    Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const MainNavigation(),
+    ),
+    (route) => false,
+  );
   }
 
   @override
