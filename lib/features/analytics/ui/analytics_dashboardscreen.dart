@@ -7,10 +7,7 @@ class AnalyticsDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Analytics'),
-        centerTitle: true,
-      ),
+      
       body: const Center(
         child: Text('Analytics Dashboard'),
       ),

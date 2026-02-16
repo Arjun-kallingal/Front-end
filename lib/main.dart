@@ -12,16 +12,14 @@ void main() {
       child: const WalletCareApp(),
     ),
   );
-  
 }
-
-
 class WalletCareApp extends StatelessWidget {
   const WalletCareApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+     return
+    MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: context.watch<ThemeProvider>().theme,
        home: MainNavigation(),

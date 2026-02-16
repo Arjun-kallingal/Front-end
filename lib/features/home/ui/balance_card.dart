@@ -84,9 +84,11 @@ class _BalanceCardState extends State<BalanceCard> {
           const SizedBox(height: 5),
 
           Text(
-            _isBalanceVisible ? '₹ 25,450.00' : '••••••••',
+            _isBalanceVisible ? '₹ 25,450' : '••••••••',
             style: textTheme.titleLarge?.copyWith(
               color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+
             ),
           ),
 
@@ -106,7 +108,9 @@ class _BalanceCardState extends State<BalanceCard> {
           Text(
             _isBalanceVisible ? '₹ 1,550' : '••••••••',
             style: textTheme.titleMedium?.copyWith(
-              color: AppColors.savingsPrimary,
+               color: AppColors.savingsPrimary,
+              fontWeight: FontWeight.bold,
+
             ),
           ),
 
@@ -125,9 +129,11 @@ class _BalanceCardState extends State<BalanceCard> {
                 ),
               ),
               Text(
-                _isBalanceVisible ? '₹ 27,000.00' : '••••••••',
+                _isBalanceVisible ? '₹ 27,000' : '••••••••',
                 style: textTheme.titleMedium?.copyWith(
-                  color: AppColors.success,
+                   color: AppColors.textMuted,
+                  fontWeight: FontWeight.bold,
+
                 ),
               ),
             ],

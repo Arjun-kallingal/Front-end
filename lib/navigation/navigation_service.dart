@@ -18,9 +18,9 @@ class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = const [
-    WalletScreen(),
-    TransactionsScreen(),
+    HomeScreen(),
     AnalyticsDashboardScreen(),
+    TransactionsScreen(),
     // DebtorsScreen(),
     ProfileScreen(),
   ];
@@ -50,14 +50,15 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.home),
             label: 'Home',
           ),
+           BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Analytics',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
             label: 'History',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart),
-            label: 'Analytics',
-          ),
+         
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
