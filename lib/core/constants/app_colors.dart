@@ -23,6 +23,8 @@ class AppColors {
   static const Color cardBg = Color(0xCC1A1A1A);
   static const Color cardBorder = Color(0x332A2A2A);
   static const Color cardShadow = Color(0x99000000);
+  
+
 
   // ==================================================
   // TEXT COLORS
