@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
   const CustomButton({
     super.key,
     required this.text,
     required this.onPressed,
+    this.isLoading = false,
   });
 
   @override
@@ -17,21 +18,26 @@ class CustomButton extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        onPressed: isLoading ? null : onPressed,
+        child: isLoading
+            ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Text(
+                text,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
       ),
     );
   }

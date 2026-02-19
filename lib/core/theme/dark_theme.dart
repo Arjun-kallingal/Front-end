@@ -8,10 +8,10 @@ class DarkTheme {
       fontFamily: 'Inter',
 
       scaffoldBackgroundColor: AppColors.bgPrimary,
-      primaryColor: AppColors.primaryRedDark,
 
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryRedDark,
+        primary: AppColors.primary,
+        secondary: AppColors.accentOrange,
         background: AppColors.bgPrimary,
         surface: AppColors.bgSecondary,
         error: AppColors.error,
@@ -26,6 +26,8 @@ class DarkTheme {
         filled: true,
         fillColor: AppColors.bgSecondary,
         hintStyle: const TextStyle(color: AppColors.textHint),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.border),
@@ -36,20 +38,28 @@ class DarkTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryRedDark),
+          borderSide:
+              const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.error),
         ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryRedDark,
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
+          elevation: 0,
         ),
       ),
+
+      dividerColor: AppColors.divider,
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'features/auth/ui/login_screen.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class WalletCareApp extends StatelessWidget {
+  const WalletCareApp({super.key});
 
 
   @override

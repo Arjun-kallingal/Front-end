@@ -24,6 +24,11 @@ class AppColors {
   static const Color cardBorder = Color(0x332A2A2A);
   static const Color cardShadow = Color(0x99000000);
 
+  //  SUMMARY / HEADER CARDS (Analytics & History)
+  static const Color summaryCardBg = Color(0x33FFFFFF);
+  static const Color summaryCardBorder = Color(0x33FFFFFF);
+  static const Color summaryCardShadow = Color(0x66000000);
+
   // ==================================================
   // TEXT COLORS
   // ==================================================
@@ -112,8 +117,6 @@ class AppColors {
   // ==================================================
   // DIVIDERS / BORDERS
   // ==================================================
-    static const Color divider = Color(0xFF1F1F1F);
+  static const Color divider = Color(0xFF1F1F1F);
   static const Color border = Color(0xFF2A2A2A);
 }
-
-

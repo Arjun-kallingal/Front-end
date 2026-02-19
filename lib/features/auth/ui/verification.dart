@@ -1,10 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:front_end/core/widgets/custom_button.dart';
-
 import 'package:front_end/navigation/navigation_service.dart';
-
-
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -24,6 +23,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   final List<FocusNode> _focusNodes =
       List.generate(6, (_) => FocusNode());
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -45,29 +46,80 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
-  void _verifyCode() {
-  final code = _controllers.map((e) => e.text).join();
+  Future<void> _verifyCode() async {
+    final code = _controllers.map((e) => e.text).join();
 
-  if (code.length < 6) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Enter complete verification code'),
-      ),
-    );
-    return;
+    if (code.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter complete verification code'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5000/api/auth/verify-otp'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'email': widget.email,
+          'otp': code,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification Successful'),
+          ),
+        );
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MainNavigation(),
+          ),
+          (route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data['message'] ?? 'Invalid OTP'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Server error. Please try again.'),
+        ),
+      );
+      debugPrint("OTP Verify Error: $e");
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
-    // TODO: verify OTP with API
-    
-   debugPrint('Entered Code: $code');
-
-    Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const MainNavigation(),
-    ),
-    (route) => false,
-  );
+  void _resendOtp() {
+    // TODO: Call resend OTP API
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Resend OTP clicked'),
+      ),
+    );
   }
 
   @override
@@ -159,9 +211,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         style: textTheme.bodySmall,
                       ),
                       TextButton(
-                        onPressed: () {
-                          // TODO: resend OTP
-                        },
+                        onPressed: _resendOtp,
                         child: const Text('Resend'),
                       ),
                     ],
@@ -171,13 +221,15 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                   /// VERIFY BUTTON
                   CustomButton(
-                    text: 'Verify & Continue',
-                    onPressed: _verifyCode,
+                    text: _isLoading
+                        ? 'Verifying...'
+                        : 'Verify & Continue',
+                    onPressed: _isLoading ? null : _verifyCode,
                   ),
 
                   const SizedBox(height: 12),
 
-                  /// BACK (navigation unchanged)
+                  /// BACK
                   OutlinedButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back),

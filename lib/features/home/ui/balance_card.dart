@@ -24,7 +24,8 @@ class _BalanceCardState extends State<BalanceCard> {
         borderRadius: BorderRadius.circular(16),
         border: const Border(
           top: BorderSide(
-            color: AppColors.primaryRedDark,
+            color: AppColors.primary
+,
             width: 3,
           ),
         ),
