@@ -22,7 +22,7 @@ class _MainNavigationState extends State<MainNavigation> {
     AnalyticsDashboardScreen(),
     TransactionsScreen(),
     // DebtorsScreen(),
-    ProfileScreen(),
+    ProfileSettingsScreen(),
   ];
 
   void _onItemTapped(int index) {
