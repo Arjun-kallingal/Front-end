@@ -51,6 +51,9 @@ class HomeScreen extends StatelessWidget {
             BalanceCard(),
             SizedBox(height: 10),
             QuickActionsSection(),
+            
+
+
           ],
         ),
       ),
