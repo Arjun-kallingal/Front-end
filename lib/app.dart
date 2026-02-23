@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
-import 'core/theme/dark_theme.dart';
+import 'features/auth/ui/login_screen.dart';
 
 class WalletCareApp extends StatelessWidget {
   const WalletCareApp({super.key});
+
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: DarkTheme.theme,
-      home: const Placeholder(), // temporary
+      title: 'Moneycart',
+      home: const LoginScreen(),
+      routes: {
+        '/signup': (context) => const Scaffold(
+              body: Center(child: Text('Signup Screen')),
+            ),
+        '/forgot-password': (context) => const Scaffold(
+              body: Center(child: Text('Forgot Password')),
+            ),
+      },
     );
   }
 }

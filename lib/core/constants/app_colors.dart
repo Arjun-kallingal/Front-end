@@ -4,7 +4,7 @@ class AppColors {
   // ==================================================
   // BRAND / PRIMARY
   // ==================================================
-  static const Color primaryRed = Color(0xFFE53935);
+  static const Color primary = Color(0xFFE53935);
   static const Color primaryRedDark = Color(0xFFC62828);
   static const Color accentOrange = Color(0xFFFF9800);
 
@@ -25,6 +25,11 @@ class AppColors {
   static const Color cardShadow = Color(0x99000000);
   
 
+
+  //  SUMMARY / HEADER CARDS (Analytics & History)
+  static const Color summaryCardBg = Color(0x33FFFFFF);
+  static const Color summaryCardBorder = Color(0x33FFFFFF);
+  static const Color summaryCardShadow = Color(0x66000000);
 
   // ==================================================
   // TEXT COLORS

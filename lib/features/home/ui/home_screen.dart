@@ -35,14 +35,16 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.bgPrimary,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         titleSpacing: 0,
-        title: const Padding(
-          padding: EdgeInsets.only(left: 30),
+        title: Padding(
+          padding: const EdgeInsets.all(30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -50,19 +52,19 @@ class HomeScreen extends StatelessWidget {
                 'Welcome',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onBackground.withOpacity(0.7),
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
-                'Muhammed Irfan',
+                'Syamjith',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: theme.colorScheme.onBackground,
                 ),
               ),
-            ], 
+            ],
           ),
         ),
         actions: [
@@ -71,9 +73,14 @@ class HomeScreen extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () {},
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 18,
-                child: Icon(Icons.person, size: 20),
+                backgroundColor: theme.colorScheme.surface,
+                child: Icon(
+                  Icons.person,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ),
           ),
@@ -84,15 +91,15 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
 
             const BalanceCard(),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
 
             const QuickActionsSection(),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             /// 🔹 RECENT TRANSACTIONS HEADER
             Padding(
@@ -100,12 +107,12 @@ class HomeScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Recent Transactions",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: theme.colorScheme.onBackground,
                     ),
                   ),
                   GestureDetector(
@@ -113,17 +120,19 @@ class HomeScreen extends StatelessWidget {
                       NavigationService.bottomIndex.value = 2;
                     },
                     child: Row(
-                      children: const [
+                      children: [
                         Text(
                           "See All",
                           style: TextStyle(
-                            color: AppColors.textMuted,
+                            color: theme.colorScheme.onBackground
+                                .withOpacity(0.6),
                           ),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Icon(
                           Icons.chevron_right,
-                          color: AppColors.textMuted,
+                          color: theme.colorScheme.onBackground
+                              .withOpacity(0.6),
                         ),
                       ],
                     ),
@@ -140,7 +149,7 @@ class HomeScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBg,
+                  color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(color: AppColors.cardBorder),
                   boxShadow: const [
@@ -159,7 +168,7 @@ class HomeScreen extends StatelessWidget {
                         title: tx.title,
                         subtitle: tx.date.toString().split(' ')[0],
                         amount: tx.amount.toStringAsFixed(0),
-                        type: tx.type == "transfer"
+                        type: tx.type == "reserved"
                             ? TransactionType.reserved
                             : tx.amount < 0
                                 ? TransactionType.expense

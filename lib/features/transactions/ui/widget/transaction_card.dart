@@ -17,10 +17,8 @@ class TransactionCard extends StatelessWidget {
     required this.type,
   });
 
-  
-  // AMOUNT COLOR
-  
-  Color get amountColor {
+  /// ✅ AMOUNT COLOR
+  Color getAmountColor(BuildContext context) {
     switch (type) {
       case TransactionType.income:
         return AppColors.incomeAmount;
@@ -31,9 +29,7 @@ class TransactionCard extends StatelessWidget {
     }
   }
 
-  
-  // ICON
-  
+  /// ✅ ICON
   IconData get icon {
     switch (type) {
       case TransactionType.income:
@@ -45,10 +41,8 @@ class TransactionCard extends StatelessWidget {
     }
   }
 
-  
-  // ICON BACKGROUND
-  
-  Color get iconBg {
+  /// ✅ ICON BACKGROUND
+  Color getIconBg(BuildContext context) {
     switch (type) {
       case TransactionType.income:
         return AppColors.incomeIconBg;
@@ -61,26 +55,37 @@ class TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final amountColor = getAmountColor(context);
+    final iconBg = getIconBg(context);
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: const [
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : AppColors.cardBorder,
+        ),
+        boxShadow: [
           BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 6,
-            offset: Offset(0, 4),
+            color: isDark
+                ? Colors.black.withOpacity(0.4)
+                : AppColors.cardShadow,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          
-          // ICON
-          
+          /// 🔵 ICON
           CircleAvatar(
+            radius: 22,
             backgroundColor: iconBg,
             child: Icon(
               icon,
@@ -90,41 +95,35 @@ class TransactionCard extends StatelessWidget {
 
           const SizedBox(width: 15),
 
-          
-          // TITLE & SUBTITLE
-          
+          /// 📝 TITLE & SUBTITLE
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 5),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: AppColors.dateLabel,
-                    fontSize: 13,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color
+                        ?.withOpacity(0.7),
                   ),
                 ),
               ],
             ),
           ),
 
-          
-          // AMOUNT
-          
+          /// 💰 AMOUNT
           Text(
             amount,
-            style: TextStyle(
+            style: theme.textTheme.titleMedium?.copyWith(
               color: amountColor,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
             ),
           ),
         ],

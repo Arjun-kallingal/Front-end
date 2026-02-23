@@ -19,9 +19,12 @@ class MainNavigation extends StatelessWidget {
   static const List<Widget> _screens = [
     HomeScreen(),
     AnalyticsDashboardScreen(),
+
+   
     HistoryScreen(),
-    ProfileScreen(),
-  
+    // DebtorsScreen(),
+    ProfileSettingsScreen(),
+
   ];
 
   @override

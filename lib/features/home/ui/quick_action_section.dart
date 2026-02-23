@@ -11,87 +11,111 @@ class QuickActionsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
       child: Column(
-        children: [
-          /// 🔹 Stat Cards Row
-          Row(
-            children: const [
-              StatCard(
-                icon: Icons.trending_up,
-                title: "Income",
-                amount: "\₹6,270",
-                subtitle: "This month",
-                amountColor: AppColors.incomeAmount,
-                iconBg: AppColors.incomeIconBg,
-              ),
-              SizedBox(width: 12),
-              StatCard(
-                icon: Icons.trending_down,
-                title: "Expense",
-                amount: "\₹1,655",
-                subtitle: "This month",
-                amountColor: AppColors.expenseAmount,
-                iconBg: AppColors.expenseIconBg,
-              ),
-              SizedBox(width: 12),
-              StatCard(
-                icon: Icons.savings,
-                title: "Reserved",
-                amount: "\₹800",
-                subtitle: "This month",
-                amountColor: AppColors.savingsPrimary,
-                iconBg: AppColors.savingsIconBg,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          /// 🔹 Action Buttons Row
-          Row(
-            children: [
-              ActionButtonCard(
-                icon: Icons.trending_up,
-                label: "Add Income",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddTransactionScreen(isExpense: true),
-                    ),
-                  );
-                },
-                iconBg: AppColors.incomeIconBg,
-                iconColor: AppColors.incomeAmount,
-              ),
-              const SizedBox(width: 12),
-              ActionButtonCard(
-                icon: Icons.trending_down,
-                label: "Add Expense",
-                onTap: () {
-                   Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddTransactionScreen(isExpense: false),
-                    ),
-                  );
-                },
-                iconBg: AppColors.expenseIconBg,
-                iconColor: AppColors.expenseAmount,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          /// 🔹 Full Width Move To Savings
-          MoveToSavingsCard(
-            onTap: () {
-            },
-          ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          _StatCardsRow(),
+          SizedBox(height: 24),
+          _ActionButtonsRow(),
+          SizedBox(height: 16),
+          _MoveToSavingsSection(),
         ],
       ),
+    );
+  }
+}
+
+class _StatCardsRow extends StatelessWidget {
+  const _StatCardsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: const [
+        StatCard(
+          icon: Icons.trending_up,
+          title: "Income",
+          amount: "₹6,270",
+          subtitle: "This month",
+          amountColor: AppColors.incomeAmount,
+          iconBg: AppColors.incomeIconBg,
+        ),
+        SizedBox(width: 12),
+        StatCard(
+          icon: Icons.trending_down,
+          title: "Expense",
+          amount: "₹1,655",
+          subtitle: "This month",
+          amountColor: AppColors.expenseAmount,
+          iconBg: AppColors.expenseIconBg,
+        ),
+        SizedBox(width: 12),
+        StatCard(
+          icon: Icons.savings,
+          title: "Reserved",
+          amount: "₹800",
+          subtitle: "This month",
+          amountColor: AppColors.savingsPrimary,
+          iconBg: AppColors.savingsIconBg,
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionButtonsRow extends StatelessWidget {
+  const _ActionButtonsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        ActionButtonCard(
+          icon: Icons.trending_up,
+          label: "Add Income",
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const AddTransactionScreen(isExpense: false),
+              ),
+            );
+          },
+          iconBg: AppColors.incomeIconBg,
+          iconColor: AppColors.incomeAmount,
+        ),
+        const SizedBox(width: 12),
+        ActionButtonCard(
+          icon: Icons.trending_down,
+          label: "Add Expense",
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const AddTransactionScreen(isExpense: true),
+              ),
+            );
+          },
+          iconBg: AppColors.expenseIconBg,
+          iconColor: AppColors.expenseAmount,
+        ),
+      ],
+    );
+  }
+}
+
+class _MoveToSavingsSection extends StatelessWidget {
+  const _MoveToSavingsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return MoveToSavingsCard(
+      onTap: () {
+        // TODO: Navigate to Goals Screen
+      },
     );
   }
 }

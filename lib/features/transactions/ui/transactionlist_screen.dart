@@ -56,40 +56,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
   ];
 
   List<TransactionModel> get filteredTransactions {
-    List<TransactionModel> list = transactionList;
+    return transactionList.where((tx) {
+      final matchesSearch =
+          tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
 
-    list = list.where((tx) {
-      return tx.title.toLowerCase().contains(searchQuery.toLowerCase());
-    }).toList();
+      final matchesFilter = selectedFilter == "All"
+          ? true
+          : tx.type == selectedFilter.toLowerCase();
 
-    if (selectedFilter != "All") {
-      list =
-          list.where((tx) => tx.type == selectedFilter.toLowerCase()).toList();
-    }
-
-    if (selectedDate != null) {
-      list = list
-          .where((tx) =>
-              tx.date.year == selectedDate!.year &&
+      final matchesDate = selectedDate == null
+          ? true
+          : tx.date.year == selectedDate!.year &&
               tx.date.month == selectedDate!.month &&
-              tx.date.day == selectedDate!.day)
-          .toList();
-    }
+              tx.date.day == selectedDate!.day;
 
-    list.sort((a, b) => b.date.compareTo(a.date));
-    return list;
+      return matchesSearch && matchesFilter && matchesDate;
+    }).toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
   }
 
   Map<String, List<TransactionModel>> get groupedTransactions {
-    Map<String, List<TransactionModel>> grouped = {};
-
+    final Map<String, List<TransactionModel>> grouped = {};
     for (var tx in filteredTransactions) {
-      String formattedDate = DateFormat('EEEE, MMMM d, yyyy').format(tx.date);
-
+      final formattedDate = DateFormat('EEEE, MMMM d, yyyy').format(tx.date);
       grouped.putIfAbsent(formattedDate, () => []);
       grouped[formattedDate]!.add(tx);
     }
-
     return grouped;
   }
 
@@ -103,299 +96,284 @@ class _HistoryScreenState extends State<HistoryScreen> {
       .where((tx) => tx.type == "expense")
       .fold(0, (sum, tx) => sum + tx.amount.abs());
 
-  double get totalTransfer => filteredTransactions
+  double get totalReserved => filteredTransactions
       .where((tx) => tx.type == "reserved")
       .fold(0, (sum, tx) => sum + tx.amount);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            /// 🔴 HEADER
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 40, 20, 25),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.headerGradientStart,
-                    AppColors.headerGradientEnd,
-                  ],
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  /// 🔙 BACK + TITLE
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          NavigationService.bottomIndex.value = 0;
-                        },
-                        child: const CircleAvatar(
-                          backgroundColor: AppColors.profileAvatarBg,
-                          child: Icon(
-                            Icons.arrow_back,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      const Text(
-                        "Transaction History",
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  /// 🔴 SUMMARY CARD (Inside Header Properly)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 20, horizontal: 20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFB00000),
-                          Color(0xFF8B0000),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white24,
-                        width: 0.6,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _summaryItem("Total", "$totalCount", Colors.white),
-                        _summaryItem(
-                          "Income",
-                          "\$${totalIncome.toStringAsFixed(0)}",
-                          const Color(0xFF00E676),
-                        ),
-                        _summaryItem(
-                          "Expense",
-                          "\$${totalExpense.toStringAsFixed(0)}",
-                          const Color(0xFFFF8A80),
-                        ),
-                        _summaryItem(
-                          "Reserved",
-                          "\$${totalTransfer.toStringAsFixed(0)}",
-                          const Color(0xFF64B5F6),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
+            _buildHeader(context, isDark),
             const SizedBox(height: 20),
-
-            /// 🔍 SEARCH
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: TextField(
-                style: const TextStyle(color: AppColors.textPrimary),
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: AppColors.searchBg,
-                  hintText: "Search transactions...",
-                  hintStyle: const TextStyle(color: AppColors.textHint),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: AppColors.searchIcon,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ),
-
+            _buildSearch(context),
             const SizedBox(height: 15),
-
-            /// 📅 DATE PICKER
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: GestureDetector(
-                onTap: () async {
-                  DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-
-                  if (picked != null) {
-                    setState(() {
-                      selectedDate = picked;
-                    });
-                  }
-                },
-                child: Container(
-                  height: 55,
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    color: AppColors.searchBg,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today,
-                          color: AppColors.searchIcon),
-                      const SizedBox(width: 10),
-                      Text(
-                        selectedDate == null
-                            ? "Select Date"
-                            : DateFormat('dd-MM-yyyy').format(selectedDate!),
-                        style: const TextStyle(color: AppColors.textPrimary),
-                      ),
-                      const Spacer(),
-                      if (selectedDate != null)
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedDate = null;
-                            });
-                          },
-                          child: const Icon(
-                            Icons.close,
-                            color: AppColors.error,
-                          ),
-                        )
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
+            _buildDatePicker(context),
             const SizedBox(height: 15),
-
-            /// 🔘 FILTER BUTTONS
-            Container(
-              height: 50,
-              margin: const EdgeInsets.symmetric(horizontal: 30),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ["All", "Income", "Expense", "Reserved"]
-                    .map(
-                      (filter) => ChoiceChip(
-                        label: Text(filter),
-                        selected: selectedFilter == filter,
-                        backgroundColor: AppColors.filterBg,
-                        selectedColor: AppColors.filterSelectedBg,
-                        labelStyle: TextStyle(
-                          color: selectedFilter == filter
-                              ? AppColors.filterSelectedText
-                              : AppColors.filterText,
-                        ),
-                        onSelected: (_) {
-                          setState(() {
-                            selectedFilter = filter;
-                          });
-                        },
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-
+            _buildFilters(context),
             const SizedBox(height: 20),
-
-            /// 📜 GROUPED LIST
-            Expanded(
-              child: groupedTransactions.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "No Transactions Found",
-                        style: TextStyle(color: AppColors.textMuted),
-                      ),
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 30),
-                      children: groupedTransactions.entries.map((entry) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Text(
-                                entry.key,
-                                style: const TextStyle(
-                                  color: AppColors.dateLabel,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            ...entry.value.map(
-                              (tx) => Padding(
-                                padding: const EdgeInsets.only(bottom: 15),
-                                child: TransactionCard(
-                                  title: tx.title,
-                                  subtitle: tx.subtitle,
-                                  amount: tx.amount.toStringAsFixed(0),
-                                  type: tx.type == "reserved"
-                                      ? TransactionType.reserved
-                                      : tx.amount < 0
-                                          ? TransactionType.expense
-                                          : TransactionType.income,
-                                ),
-                              ),
-                            )
-                          ],
-                        );
-                      }).toList(),
-                    ),
-            ),
+            _buildTransactionList(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _summaryItem(String title, String value, Color valueColor) {
+  // HEADER
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 25),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.headerGradientStart,
+            AppColors.headerGradientEnd,
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  NavigationService.bottomIndex.value = 0;
+                },
+                child: CircleAvatar(
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  child: const Icon(Icons.arrow_back, color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 15),
+              const Text(
+                "Transaction History",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.cardColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _summaryItem(
+                    "Total", "$totalCount", theme.textTheme.bodyLarge!.color!),
+                _summaryItem("Income", "₹${totalIncome.toStringAsFixed(0)}",
+                    AppColors.incomeAmount),
+                _summaryItem("Expense", "₹${totalExpense.toStringAsFixed(0)}",
+                    const Color.fromARGB(233, 244, 9, 5)),
+                _summaryItem("Reserved", "₹${totalReserved.toStringAsFixed(0)}",
+                    AppColors.chartBarBlue),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryItem(String title, String value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 13,
-          ),
+          style: const TextStyle(fontSize: 13, color: Colors.white70),
         ),
         const SizedBox(height: 5),
         Text(
           value,
           style: TextStyle(
-            color: valueColor,
-            fontSize: 18,
+            color: color,
             fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSearch(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: TextField(
+        style: theme.textTheme.bodyMedium,
+        onChanged: (value) {
+          setState(() => searchQuery = value);
+        },
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: theme.cardColor,
+          hintText: "Search transactions...",
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: GestureDetector(
+        onTap: () async {
+          DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2030),
+          );
+          if (picked != null) {
+            setState(() => selectedDate = picked);
+          }
+        },
+        child: Container(
+          height: 55,
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_today),
+              const SizedBox(width: 10),
+              Text(
+                selectedDate == null
+                    ? "Select Date"
+                    : DateFormat('dd-MM-yyyy').format(selectedDate!),
+              ),
+              const Spacer(),
+              if (selectedDate != null)
+                GestureDetector(
+                  onTap: () {
+                    setState(() => selectedDate = null);
+                  },
+                  child: const Icon(Icons.close, color: Colors.red),
+                )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilters(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final filters = ["All", "Income", "Expense", "Reserved"];
+
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.symmetric(horizontal: 30),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: filters.map((filter) {
+          final isSelected = selectedFilter == filter;
+
+          return ChoiceChip(
+            label: Text(
+              filter,
+              style: TextStyle(
+                color: isSelected
+                    ? theme.colorScheme.onPrimary
+                    : theme.textTheme.bodyMedium?.color,
+              ),
+            ),
+            selected: isSelected,
+            selectedColor: theme.colorScheme.primary,
+            backgroundColor: theme.cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            onSelected: (_) {
+              setState(() {
+                selectedFilter = filter;
+              });
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTransactionList(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Expanded(
+      child: groupedTransactions.isEmpty
+          ? Center(
+              child: Text(
+                "No Transactions Found",
+                style: theme.textTheme.bodyMedium,
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              itemCount: groupedTransactions.length,
+              itemBuilder: (context, index) {
+                final entry = groupedTransactions.entries.elementAt(index);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        entry.key,
+                        style: theme.textTheme.bodyMedium!
+                            .copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    ...entry.value.map(
+                      (tx) => Padding(
+                        padding: const EdgeInsets.only(bottom: 15),
+                        child: TransactionCard(
+                          title: tx.title,
+                          subtitle: tx.subtitle,
+                          amount: "₹${tx.amount.abs().toStringAsFixed(0)}",
+                          type: tx.type == "reserved"
+                              ? TransactionType.reserved
+                              : tx.amount < 0
+                                  ? TransactionType.expense
+                                  : TransactionType.income,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
     );
   }
 }
