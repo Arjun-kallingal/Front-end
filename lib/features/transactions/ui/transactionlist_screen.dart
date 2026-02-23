@@ -51,7 +51,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       subtitle: "To Savings",
       amount: 800,
       date: DateTime(2026, 2, 8),
-      type: "transfer",
+      type: "reserved",
     ),
   ];
 
@@ -104,7 +104,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       .fold(0, (sum, tx) => sum + tx.amount.abs());
 
   double get totalTransfer => filteredTransactions
-      .where((tx) => tx.type == "transfer")
+      .where((tx) => tx.type == "reserved")
       .fold(0, (sum, tx) => sum + tx.amount);
 
   @override
@@ -194,7 +194,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           const Color(0xFFFF8A80),
                         ),
                         _summaryItem(
-                          "Transfers",
+                          "Reserved",
                           "\$${totalTransfer.toStringAsFixed(0)}",
                           const Color(0xFF64B5F6),
                         ),
@@ -299,7 +299,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 30),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ["All", "Income", "Expense", "Transfer"]
+                children: ["All", "Income", "Expense", "Reserved"]
                     .map(
                       (filter) => ChoiceChip(
                         label: Text(filter),
@@ -356,8 +356,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   title: tx.title,
                                   subtitle: tx.subtitle,
                                   amount: tx.amount.toStringAsFixed(0),
-                                  type: tx.type == "transfer"
-                                      ? TransactionType.transfer
+                                  type: tx.type == "reserved"
+                                      ? TransactionType.reserved
                                       : tx.amount < 0
                                           ? TransactionType.expense
                                           : TransactionType.income,

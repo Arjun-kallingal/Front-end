@@ -11,6 +11,16 @@ class BalanceCard extends StatefulWidget {
 class _BalanceCardState extends State<BalanceCard> {
   bool _isBalanceVisible = true;
 
+  String _selectedType = 'All';
+
+  final List<String> _walletTypes = [
+    'All',
+    'Cash',
+    'Account',
+    'Add Account',
+    
+  ];
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -39,23 +49,43 @@ class _BalanceCardState extends State<BalanceCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row
+
+          /// Top Row (Wallet + Dropdown + Eye)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+
+              /// Left side: Icon + Dropdown
               Row(
                 children: [
                   const Icon(Icons.account_balance_wallet,
                       color: AppColors.textSecondary),
                   const SizedBox(width: 8),
-                  Text(
-                    'Wallet Balance',
+
+                  /// Dropdown
+                  DropdownButton<String>(
+                    value: _selectedType,
+                    dropdownColor: AppColors.cardBg,
+                    underline: const SizedBox(),
                     style: textTheme.titleMedium?.copyWith(
                       color: AppColors.textSecondary,
                     ),
+                    items: _walletTypes.map((type) {
+                      return DropdownMenuItem(
+                        value: type,
+                        child: Text(type),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedType = value!;
+                      });
+                    },
                   ),
                 ],
               ),
+
+              /// Eye Icon
               IconButton(
                 icon: Icon(
                   _isBalanceVisible
@@ -88,7 +118,6 @@ class _BalanceCardState extends State<BalanceCard> {
             style: textTheme.titleLarge?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
-
             ),
           ),
 
@@ -108,9 +137,8 @@ class _BalanceCardState extends State<BalanceCard> {
           Text(
             _isBalanceVisible ? '₹ 1,550' : '••••••••',
             style: textTheme.titleMedium?.copyWith(
-               color: AppColors.savingsPrimary,
+              color: AppColors.savingsPrimary,
               fontWeight: FontWeight.bold,
-
             ),
           ),
 
@@ -118,7 +146,6 @@ class _BalanceCardState extends State<BalanceCard> {
           const Divider(color: AppColors.divider),
           const SizedBox(height: 15),
 
-          // Total Balance row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -131,9 +158,8 @@ class _BalanceCardState extends State<BalanceCard> {
               Text(
                 _isBalanceVisible ? '₹ 27,000' : '••••••••',
                 style: textTheme.titleMedium?.copyWith(
-                   color: AppColors.textMuted,
+                  color: AppColors.textMuted,
                   fontWeight: FontWeight.bold,
-
                 ),
               ),
             ],

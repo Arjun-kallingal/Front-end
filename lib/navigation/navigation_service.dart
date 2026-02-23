@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../core/constants/app_colors.dart';
 
 import '../features/home/ui/home_screen.dart';
 import '../features/transactions/ui/transactionlist_screen.dart';
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
 import '../features/profile/ui/profile_screen.dart';
+
 
 /// GLOBAL NAV SERVICE
 class NavigationService {
@@ -19,6 +21,7 @@ class MainNavigation extends StatelessWidget {
     AnalyticsDashboardScreen(),
     HistoryScreen(),
     ProfileScreen(),
+  
   ];
 
   @override

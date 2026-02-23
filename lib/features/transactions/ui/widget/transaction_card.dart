@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:front_end/core/constants/app_colors.dart';
 
-enum TransactionType { income, expense, transfer }
+enum TransactionType { income, expense, reserved }
 
 class TransactionCard extends StatelessWidget {
   final String title;
@@ -24,7 +24,7 @@ class TransactionCard extends StatelessWidget {
     switch (type) {
       case TransactionType.income:
         return AppColors.incomeAmount;
-      case TransactionType.transfer:
+      case TransactionType.reserved:
         return AppColors.info;
       case TransactionType.expense:
         return AppColors.expenseAmount;
@@ -38,7 +38,7 @@ class TransactionCard extends StatelessWidget {
     switch (type) {
       case TransactionType.income:
         return Icons.trending_up;
-      case TransactionType.transfer:
+      case TransactionType.reserved:
         return Icons.swap_horiz;
       case TransactionType.expense:
         return Icons.trending_down;
@@ -52,7 +52,7 @@ class TransactionCard extends StatelessWidget {
     switch (type) {
       case TransactionType.income:
         return AppColors.incomeIconBg;
-      case TransactionType.transfer:
+      case TransactionType.reserved:
         return AppColors.savingsIconBg;
       case TransactionType.expense:
         return AppColors.expenseIconBg;

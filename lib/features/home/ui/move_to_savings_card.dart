@@ -37,7 +37,7 @@ class MoveToSavingsCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  "Move to Savings",
+                  "Move to Goals",
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.bold,

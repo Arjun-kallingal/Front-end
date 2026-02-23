@@ -42,7 +42,7 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
         titleSpacing: 0,
         title: const Padding(
-          padding: EdgeInsets.only(left: 20),
+          padding: EdgeInsets.only(left: 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -160,7 +160,7 @@ class HomeScreen extends StatelessWidget {
                         subtitle: tx.date.toString().split(' ')[0],
                         amount: tx.amount.toStringAsFixed(0),
                         type: tx.type == "transfer"
-                            ? TransactionType.transfer
+                            ? TransactionType.reserved
                             : tx.amount < 0
                                 ? TransactionType.expense
                                 : TransactionType.income,
