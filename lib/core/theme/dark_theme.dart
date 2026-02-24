@@ -12,8 +12,7 @@ class DarkTheme {
 ,
 
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryRedDark
-,
+        primary: AppColors.primaryRedDark,
         background: AppColors.bgPrimary,
         surface: AppColors.bgSecondary,
         error: AppColors.error,
