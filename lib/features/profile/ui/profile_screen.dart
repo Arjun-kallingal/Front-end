@@ -10,6 +10,8 @@ import 'package:front_end/features/profile/ui/support_legal/help_support.dart';
 import 'package:front_end/features/profile/ui/support_legal/privacy_policy.dart';
 import 'package:front_end/features/profile/ui/support_legal/terms_service.dart';
 import 'package:front_end/features/profile/ui/support_legal/about.dart';
+import 'package:front_end/features/profile/ui/support_legal/export_data.dart';
+import 'package:front_end/features/auth/ui/login_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -34,12 +36,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: color.background, // ✅ adaptive
+      backgroundColor: color.background, //  adaptive
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
             /// ================= HEADER =================
             Container(
               width: double.infinity,
@@ -59,7 +60,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-
                   Row(
                     children: [
                       IconButton(
@@ -81,9 +81,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 30),
-
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -105,13 +103,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 "Syamjith",
-                                style:
-                                    textTheme.titleMedium!.copyWith(
+                                style: textTheme.titleMedium!.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -119,8 +115,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 email,
-                                style:
-                                    textTheme.bodySmall!.copyWith(
+                                style: textTheme.bodySmall!.copyWith(
                                   color: Colors.white70,
                                 ),
                               ),
@@ -208,20 +203,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   icon: Icons.notifications_outlined,
                   title: "Push Notifications",
                   value: pushNotifications,
-                  onChanged: (v) =>
-                      setState(() => pushNotifications = v)),
+                  onChanged: (v) => setState(() => pushNotifications = v)),
               _switchTile(context,
                   icon: Icons.payment_outlined,
                   title: "Payment Reminders",
                   value: paymentReminders,
-                  onChanged: (v) =>
-                      setState(() => paymentReminders = v)),
+                  onChanged: (v) => setState(() => paymentReminders = v)),
               _switchTile(context,
                   icon: Icons.flag_outlined,
                   title: "Goal Milestones",
                   value: goalMilestones,
-                  onChanged: (v) =>
-                      setState(() => goalMilestones = v)),
+                  onChanged: (v) => setState(() => goalMilestones = v)),
             ]),
 
             const SizedBox(height: 24),
@@ -232,20 +224,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   icon: Icons.fingerprint,
                   title: "Biometric Login",
                   value: biometricLogin,
-                  onChanged: (v) =>
-                      setState(() => biometricLogin = v)),
+                  onChanged: (v) => setState(() => biometricLogin = v)),
               _navigationTile(
                 context,
                 icon: Icons.security_outlined,
                 title: "Two-Factor Authentication",
-                subtitle:
-                    twoFactorAuth ? "Enabled" : "Disabled",
+                subtitle: twoFactorAuth ? "Enabled" : "Disabled",
                 onTap: () async {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TwoFactorAuthScreen(
-                          initialValue: twoFactorAuth),
+                      builder: (_) =>
+                          TwoFactorAuthScreen(initialValue: twoFactorAuth),
                     ),
                   );
                   if (result != null) {
@@ -261,8 +251,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                            const ChangePasswordScreen()),
+                        builder: (_) => const ChangePasswordScreen()),
                   );
                 },
               ),
@@ -271,7 +260,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             const SizedBox(height: 24),
 
             /// ================= SUPPORT =================
-            _sectionWrapper(context, "Support & Legal", [
+            _sectionWrapper(context, "", [
+              _navigationTile(
+                context,
+                icon: Icons.download_outlined,
+                title: "Export Data",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ExportDataScreen()),
+                  );
+                },
+              ),
               _navigationTile(
                 context,
                 icon: Icons.help_outline,
@@ -280,8 +280,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                            const HelpSupportScreen()),
+                        builder: (_) => const HelpSupportScreen()),
                   );
                 },
               ),
@@ -293,8 +292,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                            const PrivacyPolicyScreen()),
+                        builder: (_) => const PrivacyPolicyScreen()),
                   );
                 },
               ),
@@ -306,8 +304,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                            const TermsOfServiceScreen()),
+                        builder: (_) => const TermsOfServiceScreen()),
                   );
                 },
               ),
@@ -319,8 +316,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                            const AboutWalletCareScreen()),
+                        builder: (_) => const AboutWalletCareScreen()),
                   );
                 },
               ),
@@ -329,10 +325,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             const SizedBox(height: 30),
 
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                },
                 child: const Text("Sign Out"),
               ),
             ),
@@ -348,30 +351,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       BuildContext context, String title, List<Widget> children) {
     final color = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(30),
         decoration: BoxDecoration(
           color: color.surface,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context)
-                          .textTheme
-                          .bodyMedium!
-                          .color)),
-              const SizedBox(height: 16),
-              ...children.map((e) => Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: 12),
-                    child: e,
-                  )),
-            ]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyMedium!.color)),
+          const SizedBox(height: 16),
+          ...children.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: e,
+              )),
+        ]),
       ),
     );
   }
@@ -386,8 +383,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: color.background,
           borderRadius: BorderRadius.circular(12),
@@ -398,16 +394,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title,
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodyLarge!
-                                .color)),
+                            color:
+                                Theme.of(context).textTheme.bodyLarge!.color)),
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
                       Text(subtitle,
@@ -420,9 +413,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ]),
             ),
             Icon(Icons.arrow_forward_ios,
-                size: 16,
-                color:
-                    Theme.of(context).dividerColor),
+                size: 16, color: Theme.of(context).dividerColor),
           ],
         ),
       ),
@@ -437,8 +428,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final color = Theme.of(context).colorScheme;
 
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: color.background,
         borderRadius: BorderRadius.circular(12),
@@ -451,10 +441,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             child: Text(title,
                 style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodyLarge!
-                        .color)),
+                    color: Theme.of(context).textTheme.bodyLarge!.color)),
           ),
           Transform.scale(
             scale: 0.8,
