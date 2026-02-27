@@ -34,7 +34,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: color.background, // ✅ adaptive
+      backgroundColor: color.surface, // ✅ adaptive
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,7 +389,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         padding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: color.background,
+          color: color.surface,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -440,7 +440,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       padding:
           const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: color.background,
+        color: color.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -460,7 +460,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             scale: 0.8,
             child: Switch(
               value: value,
-              activeColor: color.primary,
+              activeThumbColor: color.primary,
               onChanged: onChanged,
             ),
           ),

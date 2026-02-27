@@ -60,7 +60,7 @@ class _TwoFactorAuthScreenState
                     horizontal: 16, vertical: 8),
                 value: isEnabled,
                 onChanged: _handleToggle,
-                activeColor: AppColors.switchActive,
+                activeThumbColor: AppColors.switchActive,
                 title: const Text(
                   "Enable Two-Factor Authentication",
                   style: TextStyle(

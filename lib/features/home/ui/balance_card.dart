@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:front_end/core/models/account_model.dart';
+import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/constants/app_colors.dart';
 
 class BalanceCard extends StatefulWidget {
@@ -9,25 +11,93 @@ class BalanceCard extends StatefulWidget {
 }
 
 class _BalanceCardState extends State<BalanceCard> {
-  bool _isBalanceVisible = true;
-  String _selectedType = 'All';
+  final String userId = "699e8fea9a6c85ac1f0970eb"; // TEMP USER
 
-  final List<String> _walletTypes = [
-    'All',
-    'Cash',
-    'Account',
-    'Add Account',
-  ];
+  bool _isBalanceVisible = true;
+  bool _isLoading = true;
+
+  String _selectedAccountId = "all";
+  List<AccountModel> _accounts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccounts();
+  }
+
+  /// ================= LOAD ACCOUNTS =================
+  Future<void> _loadAccounts({String type = ""}) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final accounts =
+          await AccountService.getAccounts(userId, type: type);
+
+      setState(() {
+        _accounts = accounts;
+        _selectedAccountId = "all";
+      });
+    } catch (e) {
+      debugPrint("Error loading accounts: $e");
+
+      setState(() {
+        _accounts = [];
+      });
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// ================= BALANCE CALCULATIONS =================
+  double get availableBalance {
+    if (_accounts.isEmpty) return 0;
+
+    if (_selectedAccountId == "all") {
+      return _accounts.fold(
+          0, (sum, acc) => sum + acc.availableBalance);
+    }
+
+    final account = _accounts.firstWhere(
+      (a) => a.id == _selectedAccountId,
+      orElse: () => _accounts.first,
+    );
+
+    return account.availableBalance;
+  }
+
+  double get reservedBalance {
+    if (_accounts.isEmpty) return 0;
+
+    if (_selectedAccountId == "all") {
+      return _accounts.fold(
+          0, (sum, acc) => sum + acc.reservedBalance);
+    }
+
+    final account = _accounts.firstWhere(
+      (a) => a.id == _selectedAccountId,
+      orElse: () => _accounts.first,
+    );
+
+    return account.reservedBalance;
+  }
+
+  double get totalBalance =>
+      availableBalance + reservedBalance;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
+
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(30),
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -37,40 +107,21 @@ class _BalanceCardState extends State<BalanceCard> {
             width: 3,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-            color: Colors.black.withOpacity(0.2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// 🔹 Top Row
+
+          /// HEADER
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              /// Wallet + Premium Selector
-              Row(
-                children: [
-                  Icon(
-                    Icons.account_balance_wallet,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildPremiumSelector(context),
-                ],
-              ),
-
-              /// 👁 Eye Icon
+              _buildAccountSelector(),
               IconButton(
                 icon: Icon(
                   _isBalanceVisible
                       ? Icons.visibility
                       : Icons.visibility_off,
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
                 onPressed: () {
                   setState(() {
@@ -81,20 +132,17 @@ class _BalanceCardState extends State<BalanceCard> {
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
 
-          /// 🔹 Available Balance
-          Text(
-            'Available Balance',
-            style: textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
+          /// AVAILABLE
+          const Text("Available Balance"),
           const SizedBox(height: 5),
           Text(
-            _isBalanceVisible ? '₹ 25,450' : '••••••••',
-            style: textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.onSurface,
+            _isBalanceVisible
+                ? "₹ ${availableBalance.toStringAsFixed(2)}"
+                : "••••••",
+            style: const TextStyle(
+              fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -103,19 +151,17 @@ class _BalanceCardState extends State<BalanceCard> {
           Divider(color: theme.dividerColor),
           const SizedBox(height: 15),
 
-          /// 🔹 Reserved Amount
-          Text(
-            'Reserved Amount',
-            style: textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
+          /// RESERVED
+          const Text("Reserved Amount"),
           const SizedBox(height: 5),
           Text(
-            _isBalanceVisible ? '₹ 1,550' : '••••••••',
-            style: textTheme.titleMedium?.copyWith(
+            _isBalanceVisible
+                ? "₹ ${reservedBalance.toStringAsFixed(2)}"
+                : "••••••",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
               color: AppColors.savingsPrimary,
-              fontWeight: FontWeight.bold,
             ),
           ),
 
@@ -123,20 +169,17 @@ class _BalanceCardState extends State<BalanceCard> {
           Divider(color: theme.dividerColor),
           const SizedBox(height: 15),
 
-          /// 🔹 Total Balance
+          /// TOTAL
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
             children: [
+              const Text("Total Balance"),
               Text(
-                'Total Balance',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-              Text(
-                _isBalanceVisible ? '₹ 27,000' : '••••••••',
-                style: textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
+                _isBalanceVisible
+                    ? "₹ ${totalBalance.toStringAsFixed(2)}"
+                    : "••••••",
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -147,84 +190,130 @@ class _BalanceCardState extends State<BalanceCard> {
     );
   }
 
-  /// 💎 Modern Fintech Popup Selector
-  Widget _buildPremiumSelector(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return GestureDetector(
-      onTapDown: (details) async {
-        final selected = await showMenu<String>(
-          context: context,
-          position: RelativeRect.fromLTRB(
-            details.globalPosition.dx,
-            details.globalPosition.dy + 8,
-            details.globalPosition.dx,
-            details.globalPosition.dy,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          elevation: 12,
-          color: theme.colorScheme.surface,
-          items: _walletTypes.map((type) {
-            final isSelected = type == _selectedType;
-
-            return PopupMenuItem<String>(
-              value: type,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                    vertical: 8, horizontal: 10),
-                child: Row(
-                  children: [
-                    if (isSelected)
-                      Icon(
-                        Icons.check,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                    if (isSelected) const SizedBox(width: 8),
-                    Text(
-                      type,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        );
-
-        if (selected != null) {
-          setState(() {
-            _selectedType = selected;
-          });
+  /// ================= DROPDOWN =================
+  Widget _buildAccountSelector() {
+    return PopupMenuButton<String>(
+      onSelected: (value) async {
+        if (value == "create_account") {
+          _showCreateAccountDialog();
+          return;
         }
+
+        if (value == "ALL") {
+          await _loadAccounts();
+          return;
+        }
+
+        if (value == "CASH" ||
+            value == "BANK" ||
+            value == "SAVINGS") {
+          await _loadAccounts(type: value);
+          return;
+        }
+
+        setState(() {
+          _selectedAccountId = value;
+        });
       },
-      child: Row(
-        children: [
-          Text(
-            _selectedType,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
-            ),
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+            value: "ALL", child: Text("All")),
+        const PopupMenuItem(
+            value: "CASH", child: Text("Cash")),
+        const PopupMenuItem(
+            value: "BANK", child: Text("Bank")),
+        const PopupMenuItem(
+            value: "SAVINGS",
+            child: Text("Savings")),
+
+        const PopupMenuDivider(),
+
+        ..._accounts.map(
+          (account) => PopupMenuItem(
+            value: account.id,
+            child: Text(account.name),
           ),
-          const SizedBox(width: 4),
-          Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+        ),
+
+        const PopupMenuDivider(),
+
+        const PopupMenuItem(
+          value: "create_account",
+          child: Row(
+            children: [
+              Icon(Icons.add),
+              SizedBox(width: 8),
+              Text("Create Account"),
+            ],
+          ),
+        ),
+      ],
+      child: Row(
+        children: const [
+          Text("Wallet Type"),
+          SizedBox(width: 4),
+          Icon(Icons.keyboard_arrow_down),
+        ],
+      ),
+    );
+  }
+
+  /// ================= CREATE ACCOUNT =================
+  void _showCreateAccountDialog() {
+    final nameController = TextEditingController();
+    String selectedType = "CASH";
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Create Account"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration:
+                  const InputDecoration(labelText: "Account Name"),
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: selectedType,
+              items: const [
+                DropdownMenuItem(
+                    value: "CASH",
+                    child: Text("Cash")),
+                DropdownMenuItem(
+                    value: "BANK",
+                    child: Text("Bank")),
+                DropdownMenuItem(
+                    value: "SAVINGS",
+                    child: Text("Savings")),
+              ],
+              onChanged: (value) {
+                selectedType = value!;
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await AccountService.createAccount(
+                userId: userId,
+                name: nameController.text,
+                type: selectedType,
+                initialBalance: 0,
+              );
+
+              Navigator.pop(context);
+              _loadAccounts();
+            },
+            child: const Text("Create"),
           ),
         ],
       ),

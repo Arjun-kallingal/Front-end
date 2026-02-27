@@ -84,6 +84,7 @@ class AppColors {
   static const Color chartBarBlue = Color(0xFF4285F4);
   static const Color chartGrid = Color(0xFF2A2A2A);
   static const Color chartAxis = Color(0xFF6F6F6F);
+  static const Color cardDark = Color(0xFF1E1E1E); 
 
   // ==================================================
   // PROGRESS / GOALS

@@ -3,7 +3,8 @@ import '../../../core/constants/app_colors.dart';
 import 'stat_card.dart';
 import 'action_button_card.dart';
 import 'move_to_savings_card.dart';
-import 'package:front_end/features/home/widget/add_transaction_screen.dart';
+import 'package:front_end/features/home/widget/add_income_screen.dart';
+import 'package:front_end/features/home/widget/add_expense_screen.dart';
 
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
@@ -78,15 +79,16 @@ class _ActionButtonsRow extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    const AddTransactionScreen(isExpense: false),
+                builder: (_) => const AddIncomeScreen(),
               ),
             );
           },
           iconBg: AppColors.incomeIconBg,
           iconColor: AppColors.incomeAmount,
         ),
+
         const SizedBox(width: 12),
+
         ActionButtonCard(
           icon: Icons.trending_down,
           label: "Add Expense",
@@ -94,8 +96,7 @@ class _ActionButtonsRow extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    const AddTransactionScreen(isExpense: true),
+                builder: (_) => const AddExpenseScreen(),
               ),
             );
           },

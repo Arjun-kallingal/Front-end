@@ -12,7 +12,6 @@ class LightTheme {
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.accentOrange,
-        background: Colors.white,
         surface: Color(0xFFF5F5F5),
         error: AppColors.error,
       ),
