@@ -1,12 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
 import 'signup_screen.dart';
 import 'forgot_password.dart';
-
-
-
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,6 +23,62 @@ class _LoginScreenState extends State<LoginScreen> {
   bool rememberMe = false;
   bool obscurePassword = true;
   bool rememberError = false;
+
+  ///  LOGIN API FUNCTION
+  Future<void> loginUser() async {
+    try {
+      final url = Uri.parse('http://localhost:5000/api/auth/login');
+      // ⚠️ If using real device, replace with your PC IP
+      // example: http://192.168.1.5:5000/api/auth/login
+
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "email": emailController.text.trim(),
+          "password": passwordController.text.trim(),
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        ///  SUCCESS
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data["message"] ?? "Login successful"),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        ///  ERROR FROM SERVER
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data["message"] ?? "Login failed"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ///  CONNECTION ERROR
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Unable to connect to server"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +204,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const ForgotPasswordScreen(),
+                                builder: (_) =>
+                                    const ForgotPasswordScreen(),
                               ),
                             );
                           },
@@ -162,7 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: EdgeInsets.only(left: 12),
                         child: Text(
                           'Please select Remember me',
-                          style: TextStyle(color: Colors.red, fontSize: 12),
+                          style:
+                              TextStyle(color: Colors.red, fontSize: 12),
                         ),
                       ),
                   ],
@@ -172,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 CustomButton(
                   text: 'Sign In',
                   onPressed: () {
-                    final isValid = _formKey.currentState!.validate();
+                    final isValid =
+                        _formKey.currentState!.validate();
 
                     if (!rememberMe) {
                       setState(() {
@@ -181,20 +239,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
 
                     if (isValid && rememberMe) {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        '/main',
-                      );
+                      loginUser(); 
                     }
                   },
                 ),
+
                 const SizedBox(height: 30),
+
                 Center(
                   child: Text(
                     'NEW TO WALLET CARE?',
                     style: textTheme.labelMedium,
                   ),
                 ),
+
                 const SizedBox(height: 30),
 
                 /// CREATE ACCOUNT

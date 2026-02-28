@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/constants/app_colors.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -46,7 +45,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -58,7 +56,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(
-                  top: 20, bottom: 80, left: 16, right: 16),
+                  top: 20, bottom: 30, left: 0, right: 0),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -71,7 +69,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
                   Row(
                     children: [
                       IconButton(

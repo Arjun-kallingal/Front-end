@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/constants/app_colors.dart';
-import 'package:front_end/features/profile/ui/details/account_info.dart';
 import 'package:front_end/features/profile/ui/security/change_password.dart';
-import 'package:front_end/features/profile/ui/details/account_info_email.dart';
 import 'package:front_end/features/profile/ui/security/two_factor_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/theme/theme_provider.dart';
 import 'package:front_end/features/profile/ui/support_legal/help_support.dart';
 import 'package:front_end/features/profile/ui/support_legal/privacy_policy.dart';
 import 'package:front_end/features/profile/ui/support_legal/terms_service.dart';
-import 'package:front_end/features/profile/ui/support_legal/about.dart';
-import 'package:front_end/features/profile/ui/support_legal/export_data.dart';
+import 'package:front_end/features/profile/ui/about/about.dart';
+import 'package:front_end/features/profile/ui/share/export_data.dart';
 import 'package:front_end/features/auth/ui/login_screen.dart';
+import 'package:front_end/features/profile/ui/premium/premium_feature.dart';
+import 'package:front_end/features/profile/ui/edit-profile/profile_edit.dart';
+import 'package:front_end/features/profile/ui/support_legal/feedback.dart';
+import 'package:front_end/navigation/navigation_service.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -24,10 +25,25 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool pushNotifications = true;
   bool paymentReminders = true;
   bool goalMilestones = true;
-  bool biometricLogin = false;
-  String? phoneNumber;
   bool twoFactorAuth = false;
-  String email = "Syamjith@walletcare.com";
+
+  String userName = "Syamjith";
+  String email = "syamjith@email.com";
+  String? profileImage;
+  String mobileNumber = "";
+
+  /// ✅ SAFE INITIALS METHOD
+  String getInitials(String name) {
+    if (name.trim().isEmpty) return "U";
+
+    final parts = name.trim().split(" ");
+
+    if (parts.length == 1) {
+      return parts[0][0].toUpperCase();
+    }
+
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,313 +52,417 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: color.background, //  adaptive
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(
-                  top: 20, bottom: 100, left: 16, right: 16),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
+      backgroundColor: color.background,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// ================= HEADER =================
+          Container(
+            width: double.infinity,
+            padding:
+                const EdgeInsets.only(top: 15, bottom: 15, left: 0, right: 0),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color.fromARGB(255, 98, 14, 14),
+                  Color.fromARGB(255, 184, 20, 20),
+                ],
+              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        NavigationService.bottomIndex.value = 0;
+                      },
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const Text(
+                      'Profile & Settings',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Profile & Settings',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  Container(
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(
+                      top: 10, bottom: 10, left: 30, right: 30),
+                  child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryRedDark.withOpacity(0.85),
+                      color: const Color.fromARGB(210, 99, 10, 10),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.white24,
-                          child: Text(
-                            "SJ",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
+                        /// ================= PROFILE INFO =================
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor: Colors.white24,
+                              backgroundImage: (profileImage != null &&
+                                      profileImage!.isNotEmpty &&
+                                      profileImage!.startsWith("http"))
+                                  ? NetworkImage(profileImage!)
+                                  : null,
+                              child: (profileImage == null ||
+                                      profileImage!.isEmpty ||
+                                      !profileImage!.startsWith("http"))
+                                  ? Text(
+                                      getInitials(userName),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          userName,
+                                          overflow: TextOverflow.ellipsis,
+                                          style:
+                                              textTheme.titleMedium!.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          final result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => EditProfileScreen(
+                                                currentName: userName,
+                                                currentMobile: mobileNumber,
+                                                currentImage: profileImage,
+                                              ),
+                                            ),
+                                          );
+
+                                          if (result != null && mounted) {
+                                            setState(() {
+                                              userName =
+                                                  result["name"] ?? userName;
+                                              mobileNumber = result["mobile"] ??
+                                                  mobileNumber;
+                                              profileImage = result["image"] ??
+                                                  profileImage;
+                                            });
+                                          }
+                                        },
+                                        child: const Text(
+                                          "Edit",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    email,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: textTheme.bodySmall!.copyWith(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Syamjith",
-                                style: textTheme.titleMedium!.copyWith(
+
+                        const SizedBox(height: 8),
+
+                        Container(
+                          height: 1,
+                          width: double.infinity,
+                          color: const Color.fromARGB(255, 148, 77, 77),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        /// ================= PREMIUM BUTTON =================
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PremiumUpgradeScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFFF59E0B),
+                                  Color(0xFFF97316),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(
+                                  Icons.workspace_premium,
                                   color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                                  size: 20,
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                email,
-                                style: textTheme.bodySmall!.copyWith(
-                                  color: Colors.white70,
+                                SizedBox(width: 6),
+                                Text(
+                                  "Upgrade to Premium",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text(
-                            "Edit",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                ),
+              ],
+            ),
+          ),
+
+          /// ================= SCROLLABLE CONTENT =================
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+
+                  /// ================= APPEARANCE =================
+                  _sectionWrapper(context, "Appearance", [
+                    _switchTile(
+                      context,
+                      icon: Icons.dark_mode_outlined,
+                      title: "Dark Mode",
+                      value: context.watch<ThemeProvider>().isDark,
+                      onChanged: (value) {
+                        context.read<ThemeProvider>().toggleTheme(value);
+                      },
+                    ),
+                  ]),
+
+                  const SizedBox(height: 24),
+
+                  /// ================= NOTIFICATIONS =================
+                  _sectionWrapper(context, "Notifications", [
+                    _switchTile(context,
+                        icon: Icons.notifications_outlined,
+                        title: "Push Notifications",
+                        value: pushNotifications,
+                        onChanged: (v) =>
+                            setState(() => pushNotifications = v)),
+                    _switchTile(context,
+                        icon: Icons.payment_outlined,
+                        title: "Payment Reminders",
+                        value: paymentReminders,
+                        onChanged: (v) => setState(() => paymentReminders = v)),
+                    _switchTile(context,
+                        icon: Icons.flag_outlined,
+                        title: "Goal Milestones",
+                        value: goalMilestones,
+                        onChanged: (v) => setState(() => goalMilestones = v)),
+                  ]),
+
+                  const SizedBox(height: 24),
+
+                  /// ================= SECURITY =================
+                  _sectionWrapper(context, "Security", [
+                    _navigationTile(
+                      context,
+                      icon: Icons.security_outlined,
+                      title: "Two-Factor Authentication",
+                      subtitle: twoFactorAuth ? "Enabled" : "Disabled",
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TwoFactorAuthScreen(
+                              initialValue: twoFactorAuth,
+                            ),
+                          ),
+                        );
+
+                        if (result != null) {
+                          setState(() => twoFactorAuth = result);
+                        }
+                      },
+                    ),
+                    _navigationTile(
+                      context,
+                      icon: Icons.lock_outline,
+                      title: "Change Password",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ChangePasswordScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ]),
+
+                  const SizedBox(height: 24),
+
+                  /// ================= DATA =================
+                  _sectionWrapper(context, "Data Management", [
+                    _navigationTile(
+                      context,
+                      icon: Icons.download_outlined,
+                      title: "Export Data",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ExportDataScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ]),
+
+                  const SizedBox(height: 24),
+
+                  /// ================= SUPPORT =================
+                  _sectionWrapper(context, "Support & Legal", [
+                    _navigationTile(
+                      context,
+                      icon: Icons.help_outline,
+                      title: "Help & Support",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HelpSupportScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _navigationTile(
+                      context,
+                      icon: Icons.feedback_outlined,
+                      title: "Feedback & Rate Us",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const FeedbackScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _navigationTile(
+                      context,
+                      icon: Icons.privacy_tip_outlined,
+                      title: "Privacy Policy",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacyPolicyScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _navigationTile(
+                      context,
+                      icon: Icons.description_outlined,
+                      title: "Terms of Service",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TermsOfServiceScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ]),
+
+                  const SizedBox(height: 24),
+
+                  /// ================= ABOUT =================
+                  _sectionWrapper(context, "About", [
+                    _navigationTile(
+                      context,
+                      icon: Icons.info_outline,
+                      title: "About WalletCare",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AboutWalletCareScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ]),
+
+                  const SizedBox(height: 30),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 30),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      child: const Text("Sign Out"),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            /// ================= ACCOUNT INFORMATION =================
-            _sectionWrapper(context, "Account Information", [
-              _navigationTile(
-                context,
-                icon: Icons.email_outlined,
-                title: "Email",
-                subtitle: email,
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          AccountInfoEmailScreen(currentEmail: email),
-                    ),
-                  );
-                  if (result != null) {
-                    setState(() => email = result);
-                  }
-                },
-              ),
-              _navigationTile(
-                context,
-                icon: Icons.phone_outlined,
-                title: "Phone",
-                subtitle: phoneNumber ?? "Add phone number",
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          AccountInfoScreen(currentNumber: phoneNumber),
-                    ),
-                  );
-                  if (result != null) {
-                    setState(() => phoneNumber = result);
-                  }
-                },
-              ),
-            ]),
-
-            const SizedBox(height: 24),
-
-            /// ================= APPEARANCE =================
-            _sectionWrapper(context, "Appearance", [
-              _switchTile(
-                context,
-                icon: Icons.dark_mode_outlined,
-                title: "Dark Mode",
-                value: context.watch<ThemeProvider>().isDark,
-                onChanged: (value) {
-                  context.read<ThemeProvider>().toggleTheme(value);
-                },
-              ),
-            ]),
-
-            const SizedBox(height: 24),
-
-            /// ================= NOTIFICATIONS =================
-            _sectionWrapper(context, "Notifications", [
-              _switchTile(context,
-                  icon: Icons.notifications_outlined,
-                  title: "Push Notifications",
-                  value: pushNotifications,
-                  onChanged: (v) => setState(() => pushNotifications = v)),
-              _switchTile(context,
-                  icon: Icons.payment_outlined,
-                  title: "Payment Reminders",
-                  value: paymentReminders,
-                  onChanged: (v) => setState(() => paymentReminders = v)),
-              _switchTile(context,
-                  icon: Icons.flag_outlined,
-                  title: "Goal Milestones",
-                  value: goalMilestones,
-                  onChanged: (v) => setState(() => goalMilestones = v)),
-            ]),
-
-            const SizedBox(height: 24),
-
-            /// ================= SECURITY =================
-            _sectionWrapper(context, "Security", [
-              _switchTile(context,
-                  icon: Icons.fingerprint,
-                  title: "Biometric Login",
-                  value: biometricLogin,
-                  onChanged: (v) => setState(() => biometricLogin = v)),
-              _navigationTile(
-                context,
-                icon: Icons.security_outlined,
-                title: "Two-Factor Authentication",
-                subtitle: twoFactorAuth ? "Enabled" : "Disabled",
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          TwoFactorAuthScreen(initialValue: twoFactorAuth),
-                    ),
-                  );
-                  if (result != null) {
-                    setState(() => twoFactorAuth = result);
-                  }
-                },
-              ),
-              _navigationTile(
-                context,
-                icon: Icons.lock_outline,
-                title: "Change Password",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const ChangePasswordScreen()),
-                  );
-                },
-              ),
-            ]),
-
-            const SizedBox(height: 24),
-
-            /// ================= SUPPORT =================
-            _sectionWrapper(context, "", [
-              _navigationTile(
-                context,
-                icon: Icons.download_outlined,
-                title: "Export Data",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ExportDataScreen()),
-                  );
-                },
-              ),
-              _navigationTile(
-                context,
-                icon: Icons.help_outline,
-                title: "Help & Support",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const HelpSupportScreen()),
-                  );
-                },
-              ),
-              _navigationTile(
-                context,
-                icon: Icons.privacy_tip_outlined,
-                title: "Privacy Policy",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PrivacyPolicyScreen()),
-                  );
-                },
-              ),
-              _navigationTile(
-                context,
-                icon: Icons.description_outlined,
-                title: "Terms of Service",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const TermsOfServiceScreen()),
-                  );
-                },
-              ),
-              _navigationTile(
-                context,
-                icon: Icons.info_outline,
-                title: "About WalletCare",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AboutWalletCareScreen()),
-                  );
-                },
-              ),
-            ]),
-
-            const SizedBox(height: 30),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const LoginScreen(),
-                    ),
-                    (route) => false,
-                  );
-                },
-                child: const Text("Sign Out"),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

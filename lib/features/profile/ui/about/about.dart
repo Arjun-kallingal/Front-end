@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class HelpSupportScreen extends StatelessWidget {
-  const HelpSupportScreen({super.key});
+class AboutWalletCareScreen extends StatelessWidget {
+  const AboutWalletCareScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +11,6 @@ class HelpSupportScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: color.background,
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
           /// ================= HEADER =================
@@ -47,7 +46,7 @@ class HelpSupportScreen extends StatelessWidget {
                       ),
                     ),
                     const Text(
-                      "Help & Support",
+                      "About WalletCare",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -60,29 +59,56 @@ class HelpSupportScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 40),
 
-          /// ================= SCROLLABLE CONTENT =================
+          /// ================= CONTENT =================
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
 
-                    Text(
-                      "This is the Help & Support screen.",
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.6,
-                        fontSize: 14,
-                      ),
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    size: 80,
+                    color: theme.colorScheme.primary,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    "WalletCare",
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
 
-                    const SizedBox(height: 40),
+                  const SizedBox(height: 8),
 
-                  ],
-                ),
+                  Text(
+                    "Version 1.0.0",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Text(
+                    "WalletCare helps you track expenses, manage savings goals, "
+                    "and stay financially organized with a clean and secure experience.",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                  ),
+
+                  const Spacer(),
+
+                  Text(
+                    "© 2026 WalletCare. All rights reserved.",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
           ),
