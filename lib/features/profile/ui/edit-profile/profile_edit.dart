@@ -37,7 +37,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     imageUrl = widget.currentImage;
   }
 
-  /// ================= IMAGE SOURCE SELECTOR =================
   void showImageSourceSelector() {
     showModalBottomSheet(
       context: context,
@@ -69,18 +68,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  /// ================= GALLERY =================
   Future<void> pickFromGallery() async {
-    final hasPermission =
-        await PermissionService.requestGalleryPermission();
+    final hasPermission = await PermissionService.requestGalleryPermission();
 
     if (!hasPermission) {
       showPermissionSnackBar();
       return;
     }
 
-    final picked =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
       setState(() {
@@ -89,18 +85,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  /// ================= CAMERA =================
   Future<void> pickFromCamera() async {
-    final hasPermission =
-        await PermissionService.requestCameraPermission();
+    final hasPermission = await PermissionService.requestCameraPermission();
 
     if (!hasPermission) {
       showPermissionSnackBar();
       return;
     }
 
-    final picked =
-        await ImagePicker().pickImage(source: ImageSource.camera);
+    final picked = await ImagePicker().pickImage(source: ImageSource.camera);
 
     if (picked != null) {
       setState(() {
@@ -117,7 +110,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  /// ================= UPLOAD IMAGE =================
   Future<String?> uploadImage(File image) async {
     setState(() {
       isUploading = true;
@@ -154,7 +146,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  /// ================= SAVE PROFILE =================
   Future<void> saveProfile() async {
     String? finalImageUrl = imageUrl;
 
@@ -178,146 +169,173 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: color.background,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            /// HEADER
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(
-                  top: 20, bottom: 30),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
+      body: SafeArea(
+        // ✅ added SafeArea only
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(top: 30, bottom: 30),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color.fromARGB(255, 98, 14, 14),
+                      Color.fromARGB(255, 184, 20, 20),
+                    ],
+                  ),
+                  borderRadius:
+                      BorderRadius.vertical(bottom: Radius.circular(30)),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Edit Profile",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
               ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Edit Profile",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            /// FORM
-            Padding(
-              padding: const EdgeInsets.only(
-                top: 30,
-                left: 30,
-                right: 30,
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: color.surface,
-                  borderRadius: BorderRadius.circular(16),
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 30,
+                  left: 30,
+                  right: 30,
                 ),
-                child: Column(
-                  children: [
-
-                    /// PROFILE IMAGE
-                    GestureDetector(
-                      onTap: showImageSourceSelector,
-                      child: Stack(
-                        alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(30),
+                  decoration: BoxDecoration(
+                    color: color.surface,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: showImageSourceSelector,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CircleAvatar(
+                              radius: 50,
+                              backgroundImage: selectedImage != null
+                                  ? FileImage(selectedImage!)
+                                  : (imageUrl != null &&
+                                          imageUrl!.startsWith("http"))
+                                      ? NetworkImage(imageUrl!) as ImageProvider
+                                      : null,
+                              child: selectedImage == null &&
+                                      (imageUrl == null ||
+                                          !imageUrl!.startsWith("http"))
+                                  ? const Icon(Icons.camera_alt, size: 30)
+                                  : null,
+                            ),
+                            if (isUploading) const CircularProgressIndicator(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundImage: selectedImage != null
-                                ? FileImage(selectedImage!)
-                                : (imageUrl != null &&
-                                        imageUrl!.startsWith("http"))
-                                    ? NetworkImage(imageUrl!)
-                                        as ImageProvider
-                                    : null,
-                            child: selectedImage == null &&
-                                    (imageUrl == null ||
-                                        !imageUrl!.startsWith("http"))
-                                ? const Icon(Icons.camera_alt, size: 30)
-                                : null,
+                          /// LABEL OUTSIDE WITH LEFT PADDING
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              "User Name",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium!
+                                    .color,
+                              ),
+                            ),
                           ),
-                          if (isUploading)
-                            const CircularProgressIndicator(),
+
+                          const SizedBox(height: 8),
+
+                          /// TEXT FIELD
+                          TextField(
+                            controller: nameController,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: color.background,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                     Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
 
-                    const SizedBox(height: 30),
+    /// MOBILE NUMBER LABEL OUTSIDE
+    const Padding(
+      padding: EdgeInsets.only(left: 8),
+      child: Text(
+        "Mobile Number",
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
 
-                    /// USERNAME
-                    TextField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        labelText: "User Name",
-                        filled: true,
-                        fillColor: color.background,
-                        border: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+    const SizedBox(height: 8),
+
+    /// MOBILE NUMBER FIELD
+    TextField(
+      controller: mobileController,
+      keyboardType: TextInputType.phone,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: color.background,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    ),
+
+  ],
+),
+                      const SizedBox(height: 40),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: isUploading ? null : saveProfile,
+                          child: const Text(
+                            "Save Changes",
+                            style: TextStyle(fontSize: 16),
+                          ),
                         ),
                       ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    /// MOBILE NUMBER
-                    TextField(
-                      controller: mobileController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: "Mobile Number",
-                        filled: true,
-                        fillColor: color.background,
-                        border: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    /// SAVE BUTTON
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: isUploading ? null : saveProfile,
-                        child: const Text(
-                          "Save Changes",
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );

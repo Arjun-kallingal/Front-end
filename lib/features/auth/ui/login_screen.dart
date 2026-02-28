@@ -27,9 +27,13 @@ class _LoginScreenState extends State<LoginScreen> {
   ///  LOGIN API FUNCTION
   Future<void> loginUser() async {
     try {
-      final url = Uri.parse('http://localhost:5000/api/auth/login');
+
+
+final url = Uri.parse('http://10.0.2.2:5000/api/auth/login');
       // ⚠️ If using real device, replace with your PC IP
       // example: http://192.168.1.5:5000/api/auth/login
+//http://localhost:5000/api/auth/login
+
 
       final response = await http.post(
         url,

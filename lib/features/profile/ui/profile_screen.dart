@@ -32,7 +32,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   String? profileImage;
   String mobileNumber = "";
 
-  /// ✅ SAFE INITIALS METHOD
+  ///  SAFE INITIALS METHOD
   String getInitials(String name) {
     if (name.trim().isEmpty) return "U";
 
@@ -52,15 +52,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: color.background,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+  backgroundColor: color.background,
+  body: SafeArea(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
           /// ================= HEADER =================
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.only(top: 15, bottom: 15, left: 0, right: 0),
+            padding: const EdgeInsets.only(top: 30, bottom: 15),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -68,11 +68,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Color.fromARGB(255, 184, 20, 20),
                 ],
               ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(30),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                /// ================= HEADER =================
                 Row(
                   children: [
                     IconButton(
@@ -85,20 +88,28 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         size: 20,
                       ),
                     ),
-                    const Text(
-                      'Profile & Settings',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    Expanded(
+                      child: Text(
+                        'Profile & Settings',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 8),
+
                 Padding(
-                  padding: const EdgeInsets.only(
-                      top: 10, bottom: 10, left: 30, right: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 10,
+                  ),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -112,6 +123,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            /// Avatar
                             CircleAvatar(
                               radius: 28,
                               backgroundColor: Colors.white24,
@@ -132,26 +144,31 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     )
                                   : null,
                             ),
+
                             const SizedBox(width: 16),
+
+                            /// Text section
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  /// NAME + EDIT
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
                                     children: [
+                                      /// Name safe
                                       Expanded(
                                         child: Text(
                                           userName,
+                                          maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style:
-                                              textTheme.titleMedium!.copyWith(
+                                              textTheme.titleMedium?.copyWith(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ),
+
                                       TextButton(
                                         onPressed: () async {
                                           final result = await Navigator.push(
@@ -186,11 +203,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                       ),
                                     ],
                                   ),
+
                                   const SizedBox(height: 4),
+
+                                  /// EMAIL safe
                                   Text(
                                     email,
+                                    maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: textTheme.bodySmall!.copyWith(
+                                    style: textTheme.bodySmall?.copyWith(
                                       color: Colors.white,
                                     ),
                                   ),
@@ -200,15 +221,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ],
                         ),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
 
+                        /// Divider
                         Container(
                           height: 1,
                           width: double.infinity,
                           color: const Color.fromARGB(255, 148, 77, 77),
                         ),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
 
                         /// ================= PREMIUM BUTTON =================
                         GestureDetector(
@@ -222,7 +244,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 8),
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [
@@ -241,12 +265,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   size: 20,
                                 ),
                                 SizedBox(width: 6),
-                                Text(
-                                  "Upgrade to Premium",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
+                                Flexible(
+                                  child: Text(
+                                    "Upgrade to Premium",
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -464,6 +491,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -493,51 +521,82 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-  Widget _navigationTile(BuildContext context,
-      {required IconData icon,
-      required String title,
-      String? subtitle,
-      required VoidCallback onTap}) {
-    final color = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: color.background,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color:
-                                Theme.of(context).textTheme.bodyLarge!.color)),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(subtitle,
-                          style: TextStyle(
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall!
-                                  .color)),
-                    ]
-                  ]),
-            ),
-            Icon(Icons.arrow_forward_ios,
-                size: 16, color: Theme.of(context).dividerColor),
-          ],
-        ),
+    Widget _navigationTile(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+  String? subtitle,
+  required VoidCallback onTap,
+}) {
+  final color = Theme.of(context).colorScheme;
+
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: color.background,
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
+      child: Row(
+        children: [
+
+          Icon(icon, color: color.primary),
+
+          const SizedBox(width: 12),
+
+          ///  prevents overflow
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyLarge!
+                        .color,
+                  ),
+                ),
+
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .color,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          ///  keeps icon visible
+          Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Theme.of(context).dividerColor,
+          ),
+        ],
+      ),
+    ),
+  );
+}
   }
 
   Widget _switchTile(BuildContext context,
@@ -575,4 +634,4 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       ),
     );
   }
-}
+

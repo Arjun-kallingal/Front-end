@@ -17,7 +17,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   void _submitFeedback() {
     if (_formKey.currentState!.validate() && _rating > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Feedback Submitted Successfully")),
+        const SnackBar(
+          content: Text("Feedback Submitted Successfully ✅"),
+        ),
       );
 
       _feedbackController.clear();
@@ -28,7 +30,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       });
     } else if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a rating")),
+        const SnackBar(
+          content: Text("Please select a rating ⭐"),
+        ),
       );
     }
   }
@@ -49,75 +53,88 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   @override
+  void dispose() {
+    _feedbackController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: color.background,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
 
-          /// ================= HEADER =================
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(
-              top: 20,
-              bottom: 30,
-              left: 0,
-              right: 0,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 98, 14, 14),
-                  Color.fromARGB(255, 184, 20, 20),
-                ],
+      /// prevents resize overflow when keyboard opens
+      resizeToAvoidBottomInset: true,
+
+      body: SafeArea(
+        child: Column(
+          children: [
+
+            /// ================= HEADER =================
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(
+                top: 20,
+                bottom: 30,
               ),
-              borderRadius:
-                  BorderRadius.vertical(bottom: Radius.circular(30)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color.fromARGB(255, 98, 14, 14),
+                    Color.fromARGB(255, 184, 20, 20),
+                  ],
+                ),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(30)),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                      size: 20,
                     ),
-                    const Text(
+                  ),
+
+                  /// prevents overflow
+                  const Expanded(
+                    child: Text(
                       "Feedback & Rate Us",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
 
-
-          /// ================= SCROLLABLE FORM =================
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 30,left: 30,right: 30),
+            /// ================= FORM =================
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  30,
+                  30,
+                  30,
+                  MediaQuery.of(context).viewInsets.bottom + 30,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
+                      /// rating title
                       Text(
                         "Rate Your Experience",
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -127,9 +144,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                       const SizedBox(height: 10),
 
+                      /// stars
                       Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
                           children: List.generate(
                             5,
                             (index) => _buildStar(index + 1),
@@ -139,6 +157,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                       const SizedBox(height: 25),
 
+                      /// feedback title
                       Text(
                         "Your Feedback",
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -148,6 +167,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                       const SizedBox(height: 10),
 
+                      /// feedback field
                       TextFormField(
                         controller: _feedbackController,
                         maxLines: 4,
@@ -167,15 +187,18 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                       const SizedBox(height: 20),
 
+                      /// email title
                       Text(
-                        "Email",
+                        "Email (optional)",
                         style: theme.textTheme.bodyMedium,
                       ),
 
                       const SizedBox(height: 8),
 
+                      /// email field
                       TextFormField(
                         controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: "Enter your email",
                           border: OutlineInputBorder(
@@ -186,6 +209,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                       const SizedBox(height: 30),
 
+                      /// submit button
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -208,15 +232,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 40),
-
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -9,74 +9,89 @@ class StatCard extends StatelessWidget {
   final Color iconBg;
   final String subtitle;
 
-
   const StatCard({
-  super.key,
-  required this.icon,
-  required this.title,
-  required this.amount,
-  required this.amountColor,
-  required this.iconBg,
-  required this.subtitle,
-});
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.amount,
+    required this.amountColor,
+    required this.iconBg,
+    required this.subtitle,
+  });
 
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12), // slightly reduced padding
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
- @override
-Widget build(BuildContext context) {
-  return Expanded(
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          /// 🔹 ICON + AMOUNT (Same Row)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: iconBg,
-                child: Icon(icon, color: amountColor, size: 18),
-              ),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  
+            /// ICON + TITLE
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: iconBg,
+                  child: Icon(
+                    icon,
+                    color: amountColor,
+                    size: 16,
+                  ),
                 ),
+
+                const SizedBox(width: 6),
+
+                /// FIX: prevents overflow
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            /// AMOUNT
+            Text(
+              amount,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: amountColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
               ),
-            ],
-          ),
-
-          const SizedBox(height: 30),
-
-          /// 🔹 TITLE BELOW
-          Text(
-            amount,
-            style:  TextStyle(
-              color:amountColor,
-              fontWeight: FontWeight.bold,
-                  fontSize: 25,
             ),
-          ),
-           const SizedBox(height: 30),
 
-          /// 🔹 Subtitle (This month)
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 12,
+            const SizedBox(height: 6),
+
+            /// SUBTITLE
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 11,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}}
+    );
+  }
+}

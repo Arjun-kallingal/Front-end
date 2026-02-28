@@ -10,62 +10,55 @@ class HelpSupportScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: color.background,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-          /// ================= HEADER =================
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(
-              top: 20,
-              bottom: 30,
-              left: 0,
-              right: 0,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 98, 14, 14),
-                  Color.fromARGB(255, 184, 20, 20),
-                ],
+            /// ================= HEADER =================
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(
+                top: 10,
+                bottom: 30,
               ),
-              borderRadius:
-                  BorderRadius.vertical(bottom: Radius.circular(30)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const Text(
-                      "Help & Support",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color.fromARGB(255, 98, 14, 14),
+                    Color.fromARGB(255, 184, 20, 20),
                   ],
                 ),
-              ],
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(30)),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const Text(
+                    "Help & Support",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          /// ================= SCROLLABLE CONTENT =================
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
+            /// ================= SCROLLABLE CONTENT =================
+            Expanded(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,8 +78,8 @@ class HelpSupportScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
