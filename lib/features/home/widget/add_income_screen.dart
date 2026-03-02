@@ -57,24 +57,24 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
             /// BODY
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(30),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _amountCard(theme),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 15),
                     Text("Category", style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
                     _categoryGrid(theme),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 15),
                     _walletDropdown(theme),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 15),
                     _textField(theme, "Description", "Add a note..."),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 15),
                     _dateField(theme),
-                    const SizedBox(height: 35),
+                    const SizedBox(height: 15),
                     _saveButton(theme),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
                   ],
                 ),
               ),
@@ -87,49 +87,42 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   /// ================= AMOUNT =================
   Widget _amountCard(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Amount",
-            style: theme.textTheme.titleMedium,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Amount",
+          style: theme.textTheme.titleMedium,
+        ),
+        const SizedBox(height: 5),
+        TextField(
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: theme.colorScheme.primary,
           ),
-          const SizedBox(height: 12),
-          TextField(
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
-            style: theme.textTheme.headlineMedium?.copyWith(
+          decoration: InputDecoration(
+            prefixText: "₹ ",
+            prefixStyle: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
             ),
-            decoration: InputDecoration(
-              prefixText: "₹ ",
-              prefixStyle: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-              hintText: "0",
-              hintStyle: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.hintColor,
-              ),
-              border: InputBorder.none,
+            hintText: "0.00",
+            hintStyle: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w400,
+              color: theme.hintColor,
             ),
-            onChanged: (value) {
-              setState(() {
-                amount = value;
-              });
-            },
+            border: InputBorder.none,
           ),
-        ],
-      ),
+          onChanged: (value) {
+            setState(() {
+              amount = value;
+            });
+          },
+        ),
+      ],
     );
   }
 
@@ -148,9 +141,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: categories.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisCount: 5,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 8,
       ),
       itemBuilder: (context, index) {
         final cat = categories[index];
@@ -169,7 +162,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               border: isSelected
                   ? Border.all(
                       color: theme.colorScheme.primary,
-                      width: 2,
+                      width: 1,
                     )
                   : Border.all(
                       color: theme.dividerColor,
@@ -180,11 +173,12 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               children: [
                 Icon(
                   cat["icon"] as IconData,
+                  size: 18,
                   color: isSelected
                       ? theme.colorScheme.primary
                       : theme.iconTheme.color,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
                 Text(
                   cat["name"] as String,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -206,7 +200,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Wallet Type", style: theme.textTheme.titleMedium),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           borderRadius: BorderRadius.circular(15),
           value: selectedWallet,
@@ -235,7 +229,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: theme.textTheme.titleMedium),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         TextField(
           controller: descriptionController,
           decoration: InputDecoration(
@@ -253,7 +247,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Date", style: theme.textTheme.titleMedium),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         GestureDetector(
           onTap: () async {
             final picked = await showDatePicker(

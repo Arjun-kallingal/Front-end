@@ -15,40 +15,42 @@ class TransactionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-   
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      width: double.infinity,
+      padding: const EdgeInsets.only(
+        top: 20,
+        bottom: 30,
+        left: 30,
+        right: 30,
+      ),
       decoration: BoxDecoration(
-       
-         gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+        gradient: LinearGradient(
+          colors: [
+            Color.fromARGB(255, 98, 14, 14),
+            Color.fromARGB(255, 184, 20, 20),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           /// Back + Title
           Row(
             children: [
-             IconButton(
-                  onPressed:  () => Navigator.pop(context),
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
                 ),
+              ),
               const SizedBox(width: 16),
               Text(
                 isExpense ? "Add Expense" : "Add Income",
@@ -61,18 +63,17 @@ class TransactionHeader extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 15),
 
           /// Toggle Buttons
           Container(
             height: 55,
             decoration: BoxDecoration(
               color: AppColors.filterSelectedBg,
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(30),
             ),
             child: Row(
               children: [
-
                 /// Income Button
                 Expanded(
                   child: GestureDetector(

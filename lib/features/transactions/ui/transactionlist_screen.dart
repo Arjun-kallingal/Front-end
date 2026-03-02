@@ -153,15 +153,15 @@ Widget build(BuildContext context) {
                 children: [
                             _buildHeader(context, isDark),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
                   _buildSearch(context),
                   const SizedBox(height: 15),
                   _buildDatePicker(context),
                   const SizedBox(height: 15),
                   _buildFilters(context),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
                   _buildTransactionList(context),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -178,7 +178,13 @@ Widget build(BuildContext context) {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 25),
+              padding: const EdgeInsets.only(
+                top: 15,
+                bottom: 20,
+                left: 20,
+                right: 20,
+              ),
+      // padding: const EdgeInsets.fromLTRB(20, 10, 20, 25),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -206,18 +212,18 @@ Widget build(BuildContext context) {
                     size: 20,
                   ),
                 ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 10),
               const Text(
                 "Transaction History",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 15),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -279,7 +285,7 @@ Widget build(BuildContext context) {
   final theme = Theme.of(context);
 
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 30),
+    padding: const EdgeInsets.symmetric(horizontal: 20),
     child: TextField(
       style: theme.textTheme.bodyMedium,
       onChanged: (value) {
@@ -302,7 +308,7 @@ Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
         onTap: () async {
           DateTime? picked = await showDatePicker(
@@ -448,7 +454,7 @@ Widget build(BuildContext context) {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           /// ROW 1
@@ -494,7 +500,7 @@ Widget _buildTransactionList(BuildContext context) {
   }
 
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 30),
+    padding: const EdgeInsets.symmetric(horizontal: 20),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: groupedTransactions.entries.map((entry) {

@@ -26,7 +26,7 @@ class StatCard extends StatelessWidget {
 
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
@@ -60,14 +60,14 @@ class StatCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
             /// 🔹 Amount
             LayoutBuilder(
               builder: (context, constraints) {
                 double fontSize;
 
-                if (constraints.maxWidth < 140) {
+                if (constraints.maxWidth < 150) {
                   fontSize = 16;
                 } else if (constraints.maxWidth < 180) {
                   fontSize = 18;

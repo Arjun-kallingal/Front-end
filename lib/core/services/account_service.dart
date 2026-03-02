@@ -1,42 +1,52 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import '../models/account_model.dart';
+import '../models/global_summary.dart';
 
 class AccountService {
-  static const String baseUrl =
-      "http://localhost:5000/api/account/balances"; 
-  // ⚠️ use your real backend URL
-  // 10.0.2.2 = Android Emulator localhost
+  // FIX: Web-safe platform checking!
+  static String get baseUrl {
+    if (kIsWeb) {
+      // If running in Chrome/Edge
+      return "http://localhost:5000/api/account"; 
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      // If running on Android Emulator
+      return "http://10.0.2.2:5000/api/account";
+    } else {
+      // If running on iOS Simulator or Desktop
+      return "http://localhost:5000/api/account";
+    }
+  }
 
-  static Future<List<AccountModel>> getAccounts(
-    String userId, {
-    String? type,
-  }) async {
+  static Future<Map<String, dynamic>> getAccountDashboard(String userId, {String type = ""}) async {
+    Uri uri = Uri.parse('$baseUrl/balances/$userId');
+    
+    if (type.isNotEmpty && type.toUpperCase() != "ALL") {
+      uri = uri.replace(queryParameters: {'type': type.toUpperCase()});
+    }
+
     try {
-      final uri = Uri.parse("$baseUrl/$userId");
-
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['accounts'] == null) {
-          return [];
-        }
-
-        final List accountsJson = data['accounts'];
-
-        return accountsJson
-            .map((json) => AccountModel.fromJson(json))
+        final data = json.decode(response.body);
+        
+        List<AccountModel> accounts = (data['accounts'] as List)
+            .map((acc) => AccountModel.fromJson(acc))
             .toList();
+
+        GlobalSummary summary = GlobalSummary.fromJson(data['globalSummary'] ?? {});
+
+        return {
+          'accounts': accounts,
+          'summary': summary,
+        };
       } else {
-        print("API Error: ${response.statusCode}");
-        print(response.body);
-        return [];
+        throw Exception("Server Error: ${response.statusCode}");
       }
     } catch (e) {
-      print("GET ACCOUNTS ERROR: $e");
-      return [];
+      throw Exception("Connection Failed: $e");
     }
   }
 
@@ -44,21 +54,19 @@ class AccountService {
     required String userId,
     required String name,
     required String type,
-    required double initialBalance,
   }) async {
     final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {"Content-Type": "application/json"},
+      Uri.parse('$baseUrl/create'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "userId": userId,
-        "name": name,
-        "type": type,
-        "initialBalance": initialBalance,
+        'userId': userId,
+        'name': name,
+        'type': type.toUpperCase(),
       }),
     );
 
     if (response.statusCode != 201) {
-      throw Exception("Failed to create account");
+      throw Exception("Could not create account: ${response.body}");
     }
   }
 }

@@ -12,7 +12,7 @@ class QuickActionsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
@@ -87,7 +87,7 @@ class _ActionButtonsRow extends StatelessWidget {
           iconColor: AppColors.incomeAmount,
         ),
 
-        const SizedBox(width: 12),
+        const SizedBox(width: 20),
 
         ActionButtonCard(
           icon: Icons.trending_down,

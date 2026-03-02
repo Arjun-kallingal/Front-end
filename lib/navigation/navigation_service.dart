@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../core/constants/app_colors.dart';
-
 import '../features/home/ui/home_screen.dart';
 import '../features/transactions/ui/transactionlist_screen.dart';
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
 import '../features/profile/ui/profile_screen.dart';
-
 
 /// GLOBAL NAV SERVICE
 class NavigationService {
@@ -19,16 +16,14 @@ class MainNavigation extends StatelessWidget {
   static const List<Widget> _screens = [
     HomeScreen(),
     AnalyticsDashboardScreen(),
-
-   
     HistoryScreen(),
-    // DebtorsScreen(),
     ProfileSettingsScreen(),
-
   ];
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return ValueListenableBuilder<int>(
       valueListenable: NavigationService.bottomIndex,
       builder: (context, index, _) {
@@ -37,15 +32,36 @@ class MainNavigation extends StatelessWidget {
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: index,
             onTap: (i) => NavigationService.bottomIndex.value = i,
-            backgroundColor: AppColors.navBg,
-            selectedItemColor: AppColors.navActive,
-            unselectedItemColor: AppColors.navInactive,
+
+            // 🎯 THEME BASED COLORS
+            backgroundColor: theme.bottomNavigationBarTheme.backgroundColor 
+                ?? theme.scaffoldBackgroundColor,
+
+            selectedItemColor: theme.colorScheme.primary,
+
+           unselectedItemColor: theme.brightness == Brightness.light
+    ? Colors.black
+    : Colors.grey.shade400,
             type: BottomNavigationBarType.fixed,
+            elevation: 0,
+
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-              BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: 'Analytics'),
-              BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.pie_chart),
+                label: 'Analytics',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.history),
+                label: 'History',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
             ],
           ),
         );
