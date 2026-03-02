@@ -55,7 +55,7 @@ class _TwoFactorAuthScreenState
               width: double.infinity,
               padding: const EdgeInsets.only(
                 top: 10,
-                bottom: 30,
+                bottom: 10,
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -64,8 +64,7 @@ class _TwoFactorAuthScreenState
                     Color.fromARGB(255, 184, 20, 20),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
+               
               ),
               child: Row(
                 children: [
@@ -96,7 +95,7 @@ class _TwoFactorAuthScreenState
             Expanded(
               child: SingleChildScrollView(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 30),
+                    const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
 

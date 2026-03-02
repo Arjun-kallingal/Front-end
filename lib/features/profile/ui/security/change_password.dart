@@ -57,7 +57,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               width: double.infinity,
               padding: const EdgeInsets.only(
                 top: 10,
-                bottom: 30,
+                bottom: 10,
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -66,8 +66,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     Color.fromARGB(255, 184, 20, 20),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
+                
               ),
               child: Row(
                 children: [
@@ -94,9 +93,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             /// SCROLLABLE CONTENT
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(20),
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: color.surface,
                     borderRadius: BorderRadius.circular(16),

@@ -78,8 +78,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(
-                top: 20,
-                bottom: 30,
+                top: 10,
+                bottom: 10,
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -88,8 +88,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     Color.fromARGB(255, 184, 20, 20),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
+               
               ),
               child: Row(
                 children: [
@@ -123,9 +122,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                  30,
-                  30,
-                  30,
+                  20,
+                  20,
+                  20,
                   MediaQuery.of(context).viewInsets.bottom + 30,
                 ),
                 child: Form(

@@ -19,8 +19,8 @@ class PremiumUpgradeScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(
-                top: 30,
-                bottom: 30,
+                top: 10,
+                bottom: 10,
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -29,8 +29,7 @@ class PremiumUpgradeScreen extends StatelessWidget {
                     Color.fromARGB(255, 184, 20, 20),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
+                
               ),
               child: Row(
                 children: [

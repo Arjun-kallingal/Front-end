@@ -176,7 +176,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.only(top: 30, bottom: 30),
+                padding: const EdgeInsets.only(top: 10, bottom: 10),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -184,8 +184,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Color.fromARGB(255, 184, 20, 20),
                     ],
                   ),
-                  borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(30)),
+                  
                 ),
                 child: Row(
                   children: [
@@ -211,12 +210,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(
-                  top: 30,
-                  left: 30,
-                  right: 30,
+                  top: 20,
+                  left: 20,
+                  right: 20,
                 ),
                 child: Container(
-                  padding: const EdgeInsets.all(30),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: color.surface,
                     borderRadius: BorderRadius.circular(16),

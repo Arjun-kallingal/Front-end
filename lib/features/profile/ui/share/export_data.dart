@@ -72,7 +72,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
               width: double.infinity,
               padding: const EdgeInsets.only(
                 top: 10,
-                bottom: 30,
+                bottom: 10,
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -81,8 +81,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                     Color.fromARGB(255, 184, 20, 20),
                   ],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
+                
               ),
               child: Row(
                 children: [
@@ -109,8 +108,8 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 30,
+                  horizontal: 20,
+                  vertical: 20,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +117,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
 
                     /// DATE RANGE CARD
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: color.surface,
                         borderRadius: BorderRadius.circular(16),
@@ -164,7 +163,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
 
                     /// FORMAT CARD
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: color.surface,
                         borderRadius: BorderRadius.circular(16),
