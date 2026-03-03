@@ -50,7 +50,7 @@ class _BalanceCardState extends State<BalanceCard> {
         _accounts = result['accounts'];
         _summary = result['summary'];
 
-        // If selected account not in filtered list → reset
+        // Reset to "all" if the specific selected account is no longer in the filtered list
         if (_selectedAccountId != "all" &&
             !_accounts.any((a) => a.id == _selectedAccountId)) {
           _selectedAccountId = "all";
@@ -250,65 +250,58 @@ class _BalanceCardState extends State<BalanceCard> {
       onSelected: (value) async {
         if (value == "create") {
           _showCreateAccountDialog();
-        } else if (["ALL", "CASH", "BANK"]
-            .contains(value)) {
+        } else if (["ALL", "CASH", "BANK"].contains(value)) {
           setState(() {
             _selectedAccountId = "all";
+            // _activeCategory is updated inside _loadDashboard via the type parameter
           });
 
-          await _loadDashboard(
-              type: value == "ALL" ? "" : value);
-
+          await _loadDashboard(type: value == "ALL" ? "" : value);
           widget.onAccountSelected?.call("all");
         } else {
           setState(() {
             _selectedAccountId = value;
           });
-
           widget.onAccountSelected?.call(value);
         }
       },
-      itemBuilder: (context) => [
-        _buildPopupItem(
-            "ALL", "All Wallets", Icons.wallet),
-        _buildPopupItem(
-            "CASH", "Cash Only", Icons.money),
-        _buildPopupItem(
-            "BANK", "Bank Only", Icons.account_balance),
-        const PopupMenuDivider(),
-
-        if (_accounts.isEmpty)
-          const PopupMenuItem(
-              enabled: false,
-              child: Text("No accounts found"))
-        else
-          ..._accounts.map(
-            (a) => PopupMenuItem(
-              value: a.id,
-              child: Row(
-                children: [
-                  Icon(
-                    a.type == "CASH"
-                        ? Icons.money
-                        : Icons.account_balance,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(a.name),
-                ],
+      itemBuilder: (context) {
+        return [
+          _buildPopupItem("ALL", "All Wallets", Icons.wallet),
+          _buildPopupItem("CASH", "Cash Only", Icons.money),
+          _buildPopupItem("BANK", "Bank Only", Icons.account_balance),
+          
+          // Logic: Hide individual accounts if "ALL" is selected
+          if (_activeCategory != "ALL" && _accounts.isNotEmpty) ...[
+            const PopupMenuDivider(),
+            ..._accounts.map(
+              (a) => PopupMenuItem(
+                value: a.id,
+                child: Row(
+                  children: [
+                    Icon(
+                      a.type == "CASH" ? Icons.money : Icons.account_balance,
+                      size: 16,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(a.name),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
 
-        const PopupMenuDivider(),
-        const PopupMenuItem(
-          value: "create",
-          child: Text(
-            "+ Create New",
-            style: TextStyle(color: Colors.blue),
+          const PopupMenuDivider(),
+          const PopupMenuItem(
+            value: "create",
+            child: Text(
+              "+ Create New",
+              style: TextStyle(color: Colors.blue),
+            ),
           ),
-        ),
-      ],
+        ];
+      },
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -317,16 +310,11 @@ class _BalanceCardState extends State<BalanceCard> {
           Text(
             _selectedAccountId == "all"
                 ? "$_activeCategory View"
-                : _accounts
-                        .firstWhere(
-                          (a) =>
-                              a.id ==
-                              _selectedAccountId,
-                          orElse: () => _accounts.first,
-                        )
-                        .name,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold),
+                : _accounts.firstWhere(
+                    (a) => a.id == _selectedAccountId,
+                    orElse: () => _accounts.first,
+                  ).name,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           const Icon(Icons.arrow_drop_down),
         ],
@@ -334,6 +322,7 @@ class _BalanceCardState extends State<BalanceCard> {
     );
   }
 
+  // Helper method for generating rows inside the Popup Menu
   PopupMenuItem<String> _buildPopupItem(
       String value, String label, IconData icon) {
     return PopupMenuItem(
