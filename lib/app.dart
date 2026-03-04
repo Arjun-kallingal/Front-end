@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
-import 'core/constants/app_colors.dart';
+import 'features/auth/ui/login_screen.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class WalletCareApp extends StatelessWidget {
+  const WalletCareApp({super.key});
+
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: AppColors.bgPrimary,
-        body: const Center(
-          child: Text(
-            'WalletCare',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+      title: 'Moneycart',
+      home: const LoginScreen(),
+      routes: {
+        '/signup': (context) => const Scaffold(
+              body: Center(child: Text('Signup Screen')),
             ),
-          ),
-        ),
-      ),
+        '/forgot-password': (context) => const Scaffold(
+              body: Center(child: Text('Forgot Password')),
+            ),
+      },
     );
   }
 }
