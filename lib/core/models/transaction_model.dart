@@ -1,5 +1,4 @@
 
-
 /// 1. THE INDIVIDUAL TRANSACTION OBJECT
 class TransactionModel {
   final String id;

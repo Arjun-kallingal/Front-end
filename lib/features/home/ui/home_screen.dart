@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
 
   // Use your dynamic User ID here
-  final String userId = "69a7c2ee3b7e643684e7b2d0";
+  final String userId = "699e8fea9a6c85ac1f0970eb";
 
   @override
   void initState() {
@@ -144,32 +144,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-          30, 60, 30, 70), // Added top padding for SafeArea
+      padding: const EdgeInsets.only(top: 10,bottom: 10),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF620E0E), Color(0xFFB81414)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+       
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Welcome",
-                  style: TextStyle(color: Colors.white70, fontSize: 14)),
-              SizedBox(height: 4),
-              Text("Muhammed Irfan",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22)),
-            ],
-          ),
+          const Text("      Wallet Care", 
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
           GestureDetector(
             onTap: () => NavigationService.bottomIndex.value = 3,
             child: const CircleAvatar(

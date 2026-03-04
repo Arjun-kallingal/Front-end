@@ -12,7 +12,7 @@ class AccountService {
       return "http://localhost:5000/api/account"; 
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       // If running on Android Emulator
-      return "http://10.0.2.2:5000/api/account";
+      return "http://192.168.29.189:5000/api/account";
     } else {
       // If running on iOS Simulator or Desktop
       return "http://localhost:5000/api/account";

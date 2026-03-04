@@ -8,11 +8,11 @@ class AppColors {
   static const Color primaryRedDark = Color(0xFFC62828);
   static const Color accentOrange = Color(0xFFFF9800);
 
-  // ==================================================
-  // APP BACKGROUNDS
-  // ==================================================
-  static const Color bgPrimary = Color(0xFF0B0B0B);
-  static const Color bgSecondary = Color(0xFF151515);
+  
+// APP BACKGROUNDS (PURE BLACK)
+// ==================================================
+static const Color bgPrimary = Color(0xFF000000);
+static const Color bgSecondary = Color(0xFF000000);
 
   static const Color headerGradientStart = Color(0xFFB71C1C);
   static const Color headerGradientEnd = Color(0xFFE53935);
@@ -23,8 +23,6 @@ class AppColors {
   static const Color cardBg = Color(0xCC1A1A1A);
   static const Color cardBorder = Color(0x332A2A2A);
   static const Color cardShadow = Color(0x99000000);
-  
-
 
   //  SUMMARY / HEADER CARDS (Analytics & History)
   static const Color summaryCardBg = Color(0x33FFFFFF);
@@ -84,7 +82,6 @@ class AppColors {
   static const Color chartBarBlue = Color(0xFF4285F4);
   static const Color chartGrid = Color(0xFF2A2A2A);
   static const Color chartAxis = Color(0xFF6F6F6F);
-  static const Color cardDark = Color(0xFF1E1E1E); 
 
   // ==================================================
   // PROGRESS / GOALS

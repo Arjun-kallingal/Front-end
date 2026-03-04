@@ -8,7 +8,9 @@ class DarkTheme {
       fontFamily: 'Inter',
       scaffoldBackgroundColor: AppColors.bgPrimary,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryRedDark,
+        primary: AppColors.primary,
+        secondary: AppColors.accentOrange,
+        background: AppColors.bgPrimary,
         surface: AppColors.bgSecondary,
         error: AppColors.error,
       ),
