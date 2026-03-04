@@ -20,7 +20,6 @@ class MainNavigation extends StatelessWidget {
     TransactionListScreen (), // 🎯 UPDATED: Matches the class name in transactionlist_screen.dart
     ProfileSettingsScreen(),
   ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

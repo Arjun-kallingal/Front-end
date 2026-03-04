@@ -13,7 +13,6 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-
   final Color primaryRed = const Color(0xFFB81414);
   final Color goalBlue = const Color(0xFF1976D2);
 
@@ -48,11 +47,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   /// FETCH DATA
   Future<void> _fetchData({String? accountId}) async {
-
     setState(() => _isLoading = true);
 
     try {
-
       final results = await Future.wait([
         TransactionService.getHistory(
           "699e8fea9a6c85ac1f0970eb",
@@ -66,52 +63,40 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       final accountData = results[1] as Map<String, dynamic>;
 
       setState(() {
-        _transactions =
-            (results[0] as TransactionHistoryResponse).transactions;
+        _transactions = (results[0] as TransactionHistoryResponse).transactions;
 
         _accounts = List<AccountModel>.from(accountData['accounts']);
 
         _isLoading = false;
       });
-
     } catch (e) {
-
       setState(() => _isLoading = false);
-
     }
   }
 
   /// ICON UI
   Widget _getTransactionLeading(TransactionModel tx) {
-
     if (tx.direction == "GOAL_ALLOCATION") {
-
       return CircleAvatar(
         radius: 18,
         backgroundColor: goalBlue.withOpacity(0.1),
         child: Icon(Icons.flag_circle, color: goalBlue, size: 22),
       );
-
     }
 
     switch (tx.type) {
-
       case 'income':
         return CircleAvatar(
           radius: 18,
           backgroundColor: Colors.green.withOpacity(0.1),
-          child: const Icon(Icons.trending_up,
-              color: Colors.green,
-              size: 20),
+          child: const Icon(Icons.trending_up, color: Colors.green, size: 20),
         );
 
       case 'transfer':
         return CircleAvatar(
           radius: 18,
           backgroundColor: Colors.grey.withOpacity(0.1),
-          child: const Icon(Icons.sync_alt,
-              color: Colors.grey,
-              size: 20),
+          child: const Icon(Icons.sync_alt, color: Colors.grey, size: 20),
         );
 
       case 'expense':
@@ -119,57 +104,45 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         return CircleAvatar(
           radius: 18,
           backgroundColor: primaryRed.withOpacity(0.1),
-          child: Icon(Icons.trending_down,
-              color: primaryRed,
-              size: 20),
+          child: Icon(Icons.trending_down, color: primaryRed, size: 20),
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
-    bool isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-
       backgroundColor:
-          isDark ? const Color(0xFF121212) : const Color(0xFFF7F7F7),
+          //  isDark ? const Color(0xFF121212) : const Color(0xFFF7F7F7),
+
+          isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
 
       appBar: AppBar(
         backgroundColor: primaryRed,
         elevation: 0,
         title: const Text(
           "History",
-          style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-
         actions: [
-
           IconButton(
               onPressed: _clearFilters,
               icon: const Icon(Icons.refresh, color: Colors.white))
-
         ],
       ),
-
       body: Column(
         children: [
-
           /// HEADER
           Container(
             color: primaryRed,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 15),
             child: Column(
               children: [
-
                 /// SEARCH
                 Row(
                   children: [
-
                     Expanded(
                       child: Container(
                         height: 45,
@@ -178,26 +151,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextField(
-                          onChanged: (v) =>
-                              setState(() => searchQuery = v),
+                          onChanged: (v) => setState(() => searchQuery = v),
                           style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 14),
+                              color: Colors.white, fontSize: 14),
                           decoration: const InputDecoration(
                             hintText: "Search transactions...",
                             prefixIcon: Icon(Icons.search,
-                                color: Colors.grey,
-                                size: 20),
+                                color: Colors.grey, size: 20),
+
+    filled: true,
+    fillColor: Colors.white, 
                             border: InputBorder.none,
-                            contentPadding:
-                                EdgeInsets.symmetric(vertical: 12),
+                            contentPadding: EdgeInsets.symmetric(vertical: 12),
                           ),
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 8),
-
                     GestureDetector(
                       onTap: _pickDateRange,
                       child: Container(
@@ -205,11 +175,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         width: 45,
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
-                          borderRadius:
-                              BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.date_range,
-                            color: Colors.white),
+                        child:
+                            const Icon(Icons.date_range, color: Colors.white),
                       ),
                     ),
                   ],
@@ -220,28 +189,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 /// FILTER ROW
                 Row(
                   children: [
-
                     /// ACCOUNT
                     Expanded(
                       flex: 3,
                       child: _buildHeaderDropdown(
                         selectedAccountName,
-                        [
-                          "All Accounts",
-                          ..._accounts.map((a) => a.name)
-                        ],
+                        ["All Accounts", ..._accounts.map((a) => a.name)],
                         (val) {
-
-                          String? id = (val ==
-                                  "All Accounts")
+                          String? id = (val == "All Accounts")
                               ? null
-                              : _accounts
-                                  .firstWhere(
-                                      (a) => a.name == val)
-                                  .id;
+                              : _accounts.firstWhere((a) => a.name == val).id;
 
-                          setState(() =>
-                              selectedAccountName = val!);
+                          setState(() => selectedAccountName = val!);
 
                           _fetchData(accountId: id);
                         },
@@ -256,8 +215,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       child: _buildHeaderDropdown(
                         selectedType,
                         _types,
-                        (val) => setState(
-                            () => selectedType = val!),
+                        (val) => setState(() => selectedType = val!),
                       ),
                     ),
 
@@ -273,8 +231,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           color: selectedCategory != "All"
                               ? Colors.white
                               : Colors.white.withOpacity(0.2),
-                          borderRadius:
-                              BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(Icons.bar_chart,
                             color: selectedCategory != "All"
@@ -292,9 +249,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           /// LIST
           Expanded(
             child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                        color: primaryRed))
+                ? Center(child: CircularProgressIndicator(color: primaryRed))
                 : _buildTransactionList(isDark),
           )
         ],
@@ -304,14 +259,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   /// DROPDOWN
   Widget _buildHeaderDropdown(
-      String value,
-      List<String> items,
-      Function(String?) onChanged) {
-
+      String value, List<String> items, Function(String?) onChanged) {
     return Container(
       height: 38,
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(8)),
@@ -321,18 +272,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           dropdownColor: primaryRed,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down,
-              color: Colors.white,
-              size: 18),
+              color: Colors.white, size: 18),
           style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.bold),
+              color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
           items: items
               .map((e) => DropdownMenuItem(
-                  value: e,
-                  child: Text(e,
-                      overflow:
-                          TextOverflow.ellipsis)))
+                  value: e, child: Text(e, overflow: TextOverflow.ellipsis)))
               .toList(),
           onChanged: onChanged,
         ),
@@ -342,25 +287,19 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   /// TRANSACTION LIST
   Widget _buildTransactionList(bool isDark) {
-
     final list = _transactions.where((tx) {
-
       final mSearch =
-          tx.title.toLowerCase().contains(
-                  searchQuery.toLowerCase()) ||
-              tx.subtitle.toLowerCase().contains(
-                  searchQuery.toLowerCase());
+          tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
 
-      final mCat = selectedCategory == "All" ||
-          tx.category == selectedCategory;
+      final mCat = selectedCategory == "All" || tx.category == selectedCategory;
 
       bool mType = true;
 
       if (selectedType == "Income") {
         mType = tx.type == "income";
       } else if (selectedType == "Expense") {
-        mType = tx.type == "expense" &&
-            tx.direction != "GOAL_ALLOCATION";
+        mType = tx.type == "expense" && tx.direction != "GOAL_ALLOCATION";
       } else if (selectedType == "Reserved") {
         mType = tx.direction == "GOAL_ALLOCATION";
       } else if (selectedType == "Transfer") {
@@ -370,12 +309,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       bool mDate = true;
 
       if (startDate != null && endDate != null) {
-        mDate = tx.date.isAfter(
-                startDate!.subtract(
-                    const Duration(days: 1))) &&
-            tx.date.isBefore(
-                endDate!.add(
-                    const Duration(days: 1)));
+        mDate = tx.date.isAfter(startDate!.subtract(const Duration(days: 1))) &&
+            tx.date.isBefore(endDate!.add(const Duration(days: 1)));
       }
 
       return mSearch && mCat && mType && mDate;
@@ -385,80 +320,66 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       padding: const EdgeInsets.all(14),
       itemCount: list.length,
       itemBuilder: (context, i) {
-
         final tx = list[i];
 
         bool isInc = tx.type == 'income';
 
-        bool isRes =
-            tx.direction == "GOAL_ALLOCATION";
+        bool isRes = tx.direction == "GOAL_ALLOCATION";
 
-        Color moneyColor = isInc
-            ? Colors.green
-            : (isRes ? goalBlue : primaryRed);
+        Color moneyColor =
+            isInc ? Colors.green : (isRes ? goalBlue : primaryRed);
 
         return Container(
-          margin:
-              const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF1E1E1E)
-                : Colors.white,
-            borderRadius:
-                BorderRadius.circular(10),
+            color: isDark ?  Colors.black : Colors.white,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: ListTile(
-  leading: _getTransactionLeading(tx),
+            leading: _getTransactionLeading(tx),
 
-  /// CATEGORY
-  title: Text(
-    tx.title,
-    style: TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: 13,
-      color: isDark ? Colors.white : Colors.black87,
-    ),
-  ),
+            /// CATEGORY
+            title: Text(
+              tx.title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+            ),
 
-  /// DESCRIPTION + DATE
-  subtitle: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
+            /// DESCRIPTION + DATE
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (tx.subtitle.isNotEmpty)
+                  Text(
+                    tx.subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white60 : Colors.grey.shade600,
+                    ),
+                  ),
+                Text(
+                  DateFormat('dd MMM yyyy').format(tx.date),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.white38 : Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
 
-      if (tx.subtitle.isNotEmpty)
-        Text(
-          tx.subtitle,
-          style: TextStyle(
-            fontSize: 11,
-            color: isDark
-                ? Colors.white60
-                : Colors.grey.shade600,
+            /// AMOUNT
+            trailing: Text(
+              "${isInc ? '+' : '-'}₹${tx.amount.abs().toStringAsFixed(0)}",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: moneyColor,
+                fontSize: 14,
+              ),
+            ),
           ),
-        ),
-
-      Text(
-        DateFormat('dd MMM yyyy').format(tx.date),
-        style: TextStyle(
-          fontSize: 10,
-          color: isDark
-              ? Colors.white38
-              : Colors.grey.shade500,
-        ),
-      ),
-    ],
-  ),
-
-  /// AMOUNT
-  trailing: Text(
-    "${isInc ? '+' : '-'}₹${tx.amount.abs().toStringAsFixed(0)}",
-    style: TextStyle(
-      fontWeight: FontWeight.bold,
-      color: moneyColor,
-      fontSize: 14,
-    ),
-  ),
-),
-          
         );
       },
     );
@@ -466,48 +387,35 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   /// CLEAR FILTERS
   void _clearFilters() {
-
     setState(() {
-
       selectedType = "All Type";
       selectedCategory = "All";
       selectedAccountName = "All Accounts";
       startDate = null;
       endDate = null;
       searchQuery = "";
-
     });
-
   }
 
   /// DATE RANGE PICKER
   void _pickDateRange() async {
-
-    final range =
-        await showDateRangePicker(
+    final range = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2023),
       lastDate: DateTime.now(),
     );
 
     if (range != null) {
-
       setState(() {
-
         startDate = range.start;
         endDate = range.end;
-
       });
-
     }
   }
 
   /// CATEGORY MODAL
   void _showCategoryModal() {
-
-    final List<Map<String, dynamic>>
-        categoryData = [
-
+    final List<Map<String, dynamic>> categoryData = [
       {'name': 'All', 'icon': Icons.all_inclusive},
       {'name': 'Food', 'icon': Icons.restaurant},
       {'name': 'Transport', 'icon': Icons.directions_bus},
@@ -522,73 +430,44 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
-
         return Container(
-          height: MediaQuery.of(context)
-                  .size
-                  .height *
-              0.45,
+          height: MediaQuery.of(context).size.height * 0.45,
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius:
-                const BorderRadius.vertical(
-                    top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: GridView.builder(
-            padding:
-                const EdgeInsets.all(15),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10),
+            padding: const EdgeInsets.all(15),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10),
             itemCount: categoryData.length,
-            itemBuilder:
-                (context, index) {
+            itemBuilder: (context, index) {
+              final cat = categoryData[index];
 
-              final cat =
-                  categoryData[index];
-
-              final isSelected =
-                  selectedCategory ==
-                      cat['name'];
+              final isSelected = selectedCategory == cat['name'];
 
               return InkWell(
                 onTap: () {
-
-                  setState(() =>
-                      selectedCategory =
-                          cat['name']);
+                  setState(() => selectedCategory = cat['name']);
 
                   Navigator.pop(context);
-
                 },
                 child: Column(
                   children: [
-
                     CircleAvatar(
-                      backgroundColor:
-                          isSelected
-                              ? primaryRed
-                              : Colors.grey
-                                  .withOpacity(
-                                      0.1),
+                      backgroundColor: isSelected
+                          ? primaryRed
+                          : Colors.grey.withOpacity(0.1),
                       child: Icon(
                         cat['icon'],
-                        color: isSelected
-                            ? Colors.white
-                            : Colors.grey,
+                        color: isSelected ? Colors.white : Colors.grey,
                       ),
                     ),
-
                     const SizedBox(height: 5),
-
                     Text(cat['name'],
                         style: TextStyle(
                             fontSize: 10,
-                            color: isSelected
-                                ? primaryRed
-                                : Colors.grey)),
+                            color: isSelected ? primaryRed : Colors.grey)),
                   ],
                 ),
               );
