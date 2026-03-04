@@ -86,19 +86,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(30, 30, 30, 70),
+      padding: const EdgeInsets.only(top: 10,bottom: 10),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF620E0E), Color(0xFFB81414)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+       
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text("Welcome Syamjith", 
+          const Text("      Wallet Care", 
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
           GestureDetector(
             onTap: () => NavigationService.bottomIndex.value = 3,

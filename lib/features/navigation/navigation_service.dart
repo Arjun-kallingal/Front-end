@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
 
 // ✅ Use absolute package paths:
 import 'package:front_end/features/home/ui/home_screen.dart';

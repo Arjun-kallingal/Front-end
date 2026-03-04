@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// 1. THE INDIVIDUAL TRANSACTION OBJECT
 class TransactionModel {
