@@ -6,6 +6,7 @@ import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
 import 'signup_screen.dart';
 import 'forgot_password.dart';
+import 'api_config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,9 +29,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> loginUser() async {
     try {
 
-// final url = Uri.parse('http://192.168.29.128:5000/api/auth/login');
+ //final url = Uri.parse('http://192.168.29.128:5000/api/auth/login');
       
-final url = Uri.parse('http://127.0.0.1:5000/api/auth/login');
+//final url = Uri.parse('http://127.0.0.1:5000/api/auth/login');
+
+final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
       final response = await http.post(
         url,

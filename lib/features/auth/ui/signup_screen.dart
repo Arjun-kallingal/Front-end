@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:front_end/features/auth/ui/verification.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
+import 'api_config.dart';
+
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -50,8 +52,10 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => isLoading = true);
 
     try {
+      // final response = await http.post(
+      //   Uri.parse("http://localhost:5000/api/auth/register"),
       final response = await http.post(
-        Uri.parse("http://localhost:5000/api/auth/register"),
+  Uri.parse("${ApiConfig.baseUrl}/api/auth/register"),
         headers: {
           "Content-Type": "application/json",
         },
