@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:front_end/core/theme/theme_provider.dart';
-import 'package:front_end/features/analytics/ui/analytics_dashboardscreen.dart';
+import 'features/auth/ui/login_screen.dart';
 
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+void main() {
+  runApp(const WalletCareApp());
+}
+
+class WalletCareApp extends StatelessWidget {
+  const WalletCareApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = ref.watch(themeProvider);
-    final themeMode = ref.watch(themeModeProvider);
-
+  Widget build(BuildContext context){
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: theme,
-      themeMode: themeMode,
-
-      
-      home: const AnalyticsDashboardScreen(),
+      title: 'Moneycart',
+      home: const LoginScreen(),
+      routes: {
+        '/signup': (context) => const Scaffold(
+              body: Center(child: Text('Signup Screen')),
+            ),
+        '/forgot-password': (context) => const Scaffold(
+              body: Center(child: Text('Forgot Password')),
+            ),
+      },
     );
   }
 }
