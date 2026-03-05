@@ -10,6 +10,7 @@ class TransactionModel {
   final String category; // 👈 Now properly mapped
   final String direction; 
   final String accountType;
+  final String? idempotencyKey;
 
   TransactionModel({
     required this.id,
@@ -21,6 +22,7 @@ class TransactionModel {
     required this.category,
     required this.direction,
     required this.accountType,
+    required this.idempotencyKey,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class TransactionModel {
       direction: (json['direction'] ?? 'NORMAL').toString().toUpperCase(),
       
       accountType: (json['accountType'] ?? 'cash').toString().toLowerCase(),
+      idempotencyKey: json['idempotencyKey']?.toString(),
     );
   }
 }

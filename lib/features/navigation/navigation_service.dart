@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-
 // ✅ Use absolute package paths:
 import 'package:front_end/features/home/ui/home_screen.dart';
-import 'package:front_end/features/transactions/ui/transactionlist_screen.dart'; 
+import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:front_end/features/analytics/ui/analytics_dashboardscreen.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
+
 /// 🌐 GLOBAL NAV SERVICE
 /// Allows you to change tabs from anywhere (e.g., clicking "See All" on Home)
 class NavigationService {
   static final ValueNotifier<int> bottomIndex = ValueNotifier(0);
-  
+
   // Helper to change tab programmatically
   static void changeTab(int index) {
     bottomIndex.value = index;
@@ -18,18 +18,19 @@ class NavigationService {
 }
 
 class MainNavigation extends StatelessWidget {
-  const MainNavigation({super.key});
+  final String? userId;
+
+  const MainNavigation({super.key, this.userId});
 
   // 🎯 List of screens matching the BottomNavBar order
-  static const List<Widget> _screens = [
-    HomeScreen(),
-    AnalyticsDashboardScreen(),
-    TransactionListScreen (), // Matches the class name in transactionlist_screen.dart
-    ProfileSettingsScreen(), // Ensure this class name matches your profile_screen.dart
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      const HomeScreen(), // 🎯 Removed the UserId parameter!
+      AnalyticsDashboardScreen(),
+      TransactionListScreen(),
+      ProfileSettingsScreen(),
+    ];
     final theme = Theme.of(context);
 
     return ValueListenableBuilder<int>(
@@ -54,9 +55,10 @@ class MainNavigation extends StatelessWidget {
             child: BottomNavigationBar(
               currentIndex: index,
               onTap: (i) => NavigationService.bottomIndex.value = i,
-              backgroundColor: theme.bottomNavigationBarTheme.backgroundColor 
-                  ?? theme.scaffoldBackgroundColor,
-              selectedItemColor: const Color(0xFFB81414), // Matches your brand red
+              backgroundColor: theme.bottomNavigationBarTheme.backgroundColor ??
+                  theme.scaffoldBackgroundColor,
+              selectedItemColor:
+                  const Color(0xFFB81414), // Matches your brand red
               unselectedItemColor: theme.brightness == Brightness.light
                   ? Colors.black54
                   : Colors.grey.shade400,

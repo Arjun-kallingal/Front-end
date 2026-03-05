@@ -6,6 +6,7 @@ import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'add_income_screen.dart';
 import 'add_transaction_screen.dart';
+import 'package:front_end/core/services/mock_auth.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -15,6 +16,7 @@ class AddExpenseScreen extends StatefulWidget {
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
+  String? _currentUserId;
   String amount = "";
   String selectedCategory = "Food";
   DateTime selectedDate = DateTime.now();
@@ -38,7 +40,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
-    _loadWallets();
+    _initializeUser();
   }
 
   @override
@@ -47,9 +49,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     super.dispose();
   }
 
+  Future<void> _initializeUser() async {
+    // REMOVE 'await' and parentheses. It's a constant, not a function.
+    final userid = MockAuthService.currentUserId;
+
+    if (userid.isNotEmpty && mounted) {
+      setState(() {
+        _currentUserId = userid;
+      });
+
+      // NOW call loadWallets, because _currentUserId is guaranteed to be set
+      _loadWallets();
+    } else {
+      _showSnackBar("Session expired. Please log in again.");
+    }
+  }
+
   Future<void> _loadWallets() async {
+    if (_currentUserId == null) return; // Safety check before making API call
     try {
-      final result = await AccountService.getAccountDashboard("699e8fea9a6c85ac1f0970eb");
+      final result =
+          await AccountService.getAccountDashboard(_currentUserId ?? "");
       if (!mounted) return;
       setState(() {
         _accounts = result['accounts'];
@@ -62,15 +82,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (_selectedAccountId == null || amount.isEmpty || double.tryParse(amount) == 0) {
+    
+
+    if (_selectedAccountId == null ||
+        amount.isEmpty ||
+        double.tryParse(amount) == 0) {
       _showSnackBar("Please enter a valid amount", isError: true);
       return;
     }
-
     setState(() => _isLoading = true);
     try {
       final result = await TransactionService.processTransaction(
-        userId: "699e8fea9a6c85ac1f0970eb",
+        userId: _currentUserId ?? "",
         accountId: _selectedAccountId!,
         amount: amount,
         type: "EXPENSE",
@@ -80,7 +103,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
       if (mounted && result['success']) {
         _showSnackBar("Expense saved!", isError: false);
-        Navigator.pop(context, true); 
+        Navigator.pop(context, true);
       } else {
         _showSnackBar(result['message'] ?? "Failed to save");
       }
@@ -93,7 +116,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   void _showSnackBar(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: isError ? Colors.red : Colors.green, behavior: SnackBarBehavior.floating),
+      SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : Colors.green,
+          behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -107,33 +133,36 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           children: [
             TransactionHeader(
               isExpense: true,
-              onIncomeTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AddIncomeScreen())),
+              onIncomeTap: () => Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const AddIncomeScreen())),
               onExpenseTap: () {},
             ),
             Expanded(
-              child: _isFetchingAccounts 
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _amountField(theme, Colors.red),
-                        const SizedBox(height: 25),
-                        _walletDropdown(),
-                        const SizedBox(height: 25),
-                        const Text("Category", style: TextStyle(color: Colors.grey, fontSize: 14)),
-                        const SizedBox(height: 12),
-                        _categoryGrid(Colors.red),
-                        const SizedBox(height: 25),
-                        _descriptionField(),
-                        const SizedBox(height: 25),
-                        _datePicker(),
-                        const SizedBox(height: 35),
-                        _saveButton(Colors.red, "Save Expense"),
-                      ],
+              child: _isFetchingAccounts
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _amountField(theme, Colors.red),
+                          const SizedBox(height: 25),
+                          _walletDropdown(),
+                          const SizedBox(height: 25),
+                          const Text("Category",
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 14)),
+                          const SizedBox(height: 12),
+                          _categoryGrid(Colors.red),
+                          const SizedBox(height: 25),
+                          _descriptionField(),
+                          const SizedBox(height: 25),
+                          _datePicker(),
+                          const SizedBox(height: 35),
+                          _saveButton(Colors.red, "Save Expense"),
+                        ],
+                      ),
                     ),
-                  ),
             ),
           ],
         ),
@@ -147,9 +176,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       const Text("Amount", style: TextStyle(color: Colors.grey)),
       TextField(
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
-        style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold, color: color),
-        decoration: const InputDecoration(prefixText: "₹ ", border: InputBorder.none, hintText: "0.00"),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
+        ],
+        style: theme.textTheme.headlineLarge
+            ?.copyWith(fontWeight: FontWeight.bold, color: color),
+        decoration: const InputDecoration(
+            prefixText: "₹ ", border: InputBorder.none, hintText: "0.00"),
         onChanged: (val) => amount = val,
       ),
     ]);
@@ -162,8 +195,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       DropdownButtonFormField<String>(
         value: _selectedAccountId,
         isExpanded: true,
-        decoration: InputDecoration(prefixIcon: const Icon(Icons.account_balance_wallet_outlined), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-        items: _accounts.map((acc) => DropdownMenuItem(value: acc.id, child: Text(acc.name))).toList(),
+        decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+        items: _accounts
+            .map(
+                (acc) => DropdownMenuItem(value: acc.id, child: Text(acc.name)))
+            .toList(),
         onChanged: (val) => setState(() => _selectedAccountId = val),
       ),
     ]);
@@ -173,18 +212,29 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return LayoutBuilder(builder: (context, constraints) {
       double itemWidth = (constraints.maxWidth - 24) / 3;
       return Wrap(
-        spacing: 12, runSpacing: 12,
+        spacing: 12,
+        runSpacing: 12,
         children: _categories.map((cat) {
           bool isSel = selectedCategory == cat['name'];
           return GestureDetector(
             onTap: () => setState(() => selectedCategory = cat['name']),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200), width: itemWidth, padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(color: isSel ? activeColor : Colors.grey[100], borderRadius: BorderRadius.circular(12), border: Border.all(color: isSel ? activeColor : Colors.grey.shade300)),
+              duration: const Duration(milliseconds: 200),
+              width: itemWidth,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                  color: isSel ? activeColor : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: isSel ? activeColor : Colors.grey.shade300)),
               child: Column(children: [
-                Icon(cat['icon'], color: isSel ? Colors.white : Colors.grey[700], size: 22),
+                Icon(cat['icon'],
+                    color: isSel ? Colors.white : Colors.grey[700], size: 22),
                 const SizedBox(height: 6),
-                Text(cat['name'], style: TextStyle(fontSize: 12, color: isSel ? Colors.white : Colors.black87)),
+                Text(cat['name'],
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: isSel ? Colors.white : Colors.black87)),
               ]),
             ),
           );
@@ -197,7 +247,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text("Description", style: TextStyle(color: Colors.grey)),
       const SizedBox(height: 8),
-      TextField(controller: descriptionController, decoration: InputDecoration(hintText: "Add a note...", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+      TextField(
+          controller: descriptionController,
+          decoration: InputDecoration(
+              hintText: "Add a note...",
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
     ]);
   }
 
@@ -207,13 +262,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       const SizedBox(height: 8),
       InkWell(
         onTap: () async {
-          final d = await showDatePicker(context: context, initialDate: selectedDate, firstDate: DateTime(2020), lastDate: DateTime(2100));
+          final d = await showDatePicker(
+              context: context,
+              initialDate: selectedDate,
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2100));
           if (d != null) setState(() => selectedDate = d);
         },
         child: Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12)),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(DateFormat('dd MMM, yyyy').format(selectedDate)), const Icon(Icons.calendar_month, color: Colors.grey)]),
+          decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12)),
+          child:
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(DateFormat('dd MMM, yyyy').format(selectedDate)),
+            const Icon(Icons.calendar_month, color: Colors.grey)
+          ]),
         ),
       ),
     ]);
@@ -221,11 +286,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   Widget _saveButton(Color color, String label) {
     return SizedBox(
-      width: double.infinity, height: 55,
+      width: double.infinity,
+      height: 55,
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(backgroundColor: color, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12))),
         onPressed: _isLoading ? null : _handleSave,
-        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
       ),
     );
   }

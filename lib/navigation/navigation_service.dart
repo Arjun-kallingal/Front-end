@@ -14,14 +14,14 @@ class NavigationService {
 class MainNavigation extends StatelessWidget {
   const MainNavigation({super.key});
 
-  static const List<Widget> _screens = [
-    HomeScreen(),
-    AnalyticsDashboardScreen(),
-    TransactionListScreen (), // 🎯 UPDATED: Matches the class name in transactionlist_screen.dart
-    ProfileSettingsScreen(),
-  ];
-  @override
+ @override
   Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      const HomeScreen(), 
+      AnalyticsDashboardScreen(),
+      TransactionListScreen(), 
+      ProfileSettingsScreen(),
+    ];
     final theme = Theme.of(context);
 
     return ValueListenableBuilder<int>(
