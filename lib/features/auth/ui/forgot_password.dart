@@ -117,7 +117,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                             /// SEND RESET LINK
                             CustomButton(
-                              text: 'Send Reset Link',
+                              text: 'Send OTP',
                               onPressed: _sendResetLink,
                             ),
 

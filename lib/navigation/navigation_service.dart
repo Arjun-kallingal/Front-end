@@ -1,69 +1,74 @@
 import 'package:flutter/material.dart';
-import '../core/constants/app_colors.dart';
 
 import '../features/home/ui/home_screen.dart';
-import '../features/transactions/ui/transactionlist_screen.dart';
+// 🎯 Ensure this filename matches your actual file in the folder
+import '../features/transactions/ui/transactionlist_screen.dart'; 
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
 import '../features/profile/ui/profile_screen.dart';
 
-class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
-
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
+/// GLOBAL NAV SERVICE
+class NavigationService {
+  static final ValueNotifier<int> bottomIndex = ValueNotifier(0);
 }
 
-class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
+class MainNavigation extends StatelessWidget {
+  const MainNavigation({super.key});
 
-  final List<Widget> _screens = const [
+  static const List<Widget> _screens = [
     HomeScreen(),
     AnalyticsDashboardScreen(),
-    TransactionsScreen(),
-    // DebtorsScreen(),
+    TransactionListScreen (), // 🎯 UPDATED: Matches the class name in transactionlist_screen.dart
     ProfileSettingsScreen(),
   ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: AppColors.navBg,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.navActive,
-        unselectedItemColor: AppColors.navInactive,
-        selectedIconTheme: const IconThemeData(size: 26),
-        unselectedIconTheme: const IconThemeData(size: 24),
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+    final theme = Theme.of(context);
+
+    return ValueListenableBuilder<int>(
+      valueListenable: NavigationService.bottomIndex,
+      builder: (context, index, _) {
+        return Scaffold(
+          // IndexedStack preserves the state (scroll position/filters) of each tab
+          body: IndexedStack(
+            index: index,
+            children: _screens,
           ),
-           BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart),
-            label: 'Analytics',
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: index,
+            onTap: (i) => NavigationService.bottomIndex.value = i,
+            backgroundColor: theme.bottomNavigationBarTheme.backgroundColor 
+                ?? theme.scaffoldBackgroundColor,
+            selectedItemColor: theme.colorScheme.primary,
+            unselectedItemColor: theme.brightness == Brightness.light
+                ? Colors.black54
+                : Colors.grey.shade400,
+            type: BottomNavigationBarType.fixed,
+            elevation: 8,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.pie_chart_outline),
+                activeIcon: Icon(Icons.pie_chart),
+                label: 'Analytics',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.history),
+                activeIcon: Icon(Icons.history_toggle_off),
+                label: 'History',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'History',
-          ),
-         
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

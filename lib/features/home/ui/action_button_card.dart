@@ -19,29 +19,41 @@ class ActionButtonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 24),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: AppColors.cardBg,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.cardBorder),
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              /// 🔹 Icon
               CircleAvatar(
                 radius: 22,
                 backgroundColor: iconBg,
-                child: Icon(icon, color: iconColor),
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                ),
               ),
+
               const SizedBox(height: 12),
+
+              /// 🔹 Label
               Text(
                 label,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],

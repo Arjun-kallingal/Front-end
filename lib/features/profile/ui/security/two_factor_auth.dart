@@ -39,71 +39,160 @@ class _TwoFactorAuthScreenState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
-        title: const Text("Two-Factor Authentication"),
-        backgroundColor: AppColors.bgPrimary,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      backgroundColor: color.background,
+
+      /// SAFE AREA FIX
+      body: SafeArea(
         child: Column(
           children: [
-            Card(
-              color: AppColors.cardBg,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+
+            /// HEADER
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(
+                top: 10,
+                bottom: 10,
               ),
-              child: SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
-                value: isEnabled,
-                onChanged: _handleToggle,
-                activeColor: AppColors.switchActive,
-                title: const Text(
-                  "Enable Two-Factor Authentication",
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color.fromARGB(255, 98, 14, 14),
+                    Color.fromARGB(255, 184, 20, 20),
+                  ],
                 ),
-                subtitle: Text(
-                  isEnabled ? "Enabled" : "Disabled",
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+               
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                    ),
                   ),
+                  const Expanded(
+                    child: Text(
+                      "Two-Factor Authentication",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            /// CONTENT
+            Expanded(
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+
+                    /// SWITCH CARD
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBg,
+                        borderRadius:
+                            BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Enable Two-Factor Authentication",
+                                  style: TextStyle(
+                                    color:
+                                        AppColors.textPrimary,
+                                    fontWeight:
+                                        FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isEnabled
+                                      ? "Enabled"
+                                      : "Disabled",
+                                  style: const TextStyle(
+                                    color: AppColors
+                                        .textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Transform.scale(
+                            scale: 0.80,
+                            child: Switch(
+                              value: isEnabled,
+                              onChanged: _handleToggle,
+                              activeColor:
+                                  AppColors.switchActive,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    /// INFO CARD
+                    if (isEnabled)
+                      Container(
+                        padding:
+                            const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardBg,
+                          borderRadius:
+                              BorderRadius.circular(16),
+                        ),
+                        child: const Text(
+                          "Two-factor authentication adds an extra layer "
+                          "of security to your account by requiring a "
+                          "second verification step during login.",
+                          style: TextStyle(
+                            color:
+                                AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 100),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            if (isEnabled)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  "Two-factor authentication adds an extra layer "
-                  "of security to your account by requiring a second "
-                  "verification step during login.",
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
+
+      /// SAFE BOTTOM BUTTON
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.all(16),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: hasChanged
                 ? AppColors.primaryRedDark
                 : Colors.grey,
-            minimumSize: const Size.fromHeight(52),
+            minimumSize:
+                const Size.fromHeight(52),
           ),
           onPressed: hasChanged ? _handleSave : null,
           child: const Text(

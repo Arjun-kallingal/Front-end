@@ -4,9 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
-
 import 'core/services/local_storage_service.dart';
-
 import 'features/auth/ui/login_screen.dart';
 import 'navigation/navigation_service.dart';
 import 'features/analytics/provider/analytics_provider.dart';
