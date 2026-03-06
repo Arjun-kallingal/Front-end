@@ -73,7 +73,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       body: SafeArea(
         child: Column(
           children: [
-
             /// ================= HEADER =================
             Container(
               width: double.infinity,
@@ -83,12 +82,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
+                 colors: [
+  Color(0xFF2E7D32), // Normal Green
+  Color(0xFF4CAF50), // Material Green
+],
                 ),
-               
               ),
               child: Row(
                 children: [
@@ -132,7 +130,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       /// rating title
                       Text(
                         "Rate Your Experience",
@@ -230,7 +227,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           ),
                         ),
                       ),
-
                     ],
                   ),
                 ),
