@@ -2,11 +2,27 @@ import 'package:flutter/material.dart';
 
 class UserProfileProvider extends ChangeNotifier {
 
-  String name = "Syamjith";
-  String email = "syamjith@email.com";
+  String name = "";
+  String email = "";
   String mobile = "";
   String? image;
 
+  /// Set user when login/signup
+  void setUser({
+    required String userName,
+    required String userEmail,
+    String userMobile = "",
+    String? userImage,
+  }) {
+    name = userName;
+    email = userEmail;
+    mobile = userMobile;
+    image = userImage;
+
+    notifyListeners();
+  }
+
+  /// Update profile from edit page
   void updateProfile({
     String? newName,
     String? newMobile,
@@ -19,5 +35,4 @@ class UserProfileProvider extends ChangeNotifier {
 
     notifyListeners();
   }
-
 }

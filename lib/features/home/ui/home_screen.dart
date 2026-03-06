@@ -1,34 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/services/transaction_service.dart';
-import 'package:front_end/features/transactions/ui/widget/transaction_card.dart';
-import 'package:front_end/core/models/transaction_model.dart';
+import 'package:front_end/navigation/navigation_service.dart';
 
+import 'package:front_end/core/services/transaction_service.dart';
+import 'package:front_end/core/models/transaction_model.dart';
+import 'package:front_end/features/transactions/ui/widget/transaction_card.dart';
+// 🎯 1. Import your real AuthService instead of mock_auth
+import 'package:front_end/core/services/mock_auth.dart'; 
 import 'balance_card.dart';
 import 'quick_action_section.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
-import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
 
 class HomeScreen extends StatefulWidget {
+  // 🎯 2. You can remove userId from the constructor if you fetch it via Auth
   const HomeScreen({super.key});
-
-  /// 🔹 Dummy Goals (Temporary Until Backend Ready)
-  static final List<Map<String, dynamic>> demoGoals = [
-    {
-      "title": "Emergency Fund",
-      "saved": 6500.0,
-      "target": 10000.0,
-      "color": Colors.red,
-      "icon": Icons.track_changes,
-    },
-    {
-      "title": "Vacation to Japan",
-      "saved": 2800.0,
-      "target": 5000.0,
-      "color": Colors.blue,
-      "icon": Icons.flight,
-    },
-  ];
 
   
 
@@ -37,20 +23,49 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
+  // --- STATE ---
+  String? _currentUserId;
   List<TransactionModel> _recentTransactions = [];
   bool _isLoading = true;
-
-  final String userId = "699e8fea9a6c85ac1f0970eb";
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    // 🎯 3. Start by verifying auth before fetching data
+    _initializeUserAndData();
   }
 
-  /// FETCH TRANSACTIONS
-  Future<void> _fetchData() async {
+  // 🎯 4. NEW AUTH LOGIC
+   
+      Future<void> _initializeUserAndData() async {
+    try {
+      // Use your mock method with the 1-second fake delay
+      final userId = await MockAuthService.simulateLogin(); 
+      
+      if (mounted) {
+        setState(() => _currentUserId = userId);
+      }
+
+      if (mounted) {
+        setState(() => _currentUserId = userId);
+      }
+
+      // Proceed to fetch transaction data now that we have the real userId
+      await _fetchData(userId);
+
+    } catch (e) {
+      debugPrint("Auth Error: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Authentication failed. Please log in again.";
+        });
+      }
+    }
+  }
+
+ Future<void> _fetchData(String userId) async {
     try {
       final response = await TransactionService.getHistory(userId);
 
@@ -62,7 +77,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       debugPrint("Home Fetch Error: $e");
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Failed to load transactions.";
+        });
+      }
     }
   }
 
@@ -70,34 +90,30 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // 🔥 FIXED: Completely rebuilt the broken widget tree
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: RefreshIndicator(
-        onRefresh: _fetchData,
+        onRefresh: () => _fetchData(_currentUserId ?? ''),
         color: const Color(0xFFB81414),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-
-              _buildHeader(context),
-
+              _buildHeader(),
               const SizedBox(height: 10),
-
-              const BalanceCard(),
-
+              BalanceCard(userId: _currentUserId ?? ''),
               const SizedBox(height: 10),
-
               const QuickActionsSection(),
-
               const SizedBox(height: 25),
 
-              /// Recent Transactions
-              _buildRecentHeader(),
+              const SizedBox(height: 15),
 
-              _buildTransactionList(),
+              // Dynamic Transactions Section
+              _buildRecentHeader(theme),
+              _buildTransactionList(theme),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 40), // Extra padding at the bottom
             ],
           ),
         ),
@@ -105,105 +121,82 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String getInitials(String name) {
-    List<String> names = name.split(" ");
-    String initials = "";
+  // ... _buildHeader and _buildRecentHeader remain the same ...
+ Widget _buildHeader() {
+  final user = context.watch<UserProfileProvider>();
+  String userName = user.name;
 
-    for (var n in names) {
-      if (n.isNotEmpty) {
-        initials += n[0];
-      }
-    }
+  String initial = userName.isNotEmpty
+      ? userName.trim()[0].toUpperCase()
+      : "U";
 
-    return initials.toUpperCase();
-  }
-  // --- UI HELPER METHODS ---
-
-  Widget _buildHeader(BuildContext context) {
-    final user = context.watch<UserProfileProvider>();
-
-    String userName = user.name;
-    String? profileImage = user.image;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 10,bottom: 10),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF620E0E), Color(0xFFB81414)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Color(0xFF620E0E), Color(0xFFB81414)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          "Wallet Care",
+          style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20),
+        ),
+
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileSettingsScreen(),
+            ),
+          ),
+          child: CircleAvatar(
+            radius: 18,
+            backgroundColor: Color(0xFF620E0E),
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+ 
+
+  Widget _buildRecentHeader(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            "Wallet Care",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-          ),
-
-          /// PROFILE BUTTON
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileSettingsScreen(),
-                ),
-              );
-            },
-            child: CircleAvatar(
-              radius: 24,
-              backgroundColor: const Color.fromARGB(255, 98, 14, 14),
-
-              /// If profile image exists
-              backgroundImage: (profileImage != null && profileImage.isNotEmpty)
-                  ? NetworkImage(profileImage)
-                  : null,
-
-              /// If image not exists show initials
-              child: (profileImage == null || profileImage.isEmpty)
-                  ? Text(
-                      getInitials(userName),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
-            ),
-          ),
+          const Text("Recent Transactions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          TextButton(
+              onPressed: () => NavigationService.bottomIndex.value = 2,
+              child: const Text("See All",
+                  style: TextStyle(color: Color(0xFFB81414)))),
         ],
       ),
     );
   }
 
-  /// RECENT TRANSACTIONS HEADER
-  Widget _buildRecentHeader() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          "Recent Transactions",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
- Widget _buildTransactionList() {
+ Widget _buildTransactionList(ThemeData theme) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 0),
-    child: Container(
+    child: SizedBox(
       width: double.infinity,
      
       child: _isLoading

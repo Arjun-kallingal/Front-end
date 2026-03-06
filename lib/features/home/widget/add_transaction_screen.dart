@@ -18,8 +18,8 @@ class TransactionHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(
-        top: 20,
-        bottom: 30,
+        top: 10,
+        bottom: 20,
         left: 30,
         right: 30,
       ),
@@ -32,10 +32,10 @@ class TransactionHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
+        // borderRadius: const BorderRadius.only(
+        //   bottomLeft: Radius.circular(20),
+        //   bottomRight: Radius.circular(20),
+        // ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +51,7 @@ class TransactionHeader extends StatelessWidget {
                   size: 20,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 10),
               Text(
                 isExpense ? "Add Expense" : "Add Income",
                 style: const TextStyle(
@@ -63,14 +63,14 @@ class TransactionHeader extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 15),
+          const SizedBox(height: 8),
 
           /// Toggle Buttons
           Container(
-            height: 55,
+             height: 40,
             decoration: BoxDecoration(
               color: AppColors.filterSelectedBg,
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [

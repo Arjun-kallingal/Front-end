@@ -6,6 +6,7 @@ import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'add_expense_screen.dart';
 import 'add_transaction_screen.dart';
+import 'package:front_end/core/services/mock_auth.dart';
 
 class AddIncomeScreen extends StatefulWidget {
   const AddIncomeScreen({super.key});
@@ -15,6 +16,7 @@ class AddIncomeScreen extends StatefulWidget {
 }
 
 class _AddIncomeScreenState extends State<AddIncomeScreen> {
+  String? _currentUserId;
   String amount = "";
   String selectedCategory = "Salary";
   DateTime selectedDate = DateTime.now();
@@ -37,7 +39,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadWallets();
+    _initializeUser();
   }
 
   @override
@@ -46,10 +48,23 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     super.dispose();
   }
 
+  Future<void> _initializeUser() async {
+    final userid = MockAuthService.currentUserId;
+
+    if (userid.isNotEmpty && mounted) {
+      setState(() {
+        _currentUserId = userid;
+      });
+      _loadWallets();
+    } else {
+      _showSnackBar("Session expired. Please log in again.");
+    }
+  }
+
   Future<void> _loadWallets() async {
+    if (_currentUserId == null) return;
     try {
-      final result =
-          await AccountService.getAccountDashboard("699e8fea9a6c85ac1f0970eb");
+      final result = await AccountService.getAccountDashboard(_currentUserId!);
       if (!mounted) return;
       setState(() {
         _accounts = result['accounts'];
@@ -72,7 +87,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     setState(() => _isLoading = true);
     try {
       final result = await TransactionService.processTransaction(
-        userId: "69a7c2ee3b7e643684e7b2d0",
+        userId: _currentUserId!,
         accountId: _selectedAccountId!,
         amount: amount,
         type: "INCOME",
@@ -96,125 +111,180 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   void _showSnackBar(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : Colors.green,
-          behavior: SnackBarBehavior.floating),
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            TransactionHeader(
-              isExpense: false,
-              onIncomeTap: () {},
-              onExpenseTap: () => Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const AddExpenseScreen())),
-            ),
-            Expanded(
-              child: _isFetchingAccounts
-                  ? const Center(child: CircularProgressIndicator())
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _amountField(theme, Colors.green),
-                          const SizedBox(height: 15),
-                          _walletDropdown(),
-                          const SizedBox(height: 15),
-                          const Text("Category",
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 14)),
-                          const SizedBox(height: 12),
-                          _categoryGrid(Colors.green),
-                          const SizedBox(height: 15),
-                          _descriptionField(),
-                          const SizedBox(height: 15),
-                          _datePicker(),
-                          const SizedBox(height: 25),
-                          _saveButton(Colors.green, "Save Income"),
-                        ],
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 400),
+          opacity: _isFetchingAccounts ? 0.4 : 1,
+          child: Column(
+            children: [
+              TransactionHeader(
+                isExpense: false,
+                onIncomeTap: () {},
+                onExpenseTap: () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AddExpenseScreen()),
+                ),
+              ),
+              Expanded(
+                child: _isFetchingAccounts
+                    ? const Center(child: CircularProgressIndicator())
+                    : SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _amountField(theme, Colors.green),
+
+                            SizedBox(height: screenHeight * 0.02),
+
+                            _walletDropdown(),
+
+                            SizedBox(height: screenHeight * 0.02),
+
+                            const Text("Category",
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: 14)),
+
+                            const SizedBox(height: 10),
+
+                            _categoryGrid(Colors.green),
+
+                            SizedBox(height: screenHeight * 0.02),
+
+                            _descriptionField(),
+
+                            SizedBox(height: screenHeight * 0.02),
+
+                            _datePicker(),
+
+                            SizedBox(height: screenHeight * 0.03),
+
+                            _saveButton(Colors.green, "Save Income"),
+                          ],
+                        ),
                       ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // --- REUSED WIDGETS (Slightly Green Themed) ---
   Widget _amountField(ThemeData theme, Color color) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text("Amount", style: TextStyle(color: Colors.grey)),
-      TextField(
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
-        ],
-        style: theme.textTheme.headlineLarge
-            ?.copyWith(fontWeight: FontWeight.bold, color: color),
-        decoration: const InputDecoration(
-            prefixText: "₹ ", border: InputBorder.none, hintText: "0.00"),
-        onChanged: (val) => amount = val,
-      ),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Amount",
+            style: TextStyle(color: Colors.grey, fontSize: 15)),
+        const SizedBox(height: 6),
+        TextField(
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
+          ],
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
+            fontSize: 20,
+          ),
+          decoration: InputDecoration(
+            prefixText: "₹ ",
+            hintText: "0.00",
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onChanged: (val) => amount = val,
+        ),
+      ],
+    );
   }
 
   Widget _walletDropdown() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text("Select Wallet", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 5),
-      DropdownButtonFormField<String>(
-        value: _selectedAccountId,
-        isExpanded: true,
-        decoration: InputDecoration(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Select Wallet", style: TextStyle(color: Colors.grey)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedAccountId,
+          isExpanded: true,
+          decoration: InputDecoration(
             prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
             border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-        items: _accounts
-            .map(
-                (acc) => DropdownMenuItem(value: acc.id, child: Text(acc.name)))
-            .toList(),
-        onChanged: (val) => setState(() => _selectedAccountId = val),
-      ),
-    ]);
+                OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          items: _accounts
+              .map((acc) =>
+                  DropdownMenuItem(value: acc.id, child: Text(acc.name)))
+              .toList(),
+          onChanged: (val) => setState(() => _selectedAccountId = val),
+        ),
+      ],
+    );
   }
 
   Widget _categoryGrid(Color activeColor) {
     return LayoutBuilder(builder: (context, constraints) {
-      double itemWidth = (constraints.maxWidth - 20) / 4;
+      double itemWidth = (constraints.maxWidth - 24) / 3;
+
       return Wrap(
-        spacing: 12,
-        runSpacing: 12,
+        spacing: 10,
+        runSpacing: 10,
         children: _categories.map((cat) {
           bool isSel = selectedCategory == cat['name'];
+
           return GestureDetector(
             onTap: () => setState(() => selectedCategory = cat['name']),
-            child: AnimatedContainer(
+            child: AnimatedScale(
+              scale: isSel ? 1.05 : 1,
               duration: const Duration(milliseconds: 200),
-              width: itemWidth,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: itemWidth,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
                   color: isSel ? activeColor : Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: isSel ? activeColor : Colors.grey.shade300)),
-              child: Column(children: [
-                Icon(cat['icon'],
-                    color: isSel ? Colors.white : Colors.grey[700], size: 22),
-                const SizedBox(height: 6),
-                Text(cat['name'],
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: isSel ? Colors.white : Colors.black87)),
-              ]),
+                      color: isSel ? activeColor : Colors.grey.shade300),
+                ),
+                child: Column(
+                  children: [
+                    Icon(cat['icon'],
+                        color: isSel ? Colors.white : Colors.grey[700],
+                        size: 22),
+                    const SizedBox(height: 6),
+                    Text(
+                      cat['name'],
+                      style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isSel ? Colors.white : Colors.black87),
+                    ),
+                  ],
+                ),
+              ),
             ),
           );
         }).toList(),
@@ -223,44 +293,56 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   }
 
   Widget _descriptionField() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text("Description", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 5),
-      TextField(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Description", style: TextStyle(color: Colors.grey)),
+        const SizedBox(height: 8),
+        TextField(
           controller: descriptionController,
           decoration: InputDecoration(
-              hintText: "Add a note...",
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-    ]);
+            hintText: "Add a note...",
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _datePicker() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text("Date", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 5),
-      InkWell(
-        onTap: () async {
-          final d = await showDatePicker(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Date", style: TextStyle(color: Colors.grey)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final d = await showDatePicker(
               context: context,
               initialDate: selectedDate,
               firstDate: DateTime(2020),
-              lastDate: DateTime(2100));
-          if (d != null) setState(() => selectedDate = d);
-        },
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+              lastDate: DateTime(2100),
+            );
+            if (d != null) setState(() => selectedDate = d);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(12)),
-          child:
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(DateFormat('dd MMM, yyyy').format(selectedDate)),
-            const Icon(Icons.calendar_month, color: Colors.grey)
-          ]),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(DateFormat('dd MMM, yyyy').format(selectedDate)),
+                const Icon(Icons.calendar_month, color: Colors.grey)
+              ],
+            ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _saveButton(Color color, String label) {
@@ -269,9 +351,10 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       height: 55,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12))),
+          backgroundColor: color,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
         onPressed: _isLoading ? null : _handleSave,
         child: _isLoading
             ? const CircularProgressIndicator(color: Colors.white)
