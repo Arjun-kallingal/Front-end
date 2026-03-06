@@ -4,22 +4,32 @@ import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
-
-
+import 'core/services/local_storage_service.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'navigation/navigation_service.dart';
+import 'features/analytics/provider/analytics_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Check if JWT exists
+  final bool isLoggedIn = await LocalStorageService.isLoggedIn();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
-      child: const WalletCareApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => AnalyticsNotifier()),
+      ],
+      child: WalletCareApp(isLoggedIn: isLoggedIn),
     ),
   );
 }
 
 class WalletCareApp extends StatelessWidget {
-  const WalletCareApp({super.key});
+  final bool isLoggedIn;
+
+  const WalletCareApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -27,41 +37,32 @@ class WalletCareApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      title: 'Moneycart',
 
-      // ==============================
-      // THEMES
-      // ==============================
       theme: LightTheme.theme,
       darkTheme: DarkTheme.theme,
       themeMode: themeProvider.themeMode,
-
-      // Smooth theme animation
       themeAnimationDuration: const Duration(milliseconds: 300),
 
-      // ==============================
-      // ROUTING
-      // ==============================
-      initialRoute: '/login',
+      // ✅ Set initial route based on login state
+      initialRoute: isLoggedIn ? '/main' : '/login',
+
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/main': (context) => const MainNavigation(),
-        '/signup': (context) => const Scaffold(
+        '/login': (_) => const LoginScreen(),
+        '/main': (_) => const MainNavigation(),
+        '/signup': (_) => const Scaffold(
               body: Center(child: Text('Signup Screen')),
             ),
-        '/forgot-password': (context) => const Scaffold(
+        '/forgot-password': (_) => const Scaffold(
               body: Center(child: Text('Forgot Password')),
             ),
       },
 
-      // ==============================
-      // GLOBAL BUILDER (Optional but recommended)
-      // ==============================
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.0),
-          ),
-          child: child!,
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(1.0)),
+          child: child ?? const SizedBox(),
         );
       },
     );
