@@ -1,0 +1,66 @@
+[33m965e293[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m)[m hyy
+[33m541928b[m helo
+[33mb436067[m[33m ([m[1;31morigin/auth_login[m[33m)[m bottom nav changed
+[33md1d3930[m[33m ([m[1;31morigin/irfan[m[33m)[m goals add
+[33mdad2484[m hhhh
+[33mde46d63[m  home ui updated
+[33mdc4033c[m goals added
+[33me04b50b[m[33m ([m[1;31morigin/zilmoney[m[33m)[m aa
+[33ma65173e[m ..
+[33mb47e281[m ...
+[33macc0a35[m Merge branch 'irfan' into develop
+[33mbc42598[m[33m ([m[1;32mauth_login[m[33m)[m updated
+[33mb6e0a33[m updated
+[33mf5aab57[m api corrected
+[33m9237ac0[m feat: connect transaction history,income and expense to API, update UI icons, and refine filtering
+[33mf4579e0[m ui design changed
+[33md336045[m balace card api
+[33m24b4dce[m fixed overflow
+[33m3c04ebb[m changes in profile ui
+[33m97455e6[m check balanceCard
+[33mef4e763[m Updated tasks
+[33m0623443[m varification modifyed
+[33me52f7dd[m second one
+[33mc857f59[m add profile screen
+[33mf796ca4[m add trancastion screen
+[33m3b8b45f[m auth completed
+[33ma548c3f[m almost complete
+[33mede93f5[m full one
+[33m64ab85d[m History UI
+[33md7b43bb[m added one
+[33m3cbbf28[m initiazing riverpod & provider setup/updated
+[33mefb5546[m navigation from sign in to home and sign up to home
+[33me687c3b[m saved second
+[33m47f59c9[m added validation to sign up screen
+[33mba5d046[m Add home screen,bottom Navigation
+[33m96c376d[m little edit
+[33mf00afe7[m used custom buttun and custom text feild
+[33mbe86f0d[m saved second
+[33m9056927[m saved one
+[33m188f1a1[m wallet  design update
+[33m79af9d1[m add saving balance
+[33m51cc7bd[m update balace card
+[33m6773401[m saved final
+[33m6ae0100[m Added verification and check email
+[33m639975c[m add card
+[33m02d4184[m Update app colors
+[33m1e9b03d[m add TO BALANCE DESIGN
+[33m71c6743[m final update
+[33me6dd1f1[m add
+[33m986e36e[m signup and verification
+[33m0930c06[m updated branch
+[33m73d5a6b[m add file home
+[33m6e6bc95[m Login screen updations
+[33m3ce0404[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/common[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update app.dart
+[33m3873d7e[m Update main.dart
+[33m9c73fdd[m Update theme_provider.dart
+[33m2f1b339[m Update dark_theme.dart
+[33m03d8af4[m Update light_theme.dart
+[33m43d0669[m Update develop branch
+[33mbbb845c[m added
+[33m50faaba[m Update theme logic
+[33mc2c09d5[m Update theme logic
+[33m6692650[m Update pubspec SDK constraint and added  project files
+[33m1166f12[m[33m ([m[1;31morigin/api[m[33m, [m[1;32mmain[m[33m)[m front-end
+[33m0496775[m front-end
+[33m5f4cecc[m Initial commit
