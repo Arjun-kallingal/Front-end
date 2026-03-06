@@ -49,7 +49,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   Future<void> _loadWallets() async {
     try {
       final result =
-          await AccountService.getAccountDashboard("69a7c2ee3b7e643684e7b2d0");
+          await AccountService.getAccountDashboard("699e8fea9a6c85ac1f0970eb");
       if (!mounted) return;
       setState(() {
         _accounts = result['accounts'];
@@ -125,19 +125,19 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _amountField(theme, Colors.green),
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 15),
                           _walletDropdown(),
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 15),
                           const Text("Category",
                               style:
                                   TextStyle(color: Colors.grey, fontSize: 14)),
                           const SizedBox(height: 12),
                           _categoryGrid(Colors.green),
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 15),
                           _descriptionField(),
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 15),
                           _datePicker(),
-                          const SizedBox(height: 35),
+                          const SizedBox(height: 25),
                           _saveButton(Colors.green, "Save Income"),
                         ],
                       ),
@@ -170,7 +170,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   Widget _walletDropdown() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text("Select Wallet", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 8),
+      const SizedBox(height: 5),
       DropdownButtonFormField<String>(
         value: _selectedAccountId,
         isExpanded: true,
@@ -189,7 +189,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   Widget _categoryGrid(Color activeColor) {
     return LayoutBuilder(builder: (context, constraints) {
-      double itemWidth = (constraints.maxWidth - 24) / 3;
+      double itemWidth = (constraints.maxWidth - 20) / 4;
       return Wrap(
         spacing: 12,
         runSpacing: 12,
@@ -225,7 +225,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   Widget _descriptionField() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text("Description", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 8),
+      const SizedBox(height: 5),
       TextField(
           controller: descriptionController,
           decoration: InputDecoration(
@@ -238,7 +238,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   Widget _datePicker() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text("Date", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 8),
+      const SizedBox(height: 5),
       InkWell(
         onTap: () async {
           final d = await showDatePicker(

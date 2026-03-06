@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:front_end/core/constants/app_colors.dart';
 
 enum TransactionType { income, expense, reserved }
@@ -7,6 +8,7 @@ class TransactionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String amount;
+  final DateTime date;
   final TransactionType type;
 
   const TransactionCard({
@@ -14,10 +16,10 @@ class TransactionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.amount,
+    required this.date,
     required this.type,
   });
 
-  /// ✅ AMOUNT COLOR
   Color getAmountColor(BuildContext context) {
     switch (type) {
       case TransactionType.income:
@@ -29,7 +31,6 @@ class TransactionCard extends StatelessWidget {
     }
   }
 
-  /// ✅ ICON
   IconData get icon {
     switch (type) {
       case TransactionType.income:
@@ -41,7 +42,6 @@ class TransactionCard extends StatelessWidget {
     }
   }
 
-  /// ✅ ICON BACKGROUND
   Color getIconBg(BuildContext context) {
     switch (type) {
       case TransactionType.income:
@@ -56,34 +56,15 @@ class TransactionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     final amountColor = getAmountColor(context);
     final iconBg = getIconBg(context);
 
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : AppColors.cardBorder,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.4)
-                : AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.only(left: 30, right: 30, top: 15, bottom: 15),
+      color: theme.cardColor,
       child: Row(
         children: [
-          /// 🔵 ICON
+          /// ICON
           CircleAvatar(
             radius: 22,
             backgroundColor: iconBg,
@@ -95,7 +76,7 @@ class TransactionCard extends StatelessWidget {
 
           const SizedBox(width: 15),
 
-          /// 📝 TITLE & SUBTITLE
+          /// TITLE + SUBTITLE + DATE
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,26 +85,43 @@ class TransactionCard extends StatelessWidget {
                   title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
+                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 5),
+
+                const SizedBox(height: 3),
+
+                if (subtitle.isNotEmpty)
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                      color:
+                          theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                    ),
+                  ),
+
+                const SizedBox(height: 2),
+
+                /// DATE
                 Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color
-                        ?.withOpacity(0.7),
+                  DateFormat('dd MMM yyyy').format(date),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
                   ),
                 ),
               ],
             ),
           ),
 
-          /// 💰 AMOUNT
+          /// AMOUNT
           Text(
             amount,
             style: theme.textTheme.titleMedium?.copyWith(
               color: amountColor,
               fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
           ),
         ],

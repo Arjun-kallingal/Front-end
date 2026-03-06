@@ -127,12 +127,7 @@ class _BalanceCardState extends State<BalanceCard> {
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 10)
         ],
-        border: Border(
-          top: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 4,
-          ),
-        ),
+      
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
