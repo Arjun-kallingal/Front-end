@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/navigation/navigation_service.dart';
-import 'package:front_end/core/constants/app_colors.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/features/transactions/ui/widget/transaction_card.dart';
 import 'package:front_end/core/models/transaction_model.dart';
