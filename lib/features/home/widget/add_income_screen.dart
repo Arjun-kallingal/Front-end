@@ -150,22 +150,44 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   }
 
   // --- REUSED WIDGETS (Slightly Green Themed) ---
-  Widget _amountField(ThemeData theme, Color color) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text("Amount", style: TextStyle(color: Colors.grey)),
+ Widget _amountField(ThemeData theme, Color color) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        "Amount",
+        style: TextStyle(color: Colors.grey, fontSize: 15),
+      ),
+
+      const SizedBox(height: 6),
+
       TextField(
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
         ],
-        style: theme.textTheme.headlineLarge
-            ?.copyWith(fontWeight: FontWeight.bold, color: color),
-        decoration: const InputDecoration(
-            prefixText: "₹ ", border: InputBorder.none, hintText: "0.00"),
+        style: theme.textTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: color,
+          fontSize: 20,
+        ),
+        decoration: InputDecoration(
+          prefixText: "₹ ",
+          hintText: "0.00",
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 15,
+            horizontal: 15,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
         onChanged: (val) => amount = val,
       ),
-    ]);
-  }
+    ],
+  );
+}
 
   Widget _walletDropdown() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -189,10 +211,10 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   Widget _categoryGrid(Color activeColor) {
     return LayoutBuilder(builder: (context, constraints) {
-      double itemWidth = (constraints.maxWidth - 20) / 4;
+      double itemWidth = (constraints.maxWidth - (12 * 3)) / 4;
       return Wrap(
-        spacing: 12,
-        runSpacing: 12,
+        spacing: 10,
+        runSpacing: 10,
         children: _categories.map((cat) {
           bool isSel = selectedCategory == cat['name'];
           return GestureDetector(
