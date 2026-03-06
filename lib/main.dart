@@ -8,6 +8,7 @@ import 'core/services/local_storage_service.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'navigation/navigation_service.dart';
 import 'features/analytics/provider/analytics_provider.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AnalyticsNotifier()),
+        ChangeNotifierProvider(create: (_) => UserProfileProvider()),
       ],
       child: WalletCareApp(isLoggedIn: isLoggedIn),
     ),
