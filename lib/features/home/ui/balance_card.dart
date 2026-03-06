@@ -5,15 +5,15 @@ import 'package:front_end/core/services/account_service.dart';
 
 class BalanceCard extends StatefulWidget {
   final Function(String accountId)? onAccountSelected;
+  final String userId;
 
-  const BalanceCard({super.key, this.onAccountSelected});
+  const BalanceCard({super.key,required this.userId, this.onAccountSelected});
 
   @override
   State<BalanceCard> createState() => _BalanceCardState();
 }
 
 class _BalanceCardState extends State<BalanceCard> {
-  final String userId = "699e8fea9a6c85ac1f0970eb";
 
   bool _isBalanceVisible = true;
   bool _isLoading = true;
@@ -42,7 +42,7 @@ class _BalanceCardState extends State<BalanceCard> {
 
     try {
       final result =
-          await AccountService.getAccountDashboard(userId, type: type);
+          await AccountService.getAccountDashboard(widget.userId, type: type);
 
       if (!mounted) return;
 
@@ -370,7 +370,7 @@ class _BalanceCardState extends State<BalanceCard> {
           ElevatedButton(
             onPressed: () async {
               await AccountService.createAccount(
-                userId: userId,
+                userId: widget.userId,
                 name: controller.text.trim().isEmpty
                     ? "New Account"
                     : controller.text.trim(),

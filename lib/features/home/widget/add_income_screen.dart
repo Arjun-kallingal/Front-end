@@ -6,6 +6,7 @@ import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'add_expense_screen.dart';
 import 'add_transaction_screen.dart';
+import 'package:front_end/core/services/mock_auth.dart';
 
 class AddIncomeScreen extends StatefulWidget {
   const AddIncomeScreen({super.key});
@@ -15,6 +16,7 @@ class AddIncomeScreen extends StatefulWidget {
 }
 
 class _AddIncomeScreenState extends State<AddIncomeScreen> {
+  String? _currentUserId;
   String amount = "";
   String selectedCategory = "Salary";
   DateTime selectedDate = DateTime.now();
@@ -37,7 +39,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadWallets();
+    _initializeUser();
   }
 
   @override
@@ -46,10 +48,26 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     super.dispose();
   }
 
+  Future<void> _initializeUser() async {
+    // Use the static constant directly (no await/parentheses)
+    final userid = MockAuthService.currentUserId;
+
+    if (userid.isNotEmpty && mounted) {
+      setState(() {
+        _currentUserId = userid;
+      });
+
+      // NOW trigger the wallet fetch
+      _loadWallets();
+    } else {
+      _showSnackBar("Session expired. Please log in again.");
+    }
+  }
+
   Future<void> _loadWallets() async {
+    if (_currentUserId == null) return;
     try {
-      final result =
-          await AccountService.getAccountDashboard("699e8fea9a6c85ac1f0970eb");
+      final result = await AccountService.getAccountDashboard(_currentUserId!);
       if (!mounted) return;
       setState(() {
         _accounts = result['accounts'];
@@ -72,10 +90,10 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     setState(() => _isLoading = true);
     try {
       final result = await TransactionService.processTransaction(
-        userId: "699e8fea9a6c85ac1f0970eb",
+        userId: _currentUserId!,
         accountId: _selectedAccountId!,
         amount: amount,
-        type: "INCOME",
+        type: "INCOME", // Make sure this is uppercase to match your Ledger enum
         category: selectedCategory,
         description: descriptionController.text,
       );
@@ -125,19 +143,19 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _amountField(theme, Colors.green),
-                          const SizedBox(height: 15),
+                          const SizedBox(height: 25),
                           _walletDropdown(),
-                          const SizedBox(height: 15),
+                          const SizedBox(height: 25),
                           const Text("Category",
                               style:
                                   TextStyle(color: Colors.grey, fontSize: 14)),
                           const SizedBox(height: 12),
                           _categoryGrid(Colors.green),
-                          const SizedBox(height: 15),
-                          _descriptionField(),
-                          const SizedBox(height: 15),
-                          _datePicker(),
                           const SizedBox(height: 25),
+                          _descriptionField(),
+                          const SizedBox(height: 25),
+                          _datePicker(),
+                          const SizedBox(height: 35),
                           _saveButton(Colors.green, "Save Income"),
                         ],
                       ),
@@ -192,7 +210,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   Widget _walletDropdown() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text("Select Wallet", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 5),
+      const SizedBox(height: 8),
       DropdownButtonFormField<String>(
         value: _selectedAccountId,
         isExpanded: true,
@@ -211,7 +229,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   Widget _categoryGrid(Color activeColor) {
     return LayoutBuilder(builder: (context, constraints) {
-      double itemWidth = (constraints.maxWidth - (12 * 3)) / 4;
+      double itemWidth = (constraints.maxWidth - 24) / 3;
       return Wrap(
         spacing: 10,
         runSpacing: 10,
@@ -247,7 +265,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   Widget _descriptionField() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text("Description", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 5),
+      const SizedBox(height: 8),
       TextField(
           controller: descriptionController,
           decoration: InputDecoration(
@@ -260,7 +278,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   Widget _datePicker() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text("Date", style: TextStyle(color: Colors.grey)),
-      const SizedBox(height: 5),
+      const SizedBox(height: 8),
       InkWell(
         onTap: () async {
           final d = await showDatePicker(

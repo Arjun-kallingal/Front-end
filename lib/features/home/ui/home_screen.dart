@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:front_end/navigation/navigation_service.dart';
 import 'package:front_end/core/constants/app_colors.dart';
 import 'package:front_end/core/services/transaction_service.dart';
-import 'package:front_end/features/transactions/ui/widget/transaction_card.dart';
 import 'package:front_end/core/models/transaction_model.dart';
-import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
+import 'package:front_end/features/transactions/ui/widget/transaction_card.dart';
+// 🎯 1. Import your real AuthService instead of mock_auth
+import 'package:front_end/core/services/mock_auth.dart'; 
 import 'balance_card.dart';
 import 'quick_action_section.dart';
+import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  // 🎯 2. You can remove userId from the constructor if you fetch it via Auth
   const HomeScreen({super.key});
 
   /// 🔹 Dummy Goals (Temporary Until Backend Ready)
@@ -37,20 +40,46 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   // --- STATE ---
+  String? _currentUserId;
   List<TransactionModel> _recentTransactions = [];
   bool _isLoading = true;
-
-  // Use your dynamic User ID here
-  final String userId = "699e8fea9a6c85ac1f0970eb";
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    // 🎯 3. Start by verifying auth before fetching data
+    _initializeUserAndData();
   }
 
-  // 🎯 FETCH LOGIC
-  Future<void> _fetchData() async {
+  // 🎯 4. NEW AUTH LOGIC
+   
+      Future<void> _initializeUserAndData() async {
+    try {
+      // Use your mock method with the 1-second fake delay
+      final userId = await MockAuthService.simulateLogin(); 
+      
+      if (mounted) {
+        setState(() => _currentUserId = userId);
+      }
+
+      if (mounted) {
+        setState(() => _currentUserId = userId);
+      }
+
+      // Proceed to fetch transaction data now that we have the real userId
+      await _fetchData(userId);
+
+    } catch (e) {
+      debugPrint("Auth Error: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+ Future<void> _fetchData(String userId) async {
     try {
       final response = await TransactionService.getHistory(userId);
 
@@ -62,7 +91,11 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       debugPrint("Home Fetch Error: $e");
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -74,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: RefreshIndicator(
-        onRefresh: _fetchData,
+        onRefresh: () => _fetchData(_currentUserId ?? ''),
         color: const Color(0xFFB81414),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -82,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 10),
-              const BalanceCard(),
+              BalanceCard(userId: _currentUserId ?? ''),
               const SizedBox(height: 10),
               const QuickActionsSection(),
               const SizedBox(height: 25),
@@ -104,12 +137,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- UI HELPER METHODS ---
-
+  // ... _buildHeader and _buildRecentHeader remain the same ...
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 10,bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF620E0E), 
@@ -117,15 +149,14 @@ class _HomeScreenState extends State<HomeScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-       
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          
-          const Text("              Wallet Care", 
-          
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+          const Text(
+            "Wallet Care", 
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)
+          ),
           GestureDetector(
             onTap: () => NavigationService.bottomIndex.value = 3,
             child: const CircleAvatar(
@@ -283,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
  Widget _buildTransactionList(ThemeData theme) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 0),
-    child: Container(
+    child: SizedBox(
       width: double.infinity,
      
       child: _isLoading
