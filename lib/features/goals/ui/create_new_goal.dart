@@ -13,29 +13,31 @@ class CreateNewGoalScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<CreateNewGoalScreen> createState() =>
-      _CreateNewGoalScreenState();
+  State<CreateNewGoalScreen> createState() => _CreateNewGoalScreenState();
 }
 
-class _CreateNewGoalScreenState
-    extends State<CreateNewGoalScreen> {
-
+class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController titleController;
   late TextEditingController targetController;
-  late TextEditingController savedController;
 
   DateTime? selectedDate;
-  bool dateError = false;
 
   String selectedCategory = "Savings";
   String? selectedAccountType;
+  String? transactionType;
 
   IconData selectedIcon = Icons.trending_up_rounded;
   Color selectedColor = Colors.green;
 
   final List<String> accountTypes = ["Cash", "Account"];
+
+  final List<String> transactionTypes = [
+    "Reserved",
+    "Expense",
+    "Transaction"
+  ];
 
   final List<Map<String, dynamic>> categories = [
     {"name": "Savings", "icon": Icons.trending_up_rounded, "color": Colors.green},
@@ -56,9 +58,6 @@ class _CreateNewGoalScreenState
     targetController =
         TextEditingController(text: widget.existingGoal?["target"]?.toString() ?? "");
 
-    savedController =
-        TextEditingController(text: widget.existingGoal?["saved"]?.toString() ?? "0");
-
     selectedDate = widget.existingGoal?["deadline"];
 
     if (widget.existingGoal != null) {
@@ -66,6 +65,7 @@ class _CreateNewGoalScreenState
       selectedColor = widget.existingGoal!["color"];
       selectedCategory = widget.existingGoal!["category"];
       selectedAccountType = widget.existingGoal!["accountType"];
+      transactionType = widget.existingGoal!["transactionType"];
     }
   }
 
@@ -77,24 +77,50 @@ class _CreateNewGoalScreenState
     });
   }
 
-  void _saveGoal() {
-    setState(() {
-      dateError = selectedDate == null;
-    });
+  void _showAlert(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBg,
+          title: const Text(
+            "Notification",
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () => Navigator.pop(context),
+            )
+          ],
+        );
+      },
+    );
+  }
 
-    if (!_formKey.currentState!.validate() || selectedDate == null) {
+  void _saveGoal() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (selectedDate == null) {
+      _showAlert("Please select a deadline");
       return;
     }
 
     final goal = {
       "title": titleController.text,
-      "saved": double.tryParse(savedController.text) ?? 0.0,
       "target": double.tryParse(targetController.text) ?? 0.0,
       "deadline": selectedDate,
       "icon": selectedIcon,
       "color": selectedColor,
       "category": selectedCategory,
       "accountType": selectedAccountType,
+      "transactionType": transactionType,
     };
 
     Navigator.pop(context, goal);
@@ -111,7 +137,7 @@ class _CreateNewGoalScreenState
             /// HEADER
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -120,8 +146,8 @@ class _CreateNewGoalScreenState
                   ],
                 ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
               ),
               child: Row(
@@ -155,14 +181,24 @@ class _CreateNewGoalScreenState
                   child: ListView(
                     children: [
 
+                      /// SECTION TITLE
+                      const Text(
+                        "Goal Details",
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
                       /// GOAL TITLE
                       TextFormField(
                         controller: titleController,
                         style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: _inputDecoration(
-                          "Goal Title",
-                          Icons.flag_rounded,
-                        ),
+                        decoration:
+                            _inputDecoration("Goal Title", Icons.flag_rounded),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return "Please enter goal title";
@@ -171,7 +207,7 @@ class _CreateNewGoalScreenState
                         },
                       ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
 
                       /// TARGET AMOUNT
                       TextFormField(
@@ -179,9 +215,7 @@ class _CreateNewGoalScreenState
                         keyboardType: TextInputType.number,
                         style: const TextStyle(color: AppColors.textPrimary),
                         decoration: _inputDecoration(
-                          "Target Amount",
-                          Icons.attach_money_rounded,
-                        ),
+                            "Target Amount", Icons.attach_money_rounded),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return "Enter target amount";
@@ -190,7 +224,7 @@ class _CreateNewGoalScreenState
                         },
                       ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
 
                       /// DEADLINE
                       GestureDetector(
@@ -205,19 +239,15 @@ class _CreateNewGoalScreenState
                           if (picked != null) {
                             setState(() {
                               selectedDate = picked;
-                              dateError = false;
                             });
                           }
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 16),
+                              horizontal: 16, vertical: 16),
                           decoration: BoxDecoration(
                             color: AppColors.cardBg,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: dateError ? Colors.red : Colors.transparent,
-                            ),
                           ),
                           child: Row(
                             children: [
@@ -240,39 +270,36 @@ class _CreateNewGoalScreenState
                         ),
                       ),
 
-                      if (dateError)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 6),
-                          child: Text(
-                            "Please select a deadline",
-                            style: TextStyle(color: Colors.red, fontSize: 12),
-                          ),
+                      const SizedBox(height: 25),
+
+                      /// ACCOUNT SECTION
+                      const Text(
+                        "Account Information",
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 14),
 
-                      /// ACCOUNT TYPE (FIXED)
+                      /// ACCOUNT TYPE
                       DropdownButtonFormField<String>(
                         value: selectedAccountType,
+                        hint: const Text(
+                          "Select Account Type",
+                          style: TextStyle(color: Colors.grey),
+                        ),
                         dropdownColor: AppColors.cardBg,
                         style: const TextStyle(color: AppColors.textPrimary),
                         decoration: _inputDecoration(
-                          "Account Type",
-                          Icons.account_balance_wallet_rounded,
-                        ),
-                        hint: const Text(
-                          "Account Type",
-                          style: TextStyle(color: Colors.grey),
-                        ),
+                            "Account Type",
+                            Icons.account_balance_wallet_rounded),
                         items: accountTypes.map((type) {
-                          return DropdownMenuItem<String>(
+                          return DropdownMenuItem(
                             value: type,
-                            child: Text(
-                              type,
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
+                            child: Text(type),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -280,15 +307,59 @@ class _CreateNewGoalScreenState
                             selectedAccountType = value;
                           });
                         },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please select account type";
+                        validator: (value) =>
+                            value == null ? "Select account type" : null,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      /// TRANSACTION TYPE
+                      DropdownButtonFormField<String>(
+                        value: transactionType,
+                        hint: const Text(
+                          "Select Transaction Type",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        dropdownColor: AppColors.cardBg,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration:
+                            _inputDecoration("Transaction Type", Icons.swap_horiz),
+                        items: transactionTypes.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text(type),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            transactionType = value;
+                          });
+
+                          if (value == "Expense") {
+                            _showAlert("Your amount removed from the reserved amount");
                           }
-                          return null;
+
+                          if (value == "Reserved") {
+                            _showAlert("Amount moved to reserved");
+                          }
                         },
+                        validator: (value) =>
+                            value == null ? "Select transaction type" : null,
                       ),
 
                       const SizedBox(height: 25),
+
+                      /// CATEGORY TITLE
+                      const Text(
+                        "Goal Category",
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
 
                       /// CATEGORY GRID
                       GridView.builder(
@@ -298,9 +369,9 @@ class _CreateNewGoalScreenState
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 1.9,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1.4,
                         ),
                         itemBuilder: (context, index) {
                           final category = categories[index];
@@ -310,7 +381,7 @@ class _CreateNewGoalScreenState
                           return GestureDetector(
                             onTap: () => _selectCategory(category),
                             child: Container(
-                              padding: const EdgeInsets.all(6),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? category["color"].withOpacity(0.2)
@@ -326,9 +397,9 @@ class _CreateNewGoalScreenState
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(category["icon"],
-                                      size: 18,
+                                      size: 20,
                                       color: category["color"]),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 6),
                                   Text(
                                     category["name"],
                                     style: const TextStyle(
@@ -343,35 +414,26 @@ class _CreateNewGoalScreenState
                         },
                       ),
 
-                      const SizedBox(height: 20),
-
-                      /// SAVED AMOUNT
-                      TextFormField(
-                        controller: savedController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: _inputDecoration(
-                          "Saved Amount",
-                          Icons.savings_rounded,
-                        ),
-                      ),
-
-                      const SizedBox(height: 35),
+                      const SizedBox(height: 30),
 
                       /// SAVE BUTTON
                       SizedBox(
-                        height: 50,
+                        height: 52,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: selectedColor,
+                            elevation: 5,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                           onPressed: _saveGoal,
                           child: const Text(
                             "Save Goal",
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -393,7 +455,7 @@ class _CreateNewGoalScreenState
       filled: true,
       fillColor: AppColors.cardBg,
       contentPadding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,

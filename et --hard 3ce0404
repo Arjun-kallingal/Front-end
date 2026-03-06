@@ -1,0 +1,10 @@
+[33m16ba7d1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mzilmoney[m[33m, [m[1;31morigin/zilmoney[m[33m)[m Week 2: Initialize Riverpod state management and global providers
+[33m3ce0404[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m, [m[1;32marj[m[33m)[m Update app.dart
+[33m3873d7e[m Update main.dart
+[33m9c73fdd[m Update theme_provider.dart
+[33m2f1b339[m Update dark_theme.dart
+[33m03d8af4[m Update light_theme.dart
+[33mbbb845c[m added
+[33m1166f12[m front-end
+[33m0496775[m front-end
+[33m5f4cecc[m Initial commit
