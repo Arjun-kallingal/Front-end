@@ -8,10 +8,12 @@ import 'package:front_end/features/transactions/ui/widget/transaction_card.dart'
 import 'package:front_end/core/services/mock_auth.dart'; 
 import 'balance_card.dart';
 import 'quick_action_section.dart';
+import 'package:front_end/features/profile/ui/profile_screen.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  // 🎯 2. You can remove userId from the constructor if you fetch it via Auth
   const HomeScreen({super.key});
 
   /// 🔹 Dummy Goals (Temporary Until Backend Ready)
@@ -43,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _currentUserId;
   List<TransactionModel> _recentTransactions = [];
   bool _isLoading = true;
+
 
   @override
   void initState() {
@@ -107,15 +110,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: RefreshIndicator(
-        onRefresh: () => _fetchData(_currentUserId ?? ''),
+        onRefresh: () async {
+          if (_currentUserId != null) {
+            await _fetchData(_currentUserId!);
+          }
+        },
         color: const Color(0xFFB81414),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              _buildHeader(),
+              _buildHeader(context),
               const SizedBox(height: 10),
-              BalanceCard(userId: _currentUserId ?? ''),
+              const BalanceCard(userId: '',),
               const SizedBox(height: 10),
               const QuickActionsSection(),
               const SizedBox(height: 25),
@@ -137,15 +144,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ... _buildHeader and _buildRecentHeader remain the same ...
-  Widget _buildHeader() {
+  String getInitials(String name) {
+    List<String> names = name.split(" ");
+    String initials = "";
+
+    for (var n in names) {
+      if (n.isNotEmpty) {
+        initials += n[0];
+      }
+    }
+
+    return initials.toUpperCase();
+  }
+  // --- UI HELPER METHODS ---
+
+  Widget _buildHeader(BuildContext context) {
+    final user = context.watch<UserProfileProvider>();
+
+    String userName = user.name;
+    String? profileImage = user.image;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 20, right: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF620E0E), 
-          Color(0xFFB81414)],
+          colors: [Color(0xFF620E0E), Color(0xFFB81414)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -154,14 +178,44 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            "Wallet Care", 
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)
+            "Wallet Care",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
+
+          /// PROFILE BUTTON
           GestureDetector(
-            onTap: () => NavigationService.bottomIndex.value = 3,
-            child: const CircleAvatar(
-                backgroundColor: Colors.white24,
-                child: Icon(Icons.person, color: Colors.white)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileSettingsScreen(),
+                ),
+              );
+            },
+            child: CircleAvatar(
+              radius: 24,
+              backgroundColor: const Color.fromARGB(255, 98, 14, 14),
+
+              /// If profile image exists
+              backgroundImage: (profileImage != null && profileImage.isNotEmpty)
+                  ? NetworkImage(profileImage)
+                  : null,
+
+              /// If image not exists show initials
+              child: (profileImage == null || profileImage.isEmpty)
+                  ? Text(
+                      getInitials(userName),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
           ),
         ],
       ),
@@ -314,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
  Widget _buildTransactionList(ThemeData theme) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 0),
-    child: SizedBox(
+    child: Container(
       width: double.infinity,
      
       child: _isLoading

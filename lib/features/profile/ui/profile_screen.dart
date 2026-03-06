@@ -12,7 +12,8 @@ import 'package:front_end/features/auth/ui/login_screen.dart';
 import 'package:front_end/features/profile/ui/premium/premium_feature.dart';
 import 'package:front_end/features/profile/ui/edit-profile/profile_edit.dart';
 import 'package:front_end/features/profile/ui/support_legal/feedback.dart';
-import 'package:front_end/navigation/navigation_service.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
+
 // import 'package:front_end/core/constants/app_colors.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -28,11 +29,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool goalMilestones = true;
   bool twoFactorAuth = false;
 
-  String userName = "Syamjith";
-  String email = "syamjith@email.com";
-  String? profileImage;
-  String mobileNumber = "";
-
   ///  SAFE INITIALS METHOD
   String getInitials(String name) {
     if (name.trim().isEmpty) return "U";
@@ -45,11 +41,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
+@override
+Widget build(BuildContext context) {
+  final theme = Theme.of(context);
+  final color = theme.colorScheme;
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme;
+  final user = context.watch<UserProfileProvider>();
+
+  String userName = user.name;
+  String email = user.email;
+  String? profileImage = user.image;
+  String mobileNumber = user.mobile;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -67,13 +69,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     Color.fromARGB(255, 184, 20, 20),
                   ],
                 ),
-                
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () {
-                      NavigationService.bottomIndex.value = 0;
+                      Navigator.pop(context);
                     },
                     icon: const Icon(
                       Icons.arrow_back_ios_new,
@@ -125,56 +126,21 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    /// Avatar
-                                    // CircleAvatar(
-                                    //   radius: 28,
-                                    //   backgroundColor: (profileImage == null ||
-                                    //           profileImage!.isEmpty ||
-                                    //           !profileImage!.startsWith("http"))
-                                    //       ? (Theme.of(context).brightness ==
-                                    //               Brightness.light
-                                    //           ? Colors.black // Light → Black
-                                    //           : Colors.white) // Dark → White
-                                    //       : null,
-                                    //   backgroundImage: (profileImage != null &&
-                                    //           profileImage!.isNotEmpty &&
-                                    //           profileImage!.startsWith("http"))
-                                    //       ? NetworkImage(profileImage!)
-                                    //       : null,
-                                    //   child: (profileImage == null ||
-                                    //           profileImage!.isEmpty ||
-                                    //           !profileImage!.startsWith("http"))
-                                    //       ? Text(
-                                    //           getInitials(userName),
-                                    //           style: TextStyle(
-                                    //             color: Theme.of(context)
-                                    //                         .brightness ==
-                                    //                     Brightness.light
-                                    //                 ? Colors
-                                    //                     .white // Text visible on black bg
-                                    //                 : Colors
-                                    //                     .black, // Text visible on white bg
-                                    //             fontWeight: FontWeight.bold,
-                                    //           ),
-                                    //         )
-                                    //       : null,
-                                    // ),
                                     CircleAvatar(
                                       radius: 28,
                                       backgroundColor: (profileImage == null ||
-                                              profileImage!.isEmpty ||
-                                              !profileImage!.startsWith("http"))
-                                          ? const Color.fromARGB(
-                                              255, 98, 14, 14)
+                                              profileImage.isEmpty ||
+                                              !profileImage.startsWith("http"))
+                                          ? const Color.fromARGB(255, 98, 14, 14)
                                           : null,
                                       backgroundImage: (profileImage != null &&
-                                              profileImage!.isNotEmpty &&
-                                              profileImage!.startsWith("http"))
-                                          ? NetworkImage(profileImage!)
+                                              profileImage.isNotEmpty &&
+                                              profileImage.startsWith("http"))
+                                          ? NetworkImage(profileImage)
                                           : null,
                                       child: (profileImage == null ||
-                                              profileImage!.isEmpty ||
-                                              !profileImage!.startsWith("http"))
+                                              profileImage.isEmpty ||
+                                              !profileImage.startsWith("http"))
                                           ? Text(
                                               getInitials(userName),
                                               style: const TextStyle(
@@ -226,20 +192,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                                       ),
                                                     ),
                                                   );
-
-                                                  if (result != null &&
-                                                      mounted) {
-                                                    setState(() {
-                                                      userName =
-                                                          result["name"] ??
-                                                              userName;
-                                                      mobileNumber =
-                                                          result["mobile"] ??
-                                                              mobileNumber;
-                                                      profileImage =
-                                                          result["image"] ??
-                                                              profileImage;
-                                                    });
+                                                  if (result != null) {
+                                                    context
+                                                        .read<
+                                                            UserProfileProvider>()
+                                                        .updateProfile(
+                                                          newName:
+                                                              result["name"],
+                                                          newMobile:
+                                                              result["mobile"],
+                                                          newImage:
+                                                              result["image"],
+                                                        );
                                                   }
                                                 },
                                                 child: Text(
@@ -252,7 +216,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                               ),
                                             ],
                                           ),
-
 
                                           /// EMAIL
                                           Text(
