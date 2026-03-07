@@ -9,6 +9,8 @@ import 'package:front_end/core/services/mock_auth.dart';
 import 'balance_card.dart';
 import 'quick_action_section.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   // 🎯 2. You can remove userId from the constructor if you fetch it via Auth
@@ -120,43 +122,58 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ... _buildHeader and _buildRecentHeader remain the same ...
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF620E0E), 
-          Color(0xFFB81414)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+ Widget _buildHeader() {
+  final user = context.watch<UserProfileProvider>();
+  String userName = user.name;
+
+  String initial = userName.isNotEmpty
+      ? userName.trim()[0].toUpperCase()
+      : "U";
+
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Color(0xFF620E0E), Color(0xFFB81414)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            "Wallet Care", 
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)
-          ),
-          GestureDetector(
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileSettingsScreen(),
-                ),
-              ),
-            child: const CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color(0xFFB81414)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          "Wallet Care",
+          style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20),
+        ),
+
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileSettingsScreen(),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
+          child: CircleAvatar(
+            radius: 18,
+            backgroundColor: Color(0xFF620E0E),
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
  
 
   Widget _buildRecentHeader(ThemeData theme) {

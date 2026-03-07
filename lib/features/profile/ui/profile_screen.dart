@@ -41,17 +41,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
-@override
-Widget build(BuildContext context) {
-  final theme = Theme.of(context);
-  final color = theme.colorScheme;
 
-  final user = context.watch<UserProfileProvider>();
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
-  String userName = user.name;
-  String email = user.email;
-  String? profileImage = user.image;
-  String mobileNumber = user.mobile;
+    final user = context.watch<UserProfileProvider>();
+
+    String userName = user.name;
+    String email = user.email;
+    String mobileNumber = user.mobile;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -128,29 +128,16 @@ Widget build(BuildContext context) {
                                   children: [
                                     CircleAvatar(
                                       radius: 28,
-                                      backgroundColor: (profileImage == null ||
-                                              profileImage.isEmpty ||
-                                              !profileImage.startsWith("http"))
-                                          ? const Color.fromARGB(255, 98, 14, 14)
-                                          : null,
-                                      backgroundImage: (profileImage != null &&
-                                              profileImage.isNotEmpty &&
-                                              profileImage.startsWith("http"))
-                                          ? NetworkImage(profileImage)
-                                          : null,
-                                      child: (profileImage == null ||
-                                              profileImage.isEmpty ||
-                                              !profileImage.startsWith("http"))
-                                          ? Text(
-                                              getInitials(userName),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          : null,
+                                      backgroundColor:
+                                          const Color.fromARGB(255, 98, 14, 14),
+                                      child: Text(
+                                        getInitials(userName),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-
                                     const SizedBox(width: 16),
 
                                     /// Name + Email
@@ -187,8 +174,6 @@ Widget build(BuildContext context) {
                                                         currentName: userName,
                                                         currentMobile:
                                                             mobileNumber,
-                                                        currentImage:
-                                                            profileImage,
                                                       ),
                                                     ),
                                                   );
@@ -201,8 +186,6 @@ Widget build(BuildContext context) {
                                                               result["name"],
                                                           newMobile:
                                                               result["mobile"],
-                                                          newImage:
-                                                              result["image"],
                                                         );
                                                   }
                                                 },
