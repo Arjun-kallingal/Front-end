@@ -6,15 +6,12 @@ import 'package:front_end/core/models/transaction_model.dart';
 
 class TransactionService {
    static String get _baseUrl {
-    if (kIsWeb) {
-      // If running in Chrome/Edge
-      return "http://localhost:5000/api/transaction"; 
+   if (kIsWeb) {
+      return "http://localhost:5000/api/account";
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // If running on Android Emulator
-      return "http://192.168.29.189:5000/api/transaction";
+      return "http://192.168.137.1:5000/api/account";
     } else {
-      // If running on iOS Simulator or Desktop
-      return "http://localhost:5000/api/transaction";
+      return "http://192.168.137.1:5000/api/account";
     }
   }
 

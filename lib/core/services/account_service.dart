@@ -5,17 +5,13 @@ import '../models/account_model.dart';
 import '../models/global_summary.dart';
 
 class AccountService {
-  // FIX: Web-safe platform checking!
   static String get baseUrl {
     if (kIsWeb) {
-      // If running in Chrome/Edge
-      return "http://localhost:5000/api/account"; 
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // If running on Android Emulator
-      return "http://192.168.29.189:5000/api/account";
-    } else {
-      // If running on iOS Simulator or Desktop
       return "http://localhost:5000/api/account";
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      return "http://192.168.137.1:5000/api/account";
+    } else {
+      return "http://192.168.137.1:5000/api/account";
     }
   }
 
