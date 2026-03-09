@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import 'action_button_card.dart';
 import 'move_to_savings_card.dart';
-import 'package:front_end/features/home/widget/add_income_screen.dart';
-import 'package:front_end/features/home/widget/add_expense_screen.dart';
 import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
+
+// ✅ Change these imports to point to your new parent screen
+import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
@@ -16,7 +17,6 @@ class QuickActionsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          SizedBox(height: 24),
           _ActionButtonsRow(),
           SizedBox(height: 16),
           _MoveToSavingsSection(),
@@ -37,10 +37,11 @@ class _ActionButtonsRow extends StatelessWidget {
           icon: Icons.trending_up,
           label: "Add Income",
           onTap: () {
+            // ✅ Route to Parent Screen, defaulting to Income tab
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const AddIncomeScreen(),
+                builder: (_) => const AddTransactionScreen(initialIsExpense: false),
               ),
             );
           },
@@ -54,10 +55,11 @@ class _ActionButtonsRow extends StatelessWidget {
           icon: Icons.trending_down,
           label: "Add Expense",
           onTap: () {
+            // ✅ Route to Parent Screen, defaulting to Expense tab
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const AddExpenseScreen(),
+                builder: (_) => const AddTransactionScreen(initialIsExpense: true),
               ),
             );
           },

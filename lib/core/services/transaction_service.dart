@@ -11,7 +11,7 @@ class TransactionService {
       return "http://localhost:5000/api/transaction"; 
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       // If running on Android Emulator
-      return "http://192.168.29.189:5000/api/transaction";
+      return "http://192.168.0.182:5000/api/transaction"; // laptop IP
     } else {
       // If running on iOS Simulator or Desktop
       return "http://localhost:5000/api/transaction";
