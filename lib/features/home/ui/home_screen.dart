@@ -65,6 +65,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+
+String getInitials(String name) {
+  if (name.trim().isEmpty) return "U";
+
+  final parts = name.trim().split(" ");
+
+  if (parts.length == 1) {
+    return parts[0][0].toUpperCase();
+  }
+
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
  Future<void> _fetchData(String userId) async {
     try {
       final response = await TransactionService.getHistory(userId);
@@ -126,9 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final user = context.watch<UserProfileProvider>();
   String userName = user.name;
 
-  String initial = userName.isNotEmpty
-      ? userName.trim()[0].toUpperCase()
-      : "U";
+  String initial = getInitials(userName);
 
   return Container(
     width: double.infinity,
@@ -150,7 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
               fontWeight: FontWeight.bold,
               fontSize: 20),
         ),
-
         GestureDetector(
           onTap: () => Navigator.push(
             context,
