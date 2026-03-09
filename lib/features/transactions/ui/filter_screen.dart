@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:front_end/core/models/account_model.dart';
 
 class FilterScreen extends StatefulWidget {
-
   final String selectedType;
   final String selectedCategory;
   final String selectedAccountName;
-
   final DateTime? startDate;
   final DateTime? endDate;
+  final List<AccountModel> availableAccounts;
 
   const FilterScreen({
     super.key,
@@ -16,6 +16,7 @@ class FilterScreen extends StatefulWidget {
     required this.selectedAccountName,
     required this.startDate,
     required this.endDate,
+    required this.availableAccounts,
   });
 
   @override
@@ -23,7 +24,6 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-
   int selectedMenuIndex = 0;
 
   late String type;
@@ -52,32 +52,25 @@ class _FilterScreenState extends State<FilterScreen> {
     "All",
     "Food",
     "Transport",
+    "Salary",
+    "Shopping",
+    "Rent",
     "Bills",
-    "Shopping"
-  ];
-
-  final List<String> accounts = [
-    "All Accounts",
-    "Cash",
-    "Bank",
-    "UPI"
+    "Entertainment"
   ];
 
   @override
   void initState() {
     super.initState();
-
     type = widget.selectedType;
     category = widget.selectedCategory;
     account = widget.selectedAccountName;
-
     startDate = widget.startDate;
     endDate = widget.endDate;
   }
 
   /// DATE PICKER
   Future<void> pickStartDate() async {
-
     final date = await showDatePicker(
       context: context,
       initialDate: startDate ?? DateTime.now(),
@@ -93,7 +86,6 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 
   Future<void> pickEndDate() async {
-
     final date = await showDatePicker(
       context: context,
       initialDate: endDate ?? DateTime.now(),
@@ -110,39 +102,29 @@ class _FilterScreenState extends State<FilterScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       appBar: AppBar(
         title: const Text("Filters"),
         actions: [
-
           TextButton(
             onPressed: () {
-
               setState(() {
-
                 type = "All Type";
                 category = "All";
                 account = "All Accounts";
                 startDate = null;
                 endDate = null;
-
               });
-
             },
             child: const Text("Clear"),
           )
         ],
       ),
-
       body: Column(
         children: [
-
           Expanded(
             child: Row(
               children: [
-
                 /// LEFT MENU
                 Container(
                   width: 150,
@@ -150,7 +132,6 @@ class _FilterScreenState extends State<FilterScreen> {
                   child: ListView.builder(
                     itemCount: leftMenu.length,
                     itemBuilder: (context, index) {
-
                       return InkWell(
                         onTap: () {
                           setState(() {
@@ -190,17 +171,13 @@ class _FilterScreenState extends State<FilterScreen> {
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
               onPressed: () {
-
                 Navigator.pop(context, {
-
                   "type": type,
                   "category": category,
                   "account": account,
                   "startDate": startDate,
                   "endDate": endDate,
-
                 });
-
               },
               child: const Text("Apply"),
             ),
@@ -212,23 +189,20 @@ class _FilterScreenState extends State<FilterScreen> {
 
   /// RIGHT SIDE OPTIONS
   Widget _buildRightPanel() {
-
     switch (selectedMenuIndex) {
-
       /// TYPE
       case 0:
         return ListView(
           children: types.map((e) {
-
             return RadioListTile(
               title: Text(e),
               value: e,
               groupValue: type,
+              activeColor: const Color(0xFFB81414),
               onChanged: (v) {
                 setState(() => type = v!);
               },
             );
-
           }).toList(),
         );
 
@@ -236,34 +210,49 @@ class _FilterScreenState extends State<FilterScreen> {
       case 1:
         return ListView(
           children: categories.map((e) {
-
             return RadioListTile(
               title: Text(e),
               value: e,
               groupValue: category,
+              activeColor: const Color(0xFFB81414),
               onChanged: (v) {
                 setState(() => category = v!);
               },
             );
-
           }).toList(),
         );
 
       /// ACCOUNT
       case 2:
         return ListView(
-          children: accounts.map((e) {
-
-            return RadioListTile(
-              title: Text(e),
-              value: e,
+          children: [
+            RadioListTile(
+              title: const Text("All Accounts"),
+              secondary: const Icon(Icons.all_inclusive, color: Colors.grey),
+              value: "All Accounts",
               groupValue: account,
+              activeColor: const Color(0xFFB81414),
               onChanged: (v) {
-                setState(() => account = v!);
+                setState(() => account = v.toString());
               },
-            );
-
-          }).toList(),
+            ),
+            ...widget.availableAccounts.map((a) {
+              bool isCash = a.type == "CASH";
+              return RadioListTile(
+                title: Text(a.name),
+                secondary: Icon(
+                  isCash ? Icons.money : Icons.account_balance,
+                  color: isCash ? Colors.green : const Color(0xFF1976D2),
+                ),
+                value: a.name,
+                groupValue: account,
+                activeColor: const Color(0xFFB81414),
+                onChanged: (v) {
+                  setState(() => account = v.toString());
+                },
+              );
+            }).toList(),
+          ],
         );
 
       /// DATE
@@ -272,7 +261,6 @@ class _FilterScreenState extends State<FilterScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-
               ListTile(
                 title: const Text("Start Date"),
                 subtitle: Text(
@@ -283,7 +271,6 @@ class _FilterScreenState extends State<FilterScreen> {
                 trailing: const Icon(Icons.calendar_today),
                 onTap: pickStartDate,
               ),
-
               ListTile(
                 title: const Text("End Date"),
                 subtitle: Text(

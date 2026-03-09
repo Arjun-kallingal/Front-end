@@ -4,10 +4,13 @@ import 'package:front_end/core/models/transaction_model.dart';
 import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
-import 'filter_screen.dart';
+import 'package:front_end/core/services/mock_auth.dart';
+import 'filter_screen.dart'; // Make sure this import points to your FilterScreen file
 
 class TransactionListScreen extends StatefulWidget {
-  const TransactionListScreen({super.key});
+  final String? initialAccountName; // Added to receive data from the dashboard
+
+  const TransactionListScreen({super.key, this.initialAccountName});
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -21,7 +24,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   /// FILTER VALUES
   String selectedType = "All Type";
   String selectedCategory = "All";
-  String selectedAccountName = "All Accounts";
+  late String selectedAccountName; 
   DateTime? startDate;
   DateTime? endDate;
   String searchQuery = "";
@@ -33,33 +36,66 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void initState() {
     super.initState();
+    selectedAccountName = widget.initialAccountName ?? "All Accounts";
     _fetchData();
   }
 
-  /// FETCH DATA
-  Future<void> _fetchData({String? accountId}) async {
+  /// FETCH DATA 
+  Future<void> _fetchData() async {
     setState(() => _isLoading = true);
-    try {
-      final results = await Future.wait([
-        TransactionService.getHistory(
-          "699e8fea9a6c85ac1f0970eb",
-          accountId: accountId,
-        ),
-        AccountService.getAccountDashboard(
-          "699e8fea9a6c85ac1f0970eb",
-        )
-      ]);
+    final userId = MockAuthService.currentUserId;
 
-      final accountData = results[1] as Map<String, dynamic>;
-
-      setState(() {
-        _transactions = (results[0] as TransactionHistoryResponse).transactions;
-        _accounts = List<AccountModel>.from(accountData['accounts']);
-        _isLoading = false;
-      });
-    } catch (e) {
+    if (userId.isEmpty) {
+      if (mounted) _showSnackBar("User not logged in!", isError: true);
       setState(() => _isLoading = false);
+      return;
     }
+
+    try {
+      // 1. Fetch accounts
+      final Map<String, dynamic> accountData = await AccountService.getAccountDashboard(userId);
+      
+      // FIX: Safely extract the pre-parsed list without using .from()
+      final List<AccountModel> fetchedAccounts = 
+          (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ?? [];
+
+      // 2. Resolve account name to ID
+      String? resolvedAccountId;
+      if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
+        try {
+          resolvedAccountId = fetchedAccounts.firstWhere((a) => a.name == selectedAccountName).id;
+        } catch (e) {
+          debugPrint("Account name not found in list: $e");
+          resolvedAccountId = null; 
+        }
+      }
+
+      // 3. Fetch transactions
+      final historyData = await TransactionService.getHistory(userId, accountId: resolvedAccountId);
+
+      if (mounted) {
+        setState(() {
+          _accounts = fetchedAccounts;
+          _transactions = historyData.transactions;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("HISTORY FETCH ERROR: $e");
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnackBar("Failed to load history: $e", isError: true);
+      }
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   /// OPEN FILTER SCREEN
@@ -73,6 +109,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           selectedAccountName: selectedAccountName,
           startDate: startDate,
           endDate: endDate,
+          availableAccounts: _accounts,
         ),
       ),
     );
@@ -85,6 +122,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         startDate = result["startDate"];
         endDate = result["endDate"];
       });
+      _fetchData();
     }
   }
 
@@ -93,7 +131,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     if (tx.direction == "GOAL_ALLOCATION") {
       return CircleAvatar(
         radius: 22,
-        backgroundColor: goalBlue.withOpacity(0.1),
+        backgroundColor: goalBlue.withValues(alpha: 0.1),
         child: Icon(Icons.flag_circle, color: goalBlue, size: 22),
       );
     }
@@ -101,19 +139,19 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       case 'income':
         return CircleAvatar(
           radius: 22,
-          backgroundColor: Colors.green.withOpacity(0.1),
+          backgroundColor: Colors.green.withValues(alpha: 0.1),
           child: const Icon(Icons.trending_up, color: Colors.green, size: 20),
         );
       case 'transfer':
         return CircleAvatar(
           radius: 22,
-          backgroundColor: Colors.grey.withOpacity(0.15),
+          backgroundColor: Colors.grey.withValues(alpha: 0.15),
           child: const Icon(Icons.sync_alt, color: Colors.black87, size: 20),
         );
       default:
         return CircleAvatar(
           radius: 22,
-          backgroundColor: primaryRed.withOpacity(0.1),
+          backgroundColor: primaryRed.withValues(alpha: 0.1),
           child: Icon(Icons.trending_down, color: primaryRed, size: 20),
         );
     }
@@ -122,15 +160,32 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   /// ACTIVE FILTER CHIPS
   Widget _buildActiveFilters() {
     List<Widget> chips = [];
+    
     if (selectedType != "All Type") {
-      chips.add(_buildChip(selectedType, () => setState(() => selectedType = "All Type")));
+      chips.add(_buildChip(selectedType, () => setState(() {
+        selectedType = "All Type";
+      })));
     }
+    
     if (selectedCategory != "All") {
-      chips.add(_buildChip(selectedCategory, () => setState(() => selectedCategory = "All")));
+      chips.add(_buildChip(selectedCategory, () => setState(() {
+        selectedCategory = "All";
+      })));
     }
+    
+    if (selectedAccountName != "All Accounts") {
+      chips.add(_buildChip(selectedAccountName, () {
+        setState(() => selectedAccountName = "All Accounts");
+        _fetchData(); 
+      }));
+    }
+    
     if (startDate != null && endDate != null) {
       String dateRange = "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
-      chips.add(_buildChip(dateRange, () => setState(() { startDate = null; endDate = null; })));
+      chips.add(_buildChip(dateRange, () => setState(() { 
+        startDate = null; 
+        endDate = null; 
+      })));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -152,7 +207,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         deleteIcon: const Icon(Icons.close, size: 16),
         onDeleted: onRemove,
         backgroundColor: Colors.grey.shade100,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide.none),
       ),
     );
   }
@@ -170,13 +225,24 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "History",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        "History",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 
@@ -310,7 +376,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        /// DATE (Moved to the left)
                         Text(
                           DateFormat('dd MMM yyyy').format(tx.date),
                           style: TextStyle(color: textMuted, fontSize: 12),
@@ -334,7 +399,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 ),
               ),
               
-              /// AMOUNT AND ACCOUNT NAME COLUMN
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -347,7 +411,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  /// ACCOUNT NAME BADGE (Moved to the right)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
@@ -356,7 +419,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       border: Border.all(color: Colors.grey.shade300),
                     ),
                     child: Text(
-                      tx.accountType ?? 'Account',
+                      tx.accountType,
                       style: TextStyle(
                         fontSize: 10, 
                         color: Colors.grey.shade800, 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:front_end/core/models/account_model.dart';
+import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/mock_auth.dart';
 
@@ -18,16 +20,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String amount = "";
   DateTime selectedDate = DateTime.now();
   bool _isLoading = false;
+  bool _isFetchingAccounts = true;
   late bool _isExpense;
 
-  String? _selectedAccountType;
+  List<AccountModel> _accounts = [];
+  String? _selectedAccountId;
+  String? _selectedAccountName; // Added to display the selected name in your custom box
   String? _selectedCategory;
-  bool _showAccountOptions = false;
+  bool _showAccountOptions = false; // Controls your custom dropdown visibility
 
   final TextEditingController descriptionController = TextEditingController();
-  
-  // User defined accounts
-  final List<String> _userAccounts = ["Cash", "HDFC Bank", "SBI Bank", "ICICI", "Credit Card", "Savings"];
 
   // Colorful icons for Income
   final List<Map<String, dynamic>> _incomeCategories = [
@@ -65,13 +67,84 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void initState() {
     super.initState();
     _isExpense = widget.initialIsExpense;
-    _currentUserId = MockAuthService.currentUserId;
+    _initializeUser();
   }
 
   @override
   void dispose() {
     descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeUser() async {
+    final userid = MockAuthService.currentUserId;
+
+    if (userid.isNotEmpty && mounted) {
+      setState(() {
+        _currentUserId = userid;
+      });
+      _loadWallets();
+    } else {
+      _showSnackBar("Session expired. Please log in again.");
+    }
+  }
+
+  Future<void> _loadWallets() async {
+    if (_currentUserId == null) return;
+    try {
+      final result = await AccountService.getAccountDashboard(_currentUserId!);
+      if (!mounted) return;
+      setState(() {
+        _accounts = result['accounts'];
+        if (_accounts.isNotEmpty) {
+          _selectedAccountId = _accounts.first.id;
+          _selectedAccountName = _accounts.first.name; // Automatically select the first account
+        }
+        _isFetchingAccounts = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _isFetchingAccounts = false);
+    }
+  }
+
+  Future<void> _handleSave() async {
+    if (_selectedAccountId == null || amount.isEmpty || double.tryParse(amount) == 0 || _selectedCategory == null) {
+      _showSnackBar("Please fill all required fields properly", isError: true);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final result = await TransactionService.processTransaction(
+        userId: _currentUserId!,
+        accountId: _selectedAccountId!,
+        amount: amount,
+        type: _isExpense ? "EXPENSE" : "INCOME",
+        category: _selectedCategory!,
+        description: descriptionController.text,
+      );
+
+      if (mounted && result['success']) {
+        _showSnackBar("${_isExpense ? 'Expense' : 'Income'} saved successfully!", isError: false);
+        Navigator.pop(context, true);
+      } else {
+        _showSnackBar(result['message'] ?? "Failed to save");
+      }
+    } catch (e) {
+      _showSnackBar("Error: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _toggleType(bool isExpense) {
@@ -94,31 +167,36 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             _buildHeader(),
             _buildTopToggle(),
             
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel("Amount"),
-                    _buildDefaultField(hint: "0.00", isAmount: true),
-                    const SizedBox(height: 16),
-                    _buildLabel("Description (Optional)"),
-                    _buildDefaultField(controller: descriptionController, hint: "What was this for?"),
-                    const SizedBox(height: 16),
-                    _buildLabel("Date"),
-                    _datePicker(),
-                    const SizedBox(height: 24),
-                    _buildLabel("Account Type"),
-                    _buildAccountSelectorBox(),
-                    if (_showAccountOptions) _buildAccountList(),
-                    const SizedBox(height: 24),
-                    _buildLabel("Category"),
-                    _buildTwoLineCategories(),
-                  ],
-                ),
-              ),
-            ),
+            _isFetchingAccounts
+                ? const Expanded(child: Center(child: CircularProgressIndicator()))
+                : Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel("Amount"),
+                          _buildDefaultField(hint: "0.00", isAmount: true),
+                          const SizedBox(height: 16),
+                          _buildLabel("Description (Optional)"),
+                          _buildDefaultField(controller: descriptionController, hint: "What was this for?"),
+                          const SizedBox(height: 16),
+                          _buildLabel("Date"),
+                          _datePicker(),
+                          const SizedBox(height: 24),
+                          
+                          // Restored your custom UI here
+                          _buildLabel("Account Type"),
+                          _buildAccountSelectorBox(),
+                          if (_showAccountOptions) _buildAccountList(),
+                          
+                          const SizedBox(height: 24),
+                          _buildLabel("Category"),
+                          _buildTwoLineCategories(),
+                        ],
+                      ),
+                    ),
+                  ),
             _buildStickySaveButton(),
           ],
         ),
@@ -218,6 +296,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  // Your custom selector box, now using _selectedAccountName
   Widget _buildAccountSelectorBox() {
     return InkWell(
       onTap: () => setState(() => _showAccountOptions = !_showAccountOptions),
@@ -227,7 +306,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(_selectedAccountType ?? "Select Account", style: const TextStyle(fontWeight: FontWeight.w600)),
+            Text(_selectedAccountName ?? "Select Account", style: const TextStyle(fontWeight: FontWeight.w600)),
             const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
           ],
         ),
@@ -235,6 +314,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  // Your custom list, now mapping through live API _accounts instead of hardcoded strings
   Widget _buildAccountList() {
     return Container(
       margin: const EdgeInsets.only(top: 8),
@@ -245,12 +325,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
-        children: _userAccounts.map((type) => ListTile(
+        children: _accounts.map((acc) => ListTile(
           dense: true,
-          title: Text(type, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.bold)),
           onTap: () => setState(() {
-            _selectedAccountType = type;
-            _showAccountOptions = false;
+            _selectedAccountId = acc.id; // Save the ID for the API
+            _selectedAccountName = acc.name; // Save the name for the UI
+            _showAccountOptions = false; // Close the dropdown
           }),
         )).toList(),
       ),
@@ -307,7 +388,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  /// 🟢 NEUTRAL STICKY SAVE BUTTON
   Widget _buildStickySaveButton() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -317,14 +397,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         height: 54,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black87, // Dark neutral color
+            backgroundColor: Colors.black87,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          onPressed: _isLoading ? null : () {
-            if (amount.isEmpty || _selectedAccountType == null || _selectedCategory == null) return;
-            // Save logic
-          },
-          child: Text("Save ${_isExpense ? 'Expense' : 'Income'}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          onPressed: _isLoading ? null : _handleSave,
+          child: _isLoading 
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Text("Save ${_isExpense ? 'Expense' : 'Income'}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
         ),
       ),
     );

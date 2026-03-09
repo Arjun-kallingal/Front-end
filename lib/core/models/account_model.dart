@@ -2,7 +2,6 @@ class AccountModel {
   final String id;
   final String name;
   final String type;
-  // FIX: Changed to String to prevent float precision loss
   final String availableBalance; 
   final String reservedBalance;
   final String totalBalance;
@@ -27,7 +26,6 @@ class AccountModel {
       id: json['id']?.toString() ?? json['_id']?.toString() ?? 'unknown_id',
       name: json['name'] ?? 'Unnamed Account',
       type: json['type'] ?? 'CASH',
-      // FIX: Leave as String
       availableBalance: json['available']?.toString() ?? "0.00",
       reservedBalance: json['reserved']?.toString() ?? "0.00",
       totalBalance: json['total']?.toString() ?? "0.00",
