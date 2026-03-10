@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../features/home/ui/home_screen.dart';
 import '../features/transactions/ui/transactionlist_screen.dart';
 import '../features/analytics/ui/analytics_dashboardscreen.dart';

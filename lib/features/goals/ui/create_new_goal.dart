@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
+import 'package:front_end/core/constants/app_colors.dart'; 
+// 👇 Make sure this path is correct based on your folder structure!
+import '../data/goal_model.dart'; 
 
 class CreateNewGoalScreen extends StatefulWidget {
-  final Map<String, dynamic>? existingGoal;
+  final GoalModel? existingGoal; 
   final int? index;
 
   const CreateNewGoalScreen({
@@ -23,21 +25,14 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   late TextEditingController targetController;
 
   DateTime? selectedDate;
-
   String selectedCategory = "Savings";
-  String? selectedAccountType;
-  String? transactionType;
-
+  String? selectedAccountId; // Changed to match your model
+  
   IconData selectedIcon = Icons.trending_up_rounded;
   Color selectedColor = Colors.green;
 
+  // Assuming these are the Account IDs or Types you want to send
   final List<String> accountTypes = ["Cash", "Account"];
-
-  final List<String> transactionTypes = [
-    "Reserved",
-    "Expense",
-    "Transaction"
-  ];
 
   final List<Map<String, dynamic>> categories = [
     {"name": "Savings", "icon": Icons.trending_up_rounded, "color": Colors.green},
@@ -52,21 +47,38 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   void initState() {
     super.initState();
 
-    titleController =
-        TextEditingController(text: widget.existingGoal?["title"] ?? "");
-
-    targetController =
-        TextEditingController(text: widget.existingGoal?["target"]?.toString() ?? "");
-
-    selectedDate = widget.existingGoal?["deadline"];
+    // 1. Map from your ACTUAL GoalModel properties
+    titleController = TextEditingController(text: widget.existingGoal?.title ?? "");
+   targetController = TextEditingController(
+    text: (widget.existingGoal?.targetAmount ?? 0) > 0 
+        ? widget.existingGoal!.targetAmount.toString() 
+        : ""
+);
+    selectedDate = widget.existingGoal?.targetDate;
 
     if (widget.existingGoal != null) {
-      selectedIcon = widget.existingGoal!["icon"];
-      selectedColor = widget.existingGoal!["color"];
-      selectedCategory = widget.existingGoal!["category"];
-      selectedAccountType = widget.existingGoal!["accountType"];
-      transactionType = widget.existingGoal!["transactionType"];
+      selectedCategory = widget.existingGoal!.category;
+      
+      // Safety check for accountId dropdown
+      if (accountTypes.contains(widget.existingGoal!.accountId)) {
+        selectedAccountId = widget.existingGoal!.accountId;
+      }
+
+      // 2. Figure out the right color and icon based on the category string!
+      final matchedCategory = categories.firstWhere(
+        (cat) => cat["name"] == selectedCategory,
+        orElse: () => categories.first,
+      );
+      selectedIcon = matchedCategory["icon"];
+      selectedColor = matchedCategory["color"];
     }
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    targetController.dispose();
+    super.dispose();
   }
 
   void _selectCategory(Map<String, dynamic> category) {
@@ -77,28 +89,15 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     });
   }
 
-  void _showAlert(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.cardBg,
-          title: const Text(
-            "Notification",
-            style: TextStyle(color: Colors.white),
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(color: Colors.white70),
-          ),
-          actions: [
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () => Navigator.pop(context),
-            )
-          ],
-        );
-      },
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.headerGradientStart,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 
@@ -108,22 +107,30 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     }
 
     if (selectedDate == null) {
-      _showAlert("Please select a deadline");
+      _showSnackBar("Please select a deadline");
       return;
     }
 
-    final goal = {
-      "title": titleController.text,
-      "target": double.tryParse(targetController.text) ?? 0.0,
-      "deadline": selectedDate,
-      "icon": selectedIcon,
-      "color": selectedColor,
-      "category": selectedCategory,
-      "accountType": selectedAccountType,
-      "transactionType": transactionType,
-    };
+    if (selectedAccountId == null) {
+      _showSnackBar("Please select an account type");
+      return;
+    }
 
-    Navigator.pop(context, goal);
+    // 3. Create the GoalModel exactly as your class expects it!
+    final updatedGoal = GoalModel(
+      // Keep existing IDs, or pass empty strings for new creations
+      id: widget.existingGoal?.id ?? '', 
+      userId: widget.existingGoal?.userId ?? '', // Usually handled by backend
+      accountId: selectedAccountId!, 
+      title: titleController.text.trim(),
+      category: selectedCategory,
+      targetAmount: double.parse(targetController.text),
+      currentAmount: widget.existingGoal?.currentAmount ?? 0.0,
+      targetDate: selectedDate!,
+      status: widget.existingGoal?.status ?? 'active',
+    );
+
+    Navigator.pop(context, updatedGoal);
   }
 
   @override
@@ -133,17 +140,13 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
       body: SafeArea(
         child: Column(
           children: [
-
             /// HEADER
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    AppColors.headerGradientStart,
-                    AppColors.headerGradientEnd,
-                  ],
+                  colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
                 ),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(28),
@@ -156,14 +159,13 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                     onTap: () => Navigator.pop(context),
                     child: const CircleAvatar(
                       backgroundColor: AppColors.profileAvatarBg,
-                      child: Icon(Icons.arrow_back,
-                          color: AppColors.textPrimary),
+                      child: Icon(Icons.arrow_back, color: AppColors.textPrimary),
                     ),
                   ),
                   const SizedBox(width: 15),
-                  const Text(
-                    "Create New Goal",
-                    style: TextStyle(
+                  Text(
+                    widget.existingGoal == null ? "Create New Goal" : "Edit Goal",
+                    style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -180,8 +182,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                   key: _formKey,
                   child: ListView(
                     children: [
-
-                      /// SECTION TITLE
                       const Text(
                         "Goal Details",
                         style: TextStyle(
@@ -190,23 +190,20 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 14),
 
                       /// GOAL TITLE
                       TextFormField(
                         controller: titleController,
                         style: const TextStyle(color: AppColors.textPrimary),
-                        decoration:
-                            _inputDecoration("Goal Title", Icons.flag_rounded),
+                        decoration: _inputDecoration("Goal Title", Icons.flag_rounded),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return "Please enter goal title";
                           }
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 16),
 
                       /// TARGET AMOUNT
@@ -214,16 +211,20 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                         controller: targetController,
                         keyboardType: TextInputType.number,
                         style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: _inputDecoration(
-                            "Target Amount", Icons.attach_money_rounded),
+                        decoration: _inputDecoration("Target Amount", Icons.attach_money_rounded),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return "Enter target amount";
                           }
+                          if (double.tryParse(value) == null) {
+                            return "Please enter a valid number";
+                          }
+                          if (double.parse(value) <= 0) {
+                            return "Amount must be greater than 0";
+                          }
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 16),
 
                       /// DEADLINE
@@ -235,7 +236,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                             firstDate: DateTime.now(),
                             lastDate: DateTime(2100),
                           );
-
                           if (picked != null) {
                             setState(() {
                               selectedDate = picked;
@@ -243,33 +243,27 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           decoration: BoxDecoration(
                             color: AppColors.cardBg,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_month_rounded,
-                                  size: 20, color: Colors.grey),
+                              const Icon(Icons.calendar_month_rounded, size: 20, color: Colors.grey),
                               const SizedBox(width: 10),
                               Text(
                                 selectedDate == null
                                     ? "Select Deadline"
-                                    : DateFormat("dd MMM yyyy")
-                                        .format(selectedDate!),
+                                    : DateFormat("dd MMM yyyy").format(selectedDate!),
                                 style: TextStyle(
-                                  color: selectedDate == null
-                                      ? Colors.grey
-                                      : AppColors.textPrimary,
+                                  color: selectedDate == null ? Colors.grey : AppColors.textPrimary,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 25),
 
                       /// ACCOUNT SECTION
@@ -281,72 +275,25 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 14),
 
-                      /// ACCOUNT TYPE
+                      /// ACCOUNT TYPE / ID
                       DropdownButtonFormField<String>(
-                        value: selectedAccountType,
-                        hint: const Text(
-                          "Select Account Type",
-                          style: TextStyle(color: Colors.grey),
-                        ),
+                        value: selectedAccountId,
+                        hint: const Text("Select Account", style: TextStyle(color: Colors.grey)),
                         dropdownColor: AppColors.cardBg,
                         style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: _inputDecoration(
-                            "Account Type",
-                            Icons.account_balance_wallet_rounded),
+                        decoration: _inputDecoration("Account", Icons.account_balance_wallet_rounded),
                         items: accountTypes.map((type) {
-                          return DropdownMenuItem(
-                            value: type,
-                            child: Text(type),
-                          );
+                          return DropdownMenuItem(value: type, child: Text(type));
                         }).toList(),
                         onChanged: (value) {
                           setState(() {
-                            selectedAccountType = value;
+                            selectedAccountId = value;
                           });
                         },
-                        validator: (value) =>
-                            value == null ? "Select account type" : null,
+                        validator: (value) => value == null ? "Select an account" : null,
                       ),
-
-                      const SizedBox(height: 16),
-
-                      /// TRANSACTION TYPE
-                      DropdownButtonFormField<String>(
-                        value: transactionType,
-                        hint: const Text(
-                          "Select Transaction Type",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        dropdownColor: AppColors.cardBg,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration:
-                            _inputDecoration("Transaction Type", Icons.swap_horiz),
-                        items: transactionTypes.map((type) {
-                          return DropdownMenuItem(
-                            value: type,
-                            child: Text(type),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            transactionType = value;
-                          });
-
-                          if (value == "Expense") {
-                            _showAlert("Your amount removed from the reserved amount");
-                          }
-
-                          if (value == "Reserved") {
-                            _showAlert("Amount moved to reserved");
-                          }
-                        },
-                        validator: (value) =>
-                            value == null ? "Select transaction type" : null,
-                      ),
-
                       const SizedBox(height: 25),
 
                       /// CATEGORY TITLE
@@ -358,7 +305,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 14),
 
                       /// CATEGORY GRID
@@ -366,8 +312,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: categories.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
@@ -375,37 +320,27 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                         ),
                         itemBuilder: (context, index) {
                           final category = categories[index];
-                          final bool isSelected =
-                              selectedCategory == category["name"];
+                          final bool isSelected = selectedCategory == category["name"];
 
                           return GestureDetector(
                             onTap: () => _selectCategory(category),
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? category["color"].withOpacity(0.2)
-                                    : AppColors.cardBg,
+                                color: isSelected ? category["color"].withOpacity(0.2) : AppColors.cardBg,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected
-                                      ? category["color"]
-                                      : Colors.white12,
+                                  color: isSelected ? category["color"] : Colors.white12,
                                 ),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(category["icon"],
-                                      size: 20,
-                                      color: category["color"]),
+                                  Icon(category["icon"], size: 20, color: category["color"]),
                                   const SizedBox(height: 6),
                                   Text(
                                     category["name"],
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textPrimary,
-                                    ),
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
                                   ),
                                 ],
                               ),
@@ -413,7 +348,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                           );
                         },
                       ),
-
                       const SizedBox(height: 30),
 
                       /// SAVE BUTTON
@@ -428,12 +362,9 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                             ),
                           ),
                           onPressed: _saveGoal,
-                          child: const Text(
-                            "Save Goal",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
+                          child: Text(
+                            widget.existingGoal == null ? "Save Goal" : "Update Goal",
+                            style: const TextStyle(color: Colors.white, fontSize: 16),
                           ),
                         ),
                       ),
@@ -454,8 +385,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
       prefixIcon: Icon(icon, size: 20, color: Colors.grey),
       filled: true,
       fillColor: AppColors.cardBg,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
