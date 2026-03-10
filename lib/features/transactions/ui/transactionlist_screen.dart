@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:front_end/core/models/transaction_model.dart';
 import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
-import 'package:intl/intl.dart';
+import 'package:front_end/core/services/mock_auth.dart';
+import 'filter_screen.dart'; // Make sure this import points to your FilterScreen file
 
 class TransactionListScreen extends StatefulWidget {
-  const TransactionListScreen({super.key});
+  final String? initialAccountName; // Added to receive data from the dashboard
+
+  const TransactionListScreen({super.key, this.initialAccountName});
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -15,287 +19,297 @@ class TransactionListScreen extends StatefulWidget {
 class _TransactionListScreenState extends State<TransactionListScreen> {
   final Color primaryRed = const Color(0xFFB81414);
   final Color goalBlue = const Color(0xFF1976D2);
+  final Color textMuted = const Color(0xFF757575);
 
-  /// FILTER STATES
+  /// FILTER VALUES
   String selectedType = "All Type";
   String selectedCategory = "All";
-  String selectedAccountName = "All Accounts";
-
+  late String selectedAccountName; 
   DateTime? startDate;
   DateTime? endDate;
-
   String searchQuery = "";
 
   bool _isLoading = true;
-
   List<TransactionModel> _transactions = [];
   List<AccountModel> _accounts = [];
-
-  final List<String> _types = [
-    "All Type",
-    "Income",
-    "Expense",
-    "Reserved",
-    "Transfer"
-  ];
 
   @override
   void initState() {
     super.initState();
+    selectedAccountName = widget.initialAccountName ?? "All Accounts";
     _fetchData();
   }
 
-  /// FETCH DATA
-  Future<void> _fetchData({String? accountId}) async {
+  /// FETCH DATA 
+  Future<void> _fetchData() async {
     setState(() => _isLoading = true);
+    final userId = MockAuthService.currentUserId;
+
+    if (userId.isEmpty) {
+      if (mounted) _showSnackBar("User not logged in!", isError: true);
+      setState(() => _isLoading = false);
+      return;
+    }
 
     try {
-      final results = await Future.wait([
-        TransactionService.getHistory(
-          "699e8fea9a6c85ac1f0970eb",
-          accountId: accountId,
-        ),
-        AccountService.getAccountDashboard(
-          "699e8fea9a6c85ac1f0970eb",
-        )
-      ]);
+      // 1. Fetch accounts
+      final Map<String, dynamic> accountData = await AccountService.getAccountDashboard(userId);
+      
+      // FIX: Safely extract the pre-parsed list without using .from()
+      final List<AccountModel> fetchedAccounts = 
+          (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ?? [];
 
-      final accountData = results[1] as Map<String, dynamic>;
+      // 2. Resolve account name to ID
+      String? resolvedAccountId;
+      if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
+        try {
+          resolvedAccountId = fetchedAccounts.firstWhere((a) => a.name == selectedAccountName).id;
+        } catch (e) {
+          debugPrint("Account name not found in list: $e");
+          resolvedAccountId = null; 
+        }
+      }
 
-      setState(() {
-        _transactions = (results[0] as TransactionHistoryResponse).transactions;
+      // 3. Fetch transactions
+      final historyData = await TransactionService.getHistory(userId, accountId: resolvedAccountId);
 
-        _accounts = List<AccountModel>.from(accountData['accounts']);
-
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _accounts = fetchedAccounts;
+          _transactions = historyData.transactions;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      debugPrint("HISTORY FETCH ERROR: $e");
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnackBar("Failed to load history: $e", isError: true);
+      }
     }
   }
 
-  /// ICON UI
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  /// OPEN FILTER SCREEN
+  void _openFilters() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FilterScreen(
+          selectedType: selectedType,
+          selectedCategory: selectedCategory,
+          selectedAccountName: selectedAccountName,
+          startDate: startDate,
+          endDate: endDate,
+          availableAccounts: _accounts,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        selectedType = result["type"];
+        selectedCategory = result["category"];
+        selectedAccountName = result["account"];
+        startDate = result["startDate"];
+        endDate = result["endDate"];
+      });
+      _fetchData();
+    }
+  }
+
+  /// TRANSACTION ICON
   Widget _getTransactionLeading(TransactionModel tx) {
     if (tx.direction == "GOAL_ALLOCATION") {
       return CircleAvatar(
-        radius: 18,
-        backgroundColor: goalBlue.withOpacity(0.1),
+        radius: 22,
+        backgroundColor: goalBlue.withValues(alpha: 0.1),
         child: Icon(Icons.flag_circle, color: goalBlue, size: 22),
       );
     }
-
     switch (tx.type) {
       case 'income':
         return CircleAvatar(
-          radius: 18,
-          backgroundColor: Colors.green.withOpacity(0.1),
+          radius: 22,
+          backgroundColor: Colors.green.withValues(alpha: 0.1),
           child: const Icon(Icons.trending_up, color: Colors.green, size: 20),
         );
-
       case 'transfer':
         return CircleAvatar(
-          radius: 18,
-          backgroundColor: Colors.grey.withOpacity(0.1),
-          child: const Icon(Icons.sync_alt, color: Colors.grey, size: 20),
+          radius: 22,
+          backgroundColor: Colors.grey.withValues(alpha: 0.15),
+          child: const Icon(Icons.sync_alt, color: Colors.black87, size: 20),
         );
-
-      case 'expense':
       default:
         return CircleAvatar(
-          radius: 18,
-          backgroundColor: primaryRed.withOpacity(0.1),
+          radius: 22,
+          backgroundColor: primaryRed.withValues(alpha: 0.1),
           child: Icon(Icons.trending_down, color: primaryRed, size: 20),
         );
     }
   }
 
+  /// ACTIVE FILTER CHIPS
+  Widget _buildActiveFilters() {
+    List<Widget> chips = [];
+    
+    if (selectedType != "All Type") {
+      chips.add(_buildChip(selectedType, () => setState(() {
+        selectedType = "All Type";
+      })));
+    }
+    
+    if (selectedCategory != "All") {
+      chips.add(_buildChip(selectedCategory, () => setState(() {
+        selectedCategory = "All";
+      })));
+    }
+    
+    if (selectedAccountName != "All Accounts") {
+      chips.add(_buildChip(selectedAccountName, () {
+        setState(() => selectedAccountName = "All Accounts");
+        _fetchData(); 
+      }));
+    }
+    
+    if (startDate != null && endDate != null) {
+      String dateRange = "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
+      chips.add(_buildChip(dateRange, () => setState(() { 
+        startDate = null; 
+        endDate = null; 
+      })));
+    }
+
+    if (chips.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12.0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: chips),
+      ),
+    );
+  }
+
+  Widget _buildChip(String label, VoidCallback onRemove) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: Chip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        deleteIcon: const Icon(Icons.close, size: 16),
+        onDeleted: onRemove,
+        backgroundColor: Colors.grey.shade100,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide.none),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor:
-          //  isDark ? const Color(0xFF121212) : const Color(0xFFF7F7F7),
-
-          isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
-
-      appBar: AppBar(
-        backgroundColor: primaryRed,
-        elevation: 0,
-        title: const Text(
-          "History",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-              onPressed: _clearFilters,
-              icon: const Icon(Icons.refresh, color: Colors.white))
-        ],
-      ),
-      body: Column(
-        children: [
-          /// HEADER
-          Container(
-            color: primaryRed,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 15),
-            child: Column(
-              children: [
-                /// SEARCH
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 45,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            /// HEADER
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        "History",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                         ),
-                        child: TextField(
-                          onChanged: (v) => setState(() => searchQuery = v),
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 14),
-                          decoration: const InputDecoration(
-                            hintText: "Search transactions...",
-                            prefixIcon: Icon(Icons.search,
-                                color: Colors.grey, size: 20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
 
-    filled: true,
-    fillColor: Colors.white, 
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  /// SEARCH + FILTER BAR
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextField(
+                            onChanged: (v) => setState(() => searchQuery = v),
+                            decoration: InputDecoration(
+                              hintText: "Search transactions...",
+                              hintStyle: TextStyle(color: Colors.grey.shade500),
+                              prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: _pickDateRange,
-                      child: Container(
-                        height: 45,
-                        width: 45,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: _openFilters,
+                        child: Container(
+                          height: 48,
+                          width: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.tune, color: Colors.black87),
                         ),
-                        child:
-                            const Icon(Icons.date_range, color: Colors.white),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                /// FILTER ROW
-                Row(
-                  children: [
-                    /// ACCOUNT
-                    Expanded(
-                      flex: 3,
-                      child: _buildHeaderDropdown(
-                        selectedAccountName,
-                        ["All Accounts", ..._accounts.map((a) => a.name)],
-                        (val) {
-                          String? id = (val == "All Accounts")
-                              ? null
-                              : _accounts.firstWhere((a) => a.name == val).id;
-
-                          setState(() => selectedAccountName = val!);
-
-                          _fetchData(accountId: id);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    /// TYPE
-                    Expanded(
-                      flex: 2,
-                      child: _buildHeaderDropdown(
-                        selectedType,
-                        _types,
-                        (val) => setState(() => selectedType = val!),
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    /// CATEGORY
-                    GestureDetector(
-                      onTap: _showCategoryModal,
-                      child: Container(
-                        height: 38,
-                        width: 38,
-                        decoration: BoxDecoration(
-                          color: selectedCategory != "All"
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(Icons.bar_chart,
-                            color: selectedCategory != "All"
-                                ? primaryRed
-                                : Colors.white,
-                            size: 20),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  _buildActiveFilters(),
+                ],
+              ),
             ),
-          ),
 
-          /// LIST
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: primaryRed))
-                : _buildTransactionList(isDark),
-          )
-        ],
-      ),
-    );
-  }
-
-  /// DROPDOWN
-  Widget _buildHeaderDropdown(
-      String value, List<String> items, Function(String?) onChanged) {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8)),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          dropdownColor: primaryRed,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down,
-              color: Colors.white, size: 18),
-          style: const TextStyle(
-              color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-          items: items
-              .map((e) => DropdownMenuItem(
-                  value: e, child: Text(e, overflow: TextOverflow.ellipsis)))
-              .toList(),
-          onChanged: onChanged,
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Colors.black87))
+                  : RefreshIndicator(
+                      color: Colors.black87,
+                      onRefresh: () => _fetchData(),
+                      child: _buildTransactionList(),
+                    ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// TRANSACTION LIST
-  Widget _buildTransactionList(bool isDark) {
+  Widget _buildTransactionList() {
     final list = _transactions.where((tx) {
-      final mSearch =
-          tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
-
+      final mSearch = tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
       final mCat = selectedCategory == "All" || tx.category == selectedCategory;
-
+      
       bool mType = true;
-
       if (selectedType == "Income") {
         mType = tx.type == "income";
       } else if (selectedType == "Expense") {
@@ -307,7 +321,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       }
 
       bool mDate = true;
-
       if (startDate != null && endDate != null) {
         mDate = tx.date.isAfter(startDate!.subtract(const Duration(days: 1))) &&
             tx.date.isBefore(endDate!.add(const Duration(days: 1)));
@@ -316,162 +329,107 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       return mSearch && mCat && mType && mDate;
     }).toList();
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(14),
+    if (list.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+          const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              "No transactions found",
+              style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      physics: const AlwaysScrollableScrollPhysics(), 
       itemCount: list.length,
+      separatorBuilder: (context, index) => Divider(color: Colors.grey.shade200, height: 1),
       itemBuilder: (context, i) {
         final tx = list[i];
+        bool isIncome = tx.type == 'income';
+        bool isReserved = tx.direction == "GOAL_ALLOCATION";
+        Color moneyColor = isIncome ? Colors.green : (isReserved ? goalBlue : primaryRed);
 
-        bool isInc = tx.type == 'income';
-
-        bool isRes = tx.direction == "GOAL_ALLOCATION";
-
-        Color moneyColor =
-            isInc ? Colors.green : (isRes ? goalBlue : primaryRed);
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: isDark ?  Colors.black : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: ListTile(
-            leading: _getTransactionLeading(tx),
-
-            /// CATEGORY
-            title: Text(
-              tx.title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: isDark ? Colors.white : Colors.black,
-              ),
-            ),
-
-            /// DESCRIPTION + DATE
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (tx.subtitle.isNotEmpty)
-                  Text(
-                    tx.subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark ? Colors.white60 : Colors.grey.shade600,
-                    ),
-                  ),
-                Text(
-                  DateFormat('dd MMM yyyy').format(tx.date),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isDark ? Colors.white38 : Colors.grey.shade500,
-                  ),
-                ),
-              ],
-            ),
-
-            /// AMOUNT
-            trailing: Text(
-              "${isInc ? '+' : '-'}₹${tx.amount.abs().toStringAsFixed(0)}",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: moneyColor,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// CLEAR FILTERS
-  void _clearFilters() {
-    setState(() {
-      selectedType = "All Type";
-      selectedCategory = "All";
-      selectedAccountName = "All Accounts";
-      startDate = null;
-      endDate = null;
-      searchQuery = "";
-    });
-  }
-
-  /// DATE RANGE PICKER
-  void _pickDateRange() async {
-    final range = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2023),
-      lastDate: DateTime.now(),
-    );
-
-    if (range != null) {
-      setState(() {
-        startDate = range.start;
-        endDate = range.end;
-      });
-    }
-  }
-
-  /// CATEGORY MODAL
-  void _showCategoryModal() {
-    final List<Map<String, dynamic>> categoryData = [
-      {'name': 'All', 'icon': Icons.all_inclusive},
-      {'name': 'Food', 'icon': Icons.restaurant},
-      {'name': 'Transport', 'icon': Icons.directions_bus},
-      {'name': 'Salary', 'icon': Icons.payments},
-      {'name': 'Shopping', 'icon': Icons.shopping_bag},
-      {'name': 'Rent', 'icon': Icons.home},
-      {'name': 'Bills', 'icon': Icons.receipt_long},
-      {'name': 'Entertainment', 'icon': Icons.movie},
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.45,
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: GridView.builder(
-            padding: const EdgeInsets.all(15),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10),
-            itemCount: categoryData.length,
-            itemBuilder: (context, index) {
-              final cat = categoryData[index];
-
-              final isSelected = selectedCategory == cat['name'];
-
-              return InkWell(
-                onTap: () {
-                  setState(() => selectedCategory = cat['name']);
-
-                  Navigator.pop(context);
-                },
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          child: Row(
+            children: [
+              _getTransactionLeading(tx),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: isSelected
-                          ? primaryRed
-                          : Colors.grey.withOpacity(0.1),
-                      child: Icon(
-                        cat['icon'],
-                        color: isSelected ? Colors.white : Colors.grey,
-                      ),
+                    Text(
+                      tx.title,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 5),
-                    Text(cat['name'],
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: isSelected ? primaryRed : Colors.grey)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          DateFormat('dd MMM yyyy').format(tx.date),
+                          style: TextStyle(color: textMuted, fontSize: 12),
+                        ),
+                        if (tx.subtitle.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text("•", style: TextStyle(color: Colors.grey.shade400)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              tx.subtitle,
+                              style: TextStyle(color: textMuted, fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
-              );
-            },
+              ),
+              
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    "${isIncome ? '+' : '-'}₹${tx.amount.abs().toStringAsFixed(0)}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: moneyColor,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Text(
+                      tx.accountType,
+                      style: TextStyle(
+                        fontSize: 10, 
+                        color: Colors.grey.shade800, 
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         );
       },

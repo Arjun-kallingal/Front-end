@@ -4,43 +4,33 @@ import '../features/transactions/ui/transactionlist_screen.dart';
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
 import '../features/accounts/ui/account.dart';
 
-/// GLOBAL NAVIGATION SERVICE
 class NavigationService {
-
-  /// Bottom Navigation Controller
   static final ValueNotifier<int> bottomIndex = ValueNotifier(0);
-
-  /// Navigate to Home
-  static void goToHome() {
-    bottomIndex.value = 0;
-  }
-
-  /// Navigate to Analytics
-  static void goToAnalytics() {
-    bottomIndex.value = 1;
-  }
-
-  /// Navigate to Account
-  static void goToAccount() {
-    bottomIndex.value = 2;
-  }
-
-  /// Navigate to Transaction History
-  static void goToHistory() {
-    bottomIndex.value = 3;
-  }
 }
 
-class MainNavigation extends StatelessWidget {
+class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
-  /// App Screens
-  static const List<Widget> _screens = [
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
+
+  late PageController _pageController;
+
+  final List<Widget> _screens = [
     HomeScreen(),
     AnalyticsDashboardScreen(),
-    AccountScreen(),
+    AccountsOverviewScreen(),
     TransactionListScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,31 +43,34 @@ class MainNavigation extends StatelessWidget {
 
         return Scaffold(
 
-          /// Keeps each screen state alive
-          body: IndexedStack(
-            index: index,
+          body: PageView(
+            controller: _pageController,
+
+            onPageChanged: (i) {
+              NavigationService.bottomIndex.value = i;
+            },
+
             children: _screens,
           ),
 
-          /// Bottom Navigation
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: index,
 
             onTap: (i) {
               NavigationService.bottomIndex.value = i;
+
+              _pageController.animateToPage(
+                i,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
             },
 
-            backgroundColor: theme.bottomNavigationBarTheme.backgroundColor
-                ?? theme.scaffoldBackgroundColor,
-
+            backgroundColor: theme.scaffoldBackgroundColor,
             selectedItemColor: theme.colorScheme.primary,
-
-            unselectedItemColor: theme.brightness == Brightness.light
-                ? Colors.black54
-                : Colors.grey.shade400,
+            unselectedItemColor: Colors.grey,
 
             type: BottomNavigationBarType.fixed,
-            elevation: 8,
 
             items: const [
 
@@ -96,7 +89,7 @@ class MainNavigation extends StatelessWidget {
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),
                 activeIcon: Icon(Icons.person),
-                label: 'Account',
+                label: 'Accounts',
               ),
 
               BottomNavigationBarItem(

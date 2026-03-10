@@ -1,391 +1,128 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/models/account_model.dart';
-import 'package:front_end/core/models/global_summary.dart';
-import 'package:front_end/core/services/account_service.dart';
+import '../../../core/models/account_model.dart';
+import '../../../core/services/account_service.dart';
+import '../../accounts/ui/account.dart'; // Make sure this points to your AccountsOverviewScreen
 
 class BalanceCard extends StatefulWidget {
-  final Function(String accountId)? onAccountSelected;
-
-  const BalanceCard({super.key, this.onAccountSelected});
+  final String userId;
+  const BalanceCard({super.key, required this.userId});
 
   @override
   State<BalanceCard> createState() => _BalanceCardState();
 }
 
 class _BalanceCardState extends State<BalanceCard> {
-  final String userId = "69a7c2ee3b7e643684e7b2d0";
-
-  bool _isBalanceVisible = true;
   bool _isLoading = true;
-
-  String _selectedAccountId = "all";
-  String _activeCategory = "ALL";
-
-  List<AccountModel> _accounts = [];
-  GlobalSummary? _summary;
+  AccountModel? _primaryAccount;
 
   @override
   void initState() {
     super.initState();
-    _loadDashboard();
+    _loadPrimaryAccount();
   }
 
-  // ================= LOAD DASHBOARD =================
-
-  Future<void> _loadDashboard({String type = ""}) async {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = true;
-      _activeCategory = type.isEmpty ? "ALL" : type.toUpperCase();
-    });
-
+  Future<void> _loadPrimaryAccount() async {
+    if (widget.userId.isEmpty) return;
+    setState(() => _isLoading = true);
+    
     try {
-      final result =
-          await AccountService.getAccountDashboard(userId, type: type);
+      final Map<String, dynamic> dashboardData = await AccountService.getAccountDashboard(widget.userId);
+      // Safely casting the list to prevent type errors
+      final List<AccountModel> accounts = (dashboardData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ?? [];
 
-      if (!mounted) return;
-
-      setState(() {
-        _accounts = result['accounts'];
-        _summary = result['summary'];
-
-        // Reset to "all" if the specific selected account is no longer in the filtered list
-        if (_selectedAccountId != "all" &&
-            !_accounts.any((a) => a.id == _selectedAccountId)) {
-          _selectedAccountId = "all";
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (accounts.isNotEmpty) {
+            _primaryAccount = accounts.firstWhere(
+              (acc) => acc.isDefault == true,
+              orElse: () => accounts.firstWhere(
+                (acc) => acc.type == "CASH", 
+                orElse: () => accounts.first
+              ),
+            );
+          }
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      debugPrint("Dashboard Error: $e");
-    } finally {
+      debugPrint("BalanceCard Error: $e");
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // ================= BALANCE GETTERS =================
-
-  String get currentAvailable {
-    if (_selectedAccountId == "all") {
-      return _summary?.totalAvailable ?? "0.00";
-    }
-    try {
-      final acc =
-          _accounts.firstWhere((a) => a.id == _selectedAccountId);
-      return acc.availableBalance;
-    } catch (_) {
-      return "0.00";
-    }
-  }
-
-  String get currentReserved {
-    if (_selectedAccountId == "all") {
-      return _summary?.totalReserved ?? "0.00";
-    }
-    try {
-      final acc =
-          _accounts.firstWhere((a) => a.id == _selectedAccountId);
-      return acc.reservedBalance;
-    } catch (_) {
-      return "0.00";
-    }
-  }
-
-  String get currentTotal {
-    if (_selectedAccountId == "all") {
-      return _summary?.netWorth ?? "0.00";
-    }
-    try {
-      final acc =
-          _accounts.firstWhere((a) => a.id == _selectedAccountId);
-      return acc.totalBalance;
-    } catch (_) {
-      return "0.00";
-    }
-  }
-
-  // ================= UI =================
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     if (_isLoading) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: CircularProgressIndicator()),
+      return Container(
+        height: 180, margin: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(24)),
+        child: const Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
+    
+    if (_primaryAccount == null) return const SizedBox.shrink();
 
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
+      width: double.infinity, 
+      margin: const EdgeInsets.all(20), 
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 10)
-        ],
-      
+        color: Colors.black87, 
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // TOP ROW
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildAccountSelector(),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () => _loadDashboard(
-                        type: _activeCategory == "ALL"
-                            ? ""
-                            : _activeCategory),
-                  ),
-                  IconButton(
-                    icon: Icon(_isBalanceVisible
-                        ? Icons.visibility
-                        : Icons.visibility_off),
-                    onPressed: () => setState(() =>
-                        _isBalanceVisible =
-                            !_isBalanceVisible),
-                  ),
-                ],
-              ),
+              Text(_primaryAccount!.name.toUpperCase(), style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+              const Icon(Icons.verified, color: Colors.blueAccent, size: 16),
             ],
           ),
-
+          const SizedBox(height: 12),
+          Text("₹ ${_primaryAccount!.availableBalance}", style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: Colors.white)),
+          const Text("Available Balance", style: TextStyle(color: Colors.white54, fontSize: 12)),
+          
           const SizedBox(height: 20),
-
-          _buildBalanceSection(
-            "Available Balance",
-            currentAvailable,
-            24,
-            theme.colorScheme.onSurface,
-            true,
-          ),
-
-          const Divider(height: 30),
-
-          _buildBalanceSection(
-            "Reserved Amount",
-            currentReserved,
-            18,
-            Colors.orange,
-            false,
-          ),
-
-          const Divider(height: 30),
-
+          const Divider(color: Colors.white24, thickness: 1),
+          const SizedBox(height: 15),
+          
+          // NEW: Reserved and Total Balances Row
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Total Balance",
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              Text(
-                _isBalanceVisible
-                    ? "₹ $currentTotal"
-                    : "••••••",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
+              _buildSmallStat("Reserved", _primaryAccount!.reservedBalance, Colors.orangeAccent),
+              _buildSmallStat("Total Worth", _primaryAccount!.totalBalance, Colors.greenAccent),
             ],
+          ),
+          
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () async {
+                final refreshNeeded = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountsOverviewScreen()));
+                if (refreshNeeded == true) _loadPrimaryAccount();
+              },
+              child: const Text("Manage Wallets →", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ================= BALANCE SECTION =================
-
-  Widget _buildBalanceSection(
-    String title,
-    String value,
-    double size,
-    Color color,
-    bool isBold,
-  ) {
+  // Helper widget to keep the code clean and consistent
+  Widget _buildSmallStat(String label, String value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 12,
-          ),
-        ),
+        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
         const SizedBox(height: 4),
-        Text(
-          _isBalanceVisible ? "₹ $value" : "••••••",
-          style: TextStyle(
-            fontSize: size,
-            fontWeight:
-                isBold ? FontWeight.bold : FontWeight.w600,
-            color: color,
-          ),
-        ),
+        Text("₹ $value", style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
       ],
-    );
-  }
-
-  // ================= ACCOUNT SELECTOR =================
-
-  Widget _buildAccountSelector() {
-    return PopupMenuButton<String>(
-      onSelected: (value) async {
-        if (value == "create") {
-          _showCreateAccountDialog();
-        } else if (["ALL", "CASH", "BANK"].contains(value)) {
-          setState(() {
-            _selectedAccountId = "all";
-            // _activeCategory is updated inside _loadDashboard via the type parameter
-          });
-
-          await _loadDashboard(type: value == "ALL" ? "" : value);
-          widget.onAccountSelected?.call("all");
-        } else {
-          setState(() {
-            _selectedAccountId = value;
-          });
-          widget.onAccountSelected?.call(value);
-        }
-      },
-      itemBuilder: (context) {
-        return [
-          _buildPopupItem("ALL", "All Wallets", Icons.wallet),
-          _buildPopupItem("CASH", "Cash Only", Icons.money),
-          _buildPopupItem("BANK", "Bank Only", Icons.account_balance),
-          
-          // Logic: Hide individual accounts if "ALL" is selected
-          if (_activeCategory != "ALL" && _accounts.isNotEmpty) ...[
-            const PopupMenuDivider(),
-            ..._accounts.map(
-              (a) => PopupMenuItem(
-                value: a.id,
-                child: Row(
-                  children: [
-                    Icon(
-                      a.type == "CASH" ? Icons.money : Icons.account_balance,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(a.name),
-                  ],
-                ),
-              ),
-            ),
-          ],
-
-          const PopupMenuDivider(),
-          const PopupMenuItem(
-            value: "create",
-            child: Text(
-              "+ Create New",
-              style: TextStyle(color: Colors.blue),
-            ),
-          ),
-        ];
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.wallet, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            _selectedAccountId == "all"
-                ? "$_activeCategory View"
-                : _accounts.firstWhere(
-                    (a) => a.id == _selectedAccountId,
-                    orElse: () => _accounts.first,
-                  ).name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const Icon(Icons.arrow_drop_down),
-        ],
-      ),
-    );
-  }
-
-  // Helper method for generating rows inside the Popup Menu
-  PopupMenuItem<String> _buildPopupItem(
-      String value, String label, IconData icon) {
-    return PopupMenuItem(
-      value: value,
-      child: Row(
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 10),
-          Text(label),
-        ],
-      ),
-    );
-  }
-
-  // ================= CREATE ACCOUNT =================
-
-  void _showCreateAccountDialog() {
-    final controller = TextEditingController();
-    String type = "CASH";
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("New Account"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                  labelText: "Account Name"),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: type,
-              items: const [
-                DropdownMenuItem(
-                    value: "CASH", child: Text("Cash")),
-                DropdownMenuItem(
-                    value: "BANK", child: Text("Bank")),
-              ],
-              onChanged: (v) => type = v!,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () async {
-              await AccountService.createAccount(
-                userId: userId,
-                name: controller.text.trim().isEmpty
-                    ? "New Account"
-                    : controller.text.trim(),
-                type: type,
-              );
-
-              if (!mounted) return;
-
-              Navigator.pop(ctx);
-              _loadDashboard();
-            },
-            child: const Text("Create"),
-          )
-        ],
-      ),
     );
   }
 }
