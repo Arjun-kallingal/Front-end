@@ -1,135 +1,75 @@
-import 'dart:convert';
+*import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/goal_model.dart';
+import '../data/goal_model.dart';
 
 class GoalService {
   final String baseUrl;
-  final String token;
 
-  GoalService({
-    required this.baseUrl,
-    required this.token,
-  });
+  // REMOVED: getToken parameter
+  GoalService({required this.baseUrl});
 
-  Map<String, String> get headers => {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      };
+  // --- PRIVATE HELPERS ---
 
-  /// CREATE GOAL
-  Future<GoalModel> createGoal(GoalModel goal) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/goals"),
-      headers: headers,
-      body: jsonEncode(goal.toJson()),
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 201) {
-      return GoalModel.fromJson(data["data"]);
-    } else {
-      throw Exception(data["message"]);
-    }
+  // Simplified: No async needed, no token needed
+  Map<String, String> _getHeaders() {
+    return {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    };
   }
 
-  /// GET ALL GOALS
+  // --- SEPARATED FETCHING LOGIC ---
+
   Future<List<GoalModel>> getGoals() async {
-    final response = await http.get(
-      Uri.parse("$baseUrl/goals"),
-      headers: headers,
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 200) {
-      return List<GoalModel>.from(
-        data["data"].map((goal) => GoalModel.fromJson(goal)),
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/goals"),
+        headers: _getHeaders(), // Calling simplified helper
       );
-    } else {
-      throw Exception(data["message"]);
+
+      if (response.statusCode == 200) {
+        final dynamic body = jsonDecode(response.body);
+        
+        // Handles if the response is { "data": [...] } or just [...]
+        List data = [];
+        if (body is Map && body.containsKey('data')) {
+          data = body['data'];
+        } else if (body is List) {
+          data = body;
+        }
+
+        return data.map((json) => GoalModel.fromJson(json)).toList();
+      } else {
+        print("Fetch Error: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      print("Network Error during Fetch: $e");
+      return [];
     }
   }
 
-  /// UPDATE GOAL
-  Future<GoalModel> updateGoal(String goalId, Map<String, dynamic> body) async {
-    final response = await http.put(
-      Uri.parse("$baseUrl/goals/$goalId"),
-      headers: headers,
-      body: jsonEncode(body),
-    );
+  // --- SEPARATED CREATION LOGIC ---
 
-    final data = jsonDecode(response.body);
+  Future<bool> createGoal(GoalModel goal) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/goals"),
+        headers: _getHeaders(), // Calling simplified helper
+        body: jsonEncode(goal.toJson()),
+      );
 
-    if (response.statusCode == 200) {
-      return GoalModel.fromJson(data["data"]);
-    } else {
-      throw Exception(data["message"]);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print("Success: Goal created in database.");
+        return true;
+      } else {
+        print("Create Failed: ${response.statusCode}");
+        print("Backend Message: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Network Error during Creation: $e");
+      return false;
     }
   }
-
-  /// DELETE GOAL
-  Future<void> deleteGoal(String goalId) async {
-    final response = await http.delete(
-      Uri.parse("$baseUrl/goals/$goalId"),
-      headers: headers,
-    );
-
-    if (response.statusCode != 200) {
-      final data = jsonDecode(response.body);
-      throw Exception(data["message"]);
-    }
-  }
-
-  /// DEPOSIT TO GOAL
-  Future<GoalModel> depositToGoal(String goalId, double amount) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/goals/$goalId/deposit"),
-      headers: headers,
-      body: jsonEncode({
-        "amount": amount,
-      }),
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 200) {
-      return GoalModel.fromJson(data["data"]);
-    } else {
-      throw Exception(data["message"]);
-    }
-  }
-
-  /// WITHDRAW FROM GOAL
-  Future<void> withdrawFromGoal(String goalId, double amount) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/goals/$goalId/withdraw"),
-      headers: headers,
-      body: jsonEncode({
-        "amount": amount,
-      }),
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode != 200) {
-      throw Exception(data["message"]);
-    }
-  }
-
-  /// GOAL SUMMARY
-  Future<Map<String, dynamic>> getGoalSummary() async {
-    final response = await http.get(
-      Uri.parse("$baseUrl/goals/summary"),
-      headers: headers,
-    );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 200) {
-      return data["data"];
-    } else {
-      throw Exception(data["message"]);
-    }
-  }
-}
+}*

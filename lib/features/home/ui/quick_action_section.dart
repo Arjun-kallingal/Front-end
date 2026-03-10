@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import 'action_button_card.dart';
 import 'move_to_savings_card.dart';
-import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
 
-// ✅ Change these imports to point to your new parent screen
+// ✅ 1. Match the import to your actual file
+import 'package:front_end/features/goals/ui/financial_goals_screen.dart'; 
 import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 
 class QuickActionsSection extends StatelessWidget {
@@ -16,10 +16,12 @@ class QuickActionsSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          _ActionButtonsRow(),
-          SizedBox(height: 16),
-          _MoveToSavingsSection(),
+        // ✅ 2. REMOVED the 'const' from here. 
+        // You cannot have a const Column if its children (like _MoveToSavingsSection) are not const.
+        children: [
+          const _ActionButtonsRow(),
+          const SizedBox(height: 16),
+          const _MoveToSavingsSection(),
         ],
       ),
     );
@@ -37,7 +39,6 @@ class _ActionButtonsRow extends StatelessWidget {
           icon: Icons.trending_up,
           label: "Add Income",
           onTap: () {
-            // ✅ Route to Parent Screen, defaulting to Income tab
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -48,14 +49,11 @@ class _ActionButtonsRow extends StatelessWidget {
           iconBg: AppColors.incomeIconBg,
           iconColor: AppColors.incomeAmount,
         ),
-
         const SizedBox(width: 20),
-
         ActionButtonCard(
           icon: Icons.trending_down,
           label: "Add Expense",
           onTap: () {
-            // ✅ Route to Parent Screen, defaulting to Expense tab
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -81,7 +79,9 @@ class _MoveToSavingsSection extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const FinancialGoalsScreen(),
+            // ✅ 3. USE THE CORRECT CLASS NAME: FinancialGoalsScreen
+            // And ensure 'const' is removed here.
+            builder: (_) => const FinancialGoalsScreen(), 
           ),
         );
       },
