@@ -5,7 +5,9 @@ import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/mock_auth.dart';
-import 'filter_screen.dart'; // Make sure this import points to your FilterScreen file
+import 'filter_screen.dart';
+import 'package:front_end/navigation/navigation_service.dart';
+// Make sure this import points to your FilterScreen file
 
 class TransactionListScreen extends StatefulWidget {
   final String? initialAccountName; // Added to receive data from the dashboard
@@ -24,7 +26,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   /// FILTER VALUES
   String selectedType = "All Type";
   String selectedCategory = "All";
-  late String selectedAccountName; 
+  late String selectedAccountName;
   DateTime? startDate;
   DateTime? endDate;
   String searchQuery = "";
@@ -40,7 +42,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     _fetchData();
   }
 
-  /// FETCH DATA 
+  /// FETCH DATA
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     final userId = MockAuthService.currentUserId;
@@ -53,25 +55,30 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     try {
       // 1. Fetch accounts
-      final Map<String, dynamic> accountData = await AccountService.getAccountDashboard(userId);
-      
+      final Map<String, dynamic> accountData =
+          await AccountService.getAccountDashboard(userId);
+
       // FIX: Safely extract the pre-parsed list without using .from()
-      final List<AccountModel> fetchedAccounts = 
-          (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ?? [];
+      final List<AccountModel> fetchedAccounts =
+          (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
+              [];
 
       // 2. Resolve account name to ID
       String? resolvedAccountId;
       if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
         try {
-          resolvedAccountId = fetchedAccounts.firstWhere((a) => a.name == selectedAccountName).id;
+          resolvedAccountId = fetchedAccounts
+              .firstWhere((a) => a.name == selectedAccountName)
+              .id;
         } catch (e) {
           debugPrint("Account name not found in list: $e");
-          resolvedAccountId = null; 
+          resolvedAccountId = null;
         }
       }
 
       // 3. Fetch transactions
-      final historyData = await TransactionService.getHistory(userId, accountId: resolvedAccountId);
+      final historyData = await TransactionService.getHistory(userId,
+          accountId: resolvedAccountId);
 
       if (mounted) {
         setState(() {
@@ -126,66 +133,74 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  /// TRANSACTION ICON
   Widget _getTransactionLeading(TransactionModel tx) {
     if (tx.direction == "GOAL_ALLOCATION") {
       return CircleAvatar(
         radius: 22,
-        backgroundColor: goalBlue.withValues(alpha: 0.1),
-        child: Icon(Icons.flag_circle, color: goalBlue, size: 22),
+        backgroundColor: goalBlue.withOpacity(0.1),
+        child: const Icon(Icons.flag, color: Colors.blue, size: 20),
       );
     }
-    switch (tx.type) {
-      case 'income':
-        return CircleAvatar(
-          radius: 22,
-          backgroundColor: Colors.green.withValues(alpha: 0.1),
-          child: const Icon(Icons.trending_up, color: Colors.green, size: 20),
-        );
-      case 'transfer':
-        return CircleAvatar(
-          radius: 22,
-          backgroundColor: Colors.grey.withValues(alpha: 0.15),
-          child: const Icon(Icons.sync_alt, color: Colors.black87, size: 20),
-        );
-      default:
-        return CircleAvatar(
-          radius: 22,
-          backgroundColor: primaryRed.withValues(alpha: 0.1),
-          child: Icon(Icons.trending_down, color: primaryRed, size: 20),
-        );
+
+    if (tx.type == "income") {
+      return CircleAvatar(
+        radius: 22,
+        backgroundColor: Colors.green.withOpacity(0.1),
+        child: const Icon(Icons.trending_up, color: Colors.green, size: 20),
+      );
     }
+
+    if (tx.type == "transfer") {
+      return CircleAvatar(
+        radius: 22,
+        backgroundColor: Colors.grey.withOpacity(0.15),
+        child: const Icon(Icons.sync_alt, color: Colors.grey, size: 20),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 22,
+      backgroundColor: primaryRed.withOpacity(0.1),
+      child: Icon(Icons.trending_down, color: primaryRed, size: 20),
+    );
   }
 
   /// ACTIVE FILTER CHIPS
   Widget _buildActiveFilters() {
     List<Widget> chips = [];
-    
+
     if (selectedType != "All Type") {
-      chips.add(_buildChip(selectedType, () => setState(() {
-        selectedType = "All Type";
-      })));
+      chips.add(_buildChip(
+          selectedType,
+          () => setState(() {
+                selectedType = "All Type";
+              })));
     }
-    
+
     if (selectedCategory != "All") {
-      chips.add(_buildChip(selectedCategory, () => setState(() {
-        selectedCategory = "All";
-      })));
+      chips.add(_buildChip(
+          selectedCategory,
+          () => setState(() {
+                selectedCategory = "All";
+              })));
     }
-    
+
     if (selectedAccountName != "All Accounts") {
       chips.add(_buildChip(selectedAccountName, () {
         setState(() => selectedAccountName = "All Accounts");
-        _fetchData(); 
+        _fetchData();
       }));
     }
-    
+
     if (startDate != null && endDate != null) {
-      String dateRange = "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
-      chips.add(_buildChip(dateRange, () => setState(() { 
-        startDate = null; 
-        endDate = null; 
-      })));
+      String dateRange =
+          "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
+      chips.add(_buildChip(
+          dateRange,
+          () => setState(() {
+                startDate = null;
+                endDate = null;
+              })));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -207,7 +222,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         deleteIcon: const Icon(Icons.close, size: 16),
         onDeleted: onRemove,
         backgroundColor: Colors.grey.shade100,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide.none),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8), side: BorderSide.none),
       ),
     );
   }
@@ -228,12 +244,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   Row(
                     children: [
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                        onPressed: () {
+                          
+                          NavigationService.bottomIndex.value = 0;
+                        },
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          size: 20,
+                        ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       const Text(
                         "History",
                         style: TextStyle(
@@ -261,9 +283,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             decoration: InputDecoration(
                               hintText: "Search transactions...",
                               hintStyle: TextStyle(color: Colors.grey.shade500),
-                              prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                              prefixIcon: Icon(Icons.search,
+                                  color: Colors.grey.shade600),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ),
@@ -290,7 +314,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Colors.black87))
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.black87))
                   : RefreshIndicator(
                       color: Colors.black87,
                       onRefresh: () => _fetchData(),
@@ -305,10 +330,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   Widget _buildTransactionList() {
     final list = _transactions.where((tx) {
-      final mSearch = tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
+      final mSearch =
+          tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
       final mCat = selectedCategory == "All" || tx.category == selectedCategory;
-      
+
       bool mType = true;
       if (selectedType == "Income") {
         mType = tx.type == "income";
@@ -339,7 +365,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           const Center(
             child: Text(
               "No transactions found",
-              style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -348,14 +377,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      physics: const AlwaysScrollableScrollPhysics(), 
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: list.length,
-      separatorBuilder: (context, index) => Divider(color: Colors.grey.shade200, height: 1),
+      separatorBuilder: (context, index) =>
+          Divider(color: Colors.grey.shade200, height: 1),
       itemBuilder: (context, i) {
         final tx = list[i];
         bool isIncome = tx.type == 'income';
         bool isReserved = tx.direction == "GOAL_ALLOCATION";
-        Color moneyColor = isIncome ? Colors.green : (isReserved ? goalBlue : primaryRed);
+        Color moneyColor =
+            isIncome ? Colors.green : (isReserved ? goalBlue : primaryRed);
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -369,7 +400,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   children: [
                     Text(
                       tx.title,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 15),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -382,7 +414,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         ),
                         if (tx.subtitle.isNotEmpty) ...[
                           const SizedBox(width: 8),
-                          Text("•", style: TextStyle(color: Colors.grey.shade400)),
+                          Text("•",
+                              style: TextStyle(color: Colors.grey.shade400)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -398,7 +431,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ],
                 ),
               ),
-              
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -412,7 +444,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(4),
@@ -421,8 +454,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     child: Text(
                       tx.accountType,
                       style: TextStyle(
-                        fontSize: 10, 
-                        color: Colors.grey.shade800, 
+                        fontSize: 10,
+                        color: Colors.grey.shade800,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

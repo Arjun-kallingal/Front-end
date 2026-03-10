@@ -5,76 +5,75 @@ import '../features/transactions/ui/transactionlist_screen.dart';
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
 import '../features/accounts/ui/account.dart';
 
+/// GLOBAL NAV SERVICE
 class NavigationService {
   static final ValueNotifier<int> bottomIndex = ValueNotifier(0);
 }
 
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends StatelessWidget {
   const MainNavigation({super.key});
 
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-
-  late PageController _pageController;
-
-  final List<Widget> _screens = [
+  static const List<Widget> _screens = [
     HomeScreen(),
     AnalyticsDashboardScreen(),
     AccountsOverviewScreen(),
     TransactionListScreen(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
+  void _handleSwipe(DragEndDetails details) {
+    int index = NavigationService.bottomIndex.value;
+
+    /// Swipe Left → Next Page
+    if (details.primaryVelocity! < 0) {
+      if (index < _screens.length - 1) {
+        NavigationService.bottomIndex.value = index + 1;
+      }
+    }
+
+    /// Swipe Right → Previous Page
+    if (details.primaryVelocity! > 0) {
+      if (index > 0) {
+        NavigationService.bottomIndex.value = index - 1;
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-
     final theme = Theme.of(context);
 
     return ValueListenableBuilder<int>(
       valueListenable: NavigationService.bottomIndex,
       builder: (context, index, _) {
-
         return Scaffold(
 
-          body: PageView(
-            controller: _pageController,
+          /// SWIPE DETECTOR
+          body: GestureDetector(
+            onHorizontalDragEnd: _handleSwipe,
 
-            onPageChanged: (i) {
-              NavigationService.bottomIndex.value = i;
-            },
-
-            children: _screens,
+            child: IndexedStack(
+              index: index,
+              children: _screens,
+            ),
           ),
 
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: index,
+            onTap: (i) => NavigationService.bottomIndex.value = i,
 
-            onTap: (i) {
-              NavigationService.bottomIndex.value = i;
+            backgroundColor: theme.bottomNavigationBarTheme.backgroundColor
+                ?? theme.scaffoldBackgroundColor,
 
-              _pageController.animateToPage(
-                i,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            },
-
-            backgroundColor: theme.scaffoldBackgroundColor,
             selectedItemColor: theme.colorScheme.primary,
-            unselectedItemColor: Colors.grey,
+
+            unselectedItemColor: theme.brightness == Brightness.light
+                ? Colors.black54
+                : Colors.grey.shade400,
 
             type: BottomNavigationBarType.fixed,
+            elevation: 8,
 
             items: const [
-
               BottomNavigationBarItem(
                 icon: Icon(Icons.home_outlined),
                 activeIcon: Icon(Icons.home),
@@ -88,17 +87,16 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
 
               BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
+                icon: Icon(Icons.account_balance),
+                activeIcon: Icon(Icons.account_balance),
                 label: 'Accounts',
               ),
 
               BottomNavigationBarItem(
                 icon: Icon(Icons.history),
-                activeIcon: Icon(Icons.history_toggle_off),
+                activeIcon: Icon(Icons.history),
                 label: 'History',
               ),
-
             ],
           ),
         );
