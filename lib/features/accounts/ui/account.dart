@@ -1,10 +1,10 @@
-import 'package:front_end/features/transactions/ui/transactionlist_screen.dart'; // Ensure this matches your actual file name
 import 'package:flutter/material.dart';
 import '../../../core/models/account_model.dart';
 import '../../../core/services/account_service.dart';
 import '../../../core/services/mock_auth.dart';
 import 'package:front_end/navigation/navigation_service.dart';
 import 'package:front_end/features/transfer/transfer.dart'; // Ensure this matches your actual file name
+import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 
 class AccountsOverviewScreen extends StatefulWidget {
   const AccountsOverviewScreen({super.key});
@@ -232,18 +232,18 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-floatingActionButton: FloatingActionButton(
-  onPressed: () {
-    Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => const TransferScreen(),
-  ),
-);
-  },
-  backgroundColor: Colors.blueAccent,
-  child: const Icon(Icons.swap_horiz, color: Colors.white),
-),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TransferScreen(),
+            ),
+          );
+        },
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.swap_horiz, color: Colors.white),
+      ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Colors.black87))
@@ -420,52 +420,81 @@ floatingActionButton: FloatingActionButton(
         borderRadius: BorderRadius.circular(24),
         border: acc.isDefault
             ? Border.all(
-                color: Colors.blueAccent.withValues(alpha: 0.3), width: 1)
+                color: Colors.blueAccent.withValues(alpha: 0.3),
+                width: 1,
+              )
             : null,
       ),
       child: Column(
         children: [
+          /// TOP ROW
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
                   Icon(
-                      acc.type == "CASH" ? Icons.wallet : Icons.account_balance,
-                      color: Colors.black87,
-                      size: 18),
+                    acc.type == "CASH" ? Icons.wallet : Icons.account_balance,
+                    color: Colors.black87,
+                    size: 18,
+                  ),
                   const SizedBox(width: 12),
-                  Text(acc.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(
+                    acc.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
                 ],
               ),
-              if (acc.isDefault)
-                const Icon(Icons.check_circle,
-                    color: Colors.blueAccent, size: 22)
-              else
-                PopupMenuButton<String>(
-                  icon:
-                      const Icon(Icons.more_vert, color: Colors.grey, size: 20),
-                  onSelected: (val) {
-                    if (val == 'primary') _handleSetPrimary(acc.id);
-                    if (val == 'history')
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => TransactionListScreen(
-                                  initialAccountName: acc.name)));
-                  },
-                  itemBuilder: (ctx) => [
-                    const PopupMenuItem(
-                        value: 'primary', child: Text("Set as Primary")),
-                    const PopupMenuItem(
-                        value: 'history', child: Text("View History")),
-                  ],
-                ),
+
+              /// RIGHT SIDE ICON / MENU
+              acc.isDefault
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: Colors.blueAccent,
+                      size: 22,
+                    )
+                  : PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
+                      onSelected: (val) {
+                        if (val == 'primary') {
+                          _handleSetPrimary(acc.id);
+                        }
+                        if (val == 'history') {
+                          NavigationService.selectedAccountName = acc.name;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TransactionListScreen(),
+                            ),
+                          );
+                        }
+                      },
+                      itemBuilder: (ctx) => const [
+                        PopupMenuItem(
+                          value: 'primary',
+                          child: Text("Set as Primary"),
+                        ),
+                        PopupMenuItem(
+                          value: 'history',
+                          child: Text("View History"),
+                        ),
+                      ],
+                    ),
             ],
           ),
+
           const SizedBox(height: 16),
+
+          /// BALANCE DATA
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

@@ -6,7 +6,6 @@ import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/mock_auth.dart';
 import 'filter_screen.dart';
-import 'package:front_end/navigation/navigation_service.dart';
 // Make sure this import points to your FilterScreen file
 
 class TransactionListScreen extends StatefulWidget {
@@ -244,14 +243,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   Row(
                     children: [
                       IconButton(
-                        onPressed: () {
-                          
-                          NavigationService.bottomIndex.value = 0;
-                        },
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          size: 20,
-                        ),
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),

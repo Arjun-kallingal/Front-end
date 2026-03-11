@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-
 import '../features/home/ui/home_screen.dart';
-import '../features/transactions/ui/transactionlist_screen.dart';
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
 import '../features/accounts/ui/account.dart';
+import '../features/goals/ui/financial_goals_screen.dart';
 
 /// GLOBAL NAV SERVICE
 class NavigationService {
   static final ValueNotifier<int> bottomIndex = ValueNotifier(0);
+
+  static String? selectedAccountName;
 }
 
 class MainNavigation extends StatelessWidget {
@@ -15,9 +16,9 @@ class MainNavigation extends StatelessWidget {
 
   static const List<Widget> _screens = [
     HomeScreen(),
-    AnalyticsDashboardScreen(),
+    FinancialGoalsScreen(),
     AccountsOverviewScreen(),
-    TransactionListScreen(),
+    AnalyticsDashboardScreen(),
   ];
 
   void _handleSwipe(DragEndDetails details) {
@@ -81,21 +82,21 @@ class MainNavigation extends StatelessWidget {
               ),
 
               BottomNavigationBarItem(
-                icon: Icon(Icons.pie_chart_outline),
-                activeIcon: Icon(Icons.pie_chart),
-                label: 'Analytics',
+                icon: Icon(Icons.flag_outlined),
+                activeIcon: Icon(Icons.flag),
+                label: 'Goals',
               ),
 
               BottomNavigationBarItem(
-                icon: Icon(Icons.account_balance),
+                icon: Icon(Icons.account_balance_outlined),
                 activeIcon: Icon(Icons.account_balance),
                 label: 'Accounts',
               ),
 
               BottomNavigationBarItem(
-                icon: Icon(Icons.history),
-                activeIcon: Icon(Icons.history),
-                label: 'History',
+                icon: Icon(Icons.bar_chart_outlined),
+                activeIcon: Icon(Icons.bar_chart),
+                label: 'Analytics',
               ),
             ],
           ),
