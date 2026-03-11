@@ -12,8 +12,6 @@ class FinancialGoalsScreen extends StatefulWidget {
 }
 
 class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
-  // NOTE: Use 10.0.2.2 for Android Emulator, localhost for iOS simulator, 
-  // or your local Wi-Fi IP (192.168.x.x) for physical devices.
   late final GoalService _goalService = GoalService(
     baseUrl: "http://localhost:5000/api", 
   );
@@ -30,10 +28,12 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
   Future<void> _fetchGoals() async {
     setState(() => _isLoading = true);
     try {
-      final data = await _goalService.getGoals();
+      // 👇 THIS IS THE MISSING LINE! It defines 'data' by calling your service
+      final data = await _goalService.getGoals(); 
+
       if (mounted) {
         setState(() {
-          goals = data;
+          goals = data; // Now 'data' is defined and can be assigned to goals
           _isLoading = false;
         });
       }
@@ -49,95 +49,143 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blueAccent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onPressed: () async {
-          final refresh = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateNewGoalScreen()),
-          );
-          if (refresh == true) _fetchGoals();
-        },
-        child: const Icon(Icons.add, color: Colors.white, size: 30),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildLightHeader(),
+            _buildDarkHeroCard(), // 👈 The new all-in-one dark card
+            _buildAddGoalButton(),
+            const SizedBox(height: 10),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
+                  : _buildGoalList(),
+            ),
+          ],
+        ),
       ),
-      body: Column(
+    );
+  }
+
+  Widget _buildLightHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+      child: Row(
         children: [
-          _buildHighContrastHeader(),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.blueAccent))
-                : _buildGoalList(),
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Text(
+            "Financial Goals",
+            style: TextStyle(color: Colors.black87, fontSize: 22, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHighContrastHeader() {
-    double totalTarget = goals.fold(0, (sum, item) => sum + item.targetAmount);
-    
+  // NEW: The all-in-one dark stats card
+  Widget _buildDarkHeroCard() {
+    // Calculate stats dynamically
+    double totalSaved = goals.fold(0, (sum, item) => sum + item.currentAmount);
+    int activeCount = goals.where((g) => g.currentAmount < g.targetAmount).length;
+    int completedCount = goals.where((g) => g.currentAmount >= g.targetAmount).length;
+
     return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0052D4), Color(0xFF1A1A1A)],
+          colors: [Color(0xFF0052D4), Color(0xFF1A1A1A)], // Your requested dark blue colors
         ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-      ),
-      child: SafeArea( // 👈 Added SafeArea so it doesn't overlap the notch
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text("Financial Goals",
-                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 25),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _headerStat("Active Goals", goals.length.toString()),
-                    _headerStat("Total Target", "\$${totalTarget.toStringAsFixed(0)}"),
-                  ],
-                ),
-              )
-            ],
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0052D4).withOpacity(0.3), 
+            blurRadius: 15, 
+            offset: const Offset(0, 8)
           ),
-        ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Total Saved", style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const SizedBox(height: 8),
+          Text("\$${totalSaved.toStringAsFixed(0)}", 
+            style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSubStat("Active Goals", activeCount.toString()),
+              Container(width: 1, height: 40, color: Colors.white24), // A sleek vertical divider
+              _buildSubStat("Completed", completedCount.toString()),
+              Container(width: 1, height: 40, color: Colors.white24), // A sleek vertical divider
+              _buildSubStat("Total Goals", goals.length.toString()),
+            ],
+          )
+        ],
       ),
     );
   }
 
-  Widget _headerStat(String label, String value) {
+  // Helper for the small stats at the bottom of the dark card
+  Widget _buildSubStat(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
       ],
+    );
+  }
+
+  Widget _buildAddGoalButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: InkWell(
+        onTap: () async {
+          final refresh = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateNewGoalScreen()),
+          );
+          if (refresh == true) _fetchGoals();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.blueAccent.withOpacity(0.05),
+            border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.add_circle_outline, color: Colors.blueAccent, size: 24),
+              SizedBox(width: 8),
+              Text(
+                "Create New Goal",
+                style: TextStyle(
+                  color: Colors.blueAccent,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -146,7 +194,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       return Center(child: Text("No goals found", style: TextStyle(color: Colors.grey.shade400)));
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 20), 
       itemCount: goals.length,
       itemBuilder: (context, index) => _buildGoalCard(goals[index]),
     );

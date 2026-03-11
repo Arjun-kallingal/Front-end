@@ -11,6 +11,8 @@ class GoalService {
     return {
       "Content-Type": "application/json",
       "Accept": "application/json",
+      // TODO: Uncomment and add your token when your auth state is ready
+      // "Authorization": "Bearer YOUR_ACTUAL_TOKEN_HERE", 
     };
   }
 
@@ -59,7 +61,7 @@ class GoalService {
       return false; 
     }
   }
-  // Add this inside lib/services/goal_service.dart
+  
   Future<bool> depositToGoal(String goalId, double amount) async {
     try {
       final response = await http.post(
@@ -77,6 +79,48 @@ class GoalService {
     } catch (e) {
       print("Network Error during Deposit: $e");
       return false; 
+    }
+  }
+
+  // --- NEW METHODS ADDED BELOW ---
+
+  Future<bool> withdrawFromGoal(String goalId, double amount) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/goals/$goalId/withdraw"),
+        headers: _getHeaders(),
+        body: jsonEncode({"amount": amount}),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Withdraw Failed: ${response.statusCode} - ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Network Error during Withdraw: $e");
+      return false; 
+    }
+  }
+
+  Future<List<dynamic>> getGoalHistory(String accountId) async {
+    try {
+      final response = await http.get(
+        Uri.parse("$baseUrl/goals/account/$accountId/history"),
+        headers: _getHeaders(),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        return body['data'] ?? [];
+      } else {
+        print("History Fetch Failed: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      print("Error fetching goal history: $e");
+      return [];
     }
   }
 }
