@@ -1,19 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+//  import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:front_end/core/models/transaction_model.dart';
 
 class TransactionService {
-   static String get _baseUrl {
-   if (kIsWeb) {
-      return "http://localhost:5000/api/account";
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      return "http://192.168.137.1:5000/api/account";
-    } else {
-      return "http://192.168.137.1:5000/api/account";
-    }
-  }
+    static String get _baseUrl {
+
+    return "http://localhost:5000/api/transaction"; 
+  
+}
 
   /// --- 1. FETCH HISTORY (REFINED) ---
   /// Now supports accountId and category filtering via query parameters.
@@ -97,4 +93,5 @@ class TransactionService {
       return {"success": false, "message": "Network Failure: $e"};
     }
   }
+  
 }

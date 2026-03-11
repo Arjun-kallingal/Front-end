@@ -6,12 +6,13 @@ import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:front_end/features/analytics/ui/analytics_dashboardscreen.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
 
+// ✅ Import your new unified Add Transaction screen
+// import 'package:front_end/features/transactions/ui/add_transaction_screen.dart'; 
+
 /// 🌐 GLOBAL NAV SERVICE
-/// Allows you to change tabs from anywhere (e.g., clicking "See All" on Home)
 class NavigationService {
   static final ValueNotifier<int> bottomIndex = ValueNotifier(0);
 
-  // Helper to change tab programmatically
   static void changeTab(int index) {
     bottomIndex.value = index;
   }
@@ -22,11 +23,10 @@ class MainNavigation extends StatelessWidget {
 
   const MainNavigation({super.key, this.userId});
 
-  // 🎯 List of screens matching the BottomNavBar order
   @override
   Widget build(BuildContext context) {
     final List<Widget> _screens = [
-      const HomeScreen(), // 🎯 Removed the UserId parameter!
+      const HomeScreen(), 
       AnalyticsDashboardScreen(),
       TransactionListScreen(),
       ProfileSettingsScreen(),
@@ -37,11 +37,28 @@ class MainNavigation extends StatelessWidget {
       valueListenable: NavigationService.bottomIndex,
       builder: (context, index, _) {
         return Scaffold(
-          // 🧱 IndexedStack keeps the "Scroll State" alive when switching tabs
           body: IndexedStack(
             index: index,
             children: _screens,
           ),
+          
+          /// 🟢 NEW: CENTRAL ADD BUTTON
+          /// This puts the button on top of all your tabs!
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TransactionListScreen()),
+              );
+            },
+            backgroundColor: Colors.black87, // Matches your premium dark theme
+            elevation: 4,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
+          ),
+          // Optional: This docks the button neatly in the center of the nav bar
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               boxShadow: [
@@ -55,15 +72,15 @@ class MainNavigation extends StatelessWidget {
             child: BottomNavigationBar(
               currentIndex: index,
               onTap: (i) => NavigationService.bottomIndex.value = i,
-              backgroundColor: theme.bottomNavigationBarTheme.backgroundColor ??
-                  theme.scaffoldBackgroundColor,
-              selectedItemColor:
-                  const Color(0xFFB81414), // Matches your brand red
+              backgroundColor: theme.bottomNavigationBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
+              
+              /// Changed to black87 to match the new clean UI style
+              selectedItemColor: Colors.black87, 
               unselectedItemColor: theme.brightness == Brightness.light
                   ? Colors.black54
                   : Colors.grey.shade400,
               type: BottomNavigationBarType.fixed,
-              elevation: 0, // Handled by Container decoration for cleaner look
+              elevation: 0, 
               selectedFontSize: 12,
               unselectedFontSize: 12,
               items: const [

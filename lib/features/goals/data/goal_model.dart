@@ -2,18 +2,18 @@ class GoalModel {
   final String id;
   final String userId;
   final String accountId;
-
   String title;
   String category;
-
   double targetAmount;
   double currentAmount;
-
   DateTime targetDate;
   String status;
 
-  DateTime? createdAt;
-  DateTime? updatedAt;
+  // CALCULATED FIELDS FROM BACKEND
+  final int? daysLeft;
+  final double? requiredDailySaving;
+  final double? progressPercentage;
+  final bool isOverdue;
 
   GoalModel({
     required this.id,
@@ -25,11 +25,12 @@ class GoalModel {
     required this.currentAmount,
     required this.targetDate,
     required this.status,
-    this.createdAt,
-    this.updatedAt,
+    this.daysLeft,
+    this.requiredDailySaving,
+    this.progressPercentage,
+    this.isOverdue = false,
   });
 
-  /// JSON → Model
   factory GoalModel.fromJson(Map<String, dynamic> json) {
     return GoalModel(
       id: json['_id'] ?? '',
@@ -39,59 +40,31 @@ class GoalModel {
       category: json['category'] ?? '',
       targetAmount: (json['targetAmount'] ?? 0).toDouble(),
       currentAmount: (json['currentAmount'] ?? 0).toDouble(),
-      targetDate: DateTime.parse(json['targetDate']),
-      status: json['status'] ?? "active",
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'])
-          : null,
+      targetDate: DateTime.tryParse(json['targetDate'] ?? '') ?? DateTime.now(),
+      status: json['status'] ?? 'active',
+      
+      daysLeft: json['daysLeft'] is int ? json['daysLeft'] : null,
+      requiredDailySaving: (json['requiredDailySaving'] ?? 0).toDouble(),
+      progressPercentage: (json['progressPercentage'] ?? 0).toDouble(),
+      isOverdue: json['isOverdue'] ?? false,
     );
   }
 
-  /// Model → JSON (Create Goal API)
   Map<String, dynamic> toJson() {
     return {
+      if (id.isNotEmpty) "_id": id, 
+      "userId": userId,
+      "accountId": accountId,
       "title": title,
       "category": category,
       "targetAmount": targetAmount,
+      "currentAmount": currentAmount,
+      "status": status,
       "targetDate": targetDate.toIso8601String(),
-      "accountId": accountId,
     };
   }
 
-  /// Update Goal JSON
-  Map<String, dynamic> toUpdateJson() {
-    return {
-      "title": title,
-      "category": category,
-      "targetAmount": targetAmount,
-      "targetDate": targetDate.toIso8601String(),
-      "accountId": accountId,
-    };
-  }
-
-  /// Deposit / Withdraw JSON
-  Map<String, dynamic> amountJson(double amount) {
-    return {
-      "amount": amount,
-    };
-  }
-
-  /// Progress for UI
-  double get progress {
-    if (targetAmount == 0) return 0;
-    return currentAmount / targetAmount;
-  }
-
-  /// Remaining amount
-  double get remainingAmount {
-    return targetAmount - currentAmount;
-  }
-
-  /// Goal completed
-  bool get isCompleted {
-    return status == "completed";
-  }
+  double get progress => progressPercentage != null && progressPercentage! > 0
+      ? (progressPercentage! / 100).clamp(0.0, 1.0)
+      : (targetAmount == 0 ? 0 : (currentAmount / targetAmount).clamp(0.0, 1.0));
 }
