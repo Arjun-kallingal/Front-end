@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   IconData _getTransactionIcon(TransactionModel tx) {
     if (tx.direction == "GOAL_ALLOCATION") {
-      return Icons.flag;
+      return Icons.ads_click;
     }
 
     if (tx.type == "income") {

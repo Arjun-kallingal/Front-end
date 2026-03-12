@@ -137,7 +137,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       return CircleAvatar(
         radius: 22,
         backgroundColor: goalBlue.withOpacity(0.1),
-        child: const Icon(Icons.flag, color: Colors.blue, size: 20),
+        child: const Icon(Icons.ads_click, color: Colors.blue, size: 20),
       );
     }
 

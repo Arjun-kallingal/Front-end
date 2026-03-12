@@ -82,8 +82,8 @@ class MainNavigation extends StatelessWidget {
               ),
 
               BottomNavigationBarItem(
-                icon: Icon(Icons.flag_outlined),
-                activeIcon: Icon(Icons.flag),
+                icon: Icon(Icons.ads_click),
+                activeIcon: Icon(Icons.ads_click),
                 label: 'Goals',
               ),
 

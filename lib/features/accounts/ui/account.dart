@@ -452,7 +452,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
               /// RIGHT SIDE ICON / MENU
               acc.isDefault
                   ? const Icon(
-                      Icons.check_circle,
+                      Icons.verified,
                       color: Colors.blueAccent,
                       size: 22,
                     )

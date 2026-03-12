@@ -81,7 +81,9 @@ class _MoveToSavingsSection extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const FinancialGoalsScreen(),
+            // ✅ 3. USE THE CORRECT CLASS NAME: FinancialGoalsScreen
+            // And ensure 'const' is removed here.
+            builder: (_) => const FinancialGoalsScreen(), 
           ),
         );
       },
