@@ -1,3 +1,5 @@
+
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -5,8 +7,11 @@ import 'package:http/http.dart' as http;
 import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
 import 'signup_screen.dart';
-import 'forgot_password.dart';
-import 'api_config.dart';
+import 'forgot_password_gmail.dart';
+import '../../../core/services/api_config.dart';
+import 'package:front_end/core/services/auth_storage.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,19 +26,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  bool rememberMe = false;
   bool obscurePassword = true;
-  bool rememberError = false;
 
-  ///  LOGIN API FUNCTION
+  /// LOGIN API FUNCTION
   Future<void> loginUser() async {
     try {
-
- //final url = Uri.parse('http://192.168.29.128:5000/api/auth/login');
-      
-//final url = Uri.parse('http://127.0.0.1:5000/api/auth/login');
-
-final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
       final response = await http.post(
         url,
@@ -48,8 +46,33 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        ///  SUCCESS
+      /// DEBUG
+      print("LOGIN RESPONSE: $data");
+
+      if (response.statusCode == 200 && data["accessToken"] != null) {
+
+        final token = data["accessToken"];
+        final user = data["user"];
+
+        final name = user["name"];
+        final email = user["email"];
+
+        /// Save token + user locally
+        final phone = user["phone"] ?? "";
+
+await AuthStorage.saveUser(
+  token: token,
+  name: name,
+  email: email,
+  phone: phone,
+);
+
+        /// Save user in Provider
+        context.read<UserProfileProvider>().setUser(
+          userName: name,
+          userEmail: email,
+        );
+
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,8 +83,9 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
         );
 
         Navigator.pushReplacementNamed(context, '/main');
+
       } else {
-        ///  ERROR FROM SERVER
+
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,8 +95,11 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
           ),
         );
       }
+
     } catch (e) {
-      ///  CONNECTION ERROR
+
+      print("LOGIN ERROR: $e");
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -86,6 +113,7 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
   @override
   Widget build(BuildContext context) {
+
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -99,6 +127,7 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+
                 const SizedBox(height: 40),
 
                 /// LOGO
@@ -142,6 +171,7 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 14),
 
                 /// PASSWORD
@@ -149,6 +179,7 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                   'Password',
                   style: textTheme.labelLarge,
                 ),
+
                 const SizedBox(height: 8),
 
                 TextFormField(
@@ -183,49 +214,21 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
                 const SizedBox(height: 12),
 
-                /// REMEMBER + FORGOT
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                /// FORGOT PASSWORD
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              rememberMe = value ?? false;
-                              rememberError = false;
-                            });
-                          },
-                        ),
-                        Text(
-                          'Remember me',
-                          style: textTheme.bodyMedium,
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const ForgotPasswordScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Forgot password?'),
-                        ),
-                      ],
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text('Forgot password?'),
                     ),
-                    if (rememberError)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 12),
-                        child: Text(
-                          'Please select Remember me',
-                          style:
-                              TextStyle(color: Colors.red, fontSize: 12),
-                        ),
-                      ),
                   ],
                 ),
 
@@ -233,17 +236,11 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                 CustomButton(
                   text: 'Sign In',
                   onPressed: () {
-                    final isValid =
-                        _formKey.currentState!.validate();
 
-                    if (!rememberMe) {
-                      setState(() {
-                        rememberError = true;
-                      });
-                    }
+                    final isValid = _formKey.currentState!.validate();
 
-                    if (isValid && rememberMe) {
-                      loginUser(); 
+                    if (isValid) {
+                      loginUser();
                     }
                   },
                 ),
@@ -262,15 +259,18 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                 /// CREATE ACCOUNT
                 OutlinedButton(
                   onPressed: () {
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const SignupScreen(),
                       ),
                     );
+
                   },
                   child: const Text('Create Account'),
                 ),
+
               ],
             ),
           ),
@@ -279,3 +279,4 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
     );
   }
 }
+

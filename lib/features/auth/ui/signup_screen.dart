@@ -1,13 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
+import '../services/auth_service.dart';
 import 'package:front_end/features/auth/ui/verification.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
-import 'api_config.dart';
-import 'package:front_end/core/providers/user_profile_provider.dart';
-import 'package:provider/provider.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -37,77 +32,71 @@ class _SignupScreenState extends State<SignupScreen> {
     confirmPasswordController.dispose();
     super.dispose();
   }
+Future<void> _submit() async {
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    if (!agreeTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You must agree to the Terms & Privacy Policy'),
-        ),
-      );
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      // final response = await http.post(
-      //   Uri.parse("http://localhost:5000/api/auth/register"),
-      final response = await http.post(
-  Uri.parse("${ApiConfig.baseUrl}/api/auth/register"),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "name": nameController.text.trim(),
-          "email": emailController.text.trim(),
-          "password": passwordController.text.trim(),
-        }),
-      );
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-
-  final name = nameController.text.trim();
-  final email = emailController.text.trim();
-
-  // save user in provider
-  if (!mounted) return;
-
-  context.read<UserProfileProvider>().setUser(
-        userName: name,
-        userEmail: email,
-      );
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => VerificationScreen(
-        email: email,
+  if (!agreeTerms) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('You must agree to the Terms & Privacy Policy'),
       ),
-    ),
-  );
-} else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data["message"] ?? "Registration failed"),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
-    }
+    );
+    return;
   }
 
+  setState(() => isLoading = true);
+
+  try {
+
+    final data = await AuthService.signup(
+      nameController.text.trim(),
+      emailController.text.trim(),
+      passwordController.text.trim(),
+    );
+
+    print("Signup response: $data");
+
+    if (!mounted) return;
+
+    /// Navigate if backend returned any message
+    if (data["message"] != null) {
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerificationScreen(
+            email: emailController.text.trim(),
+          ),
+        ),
+      );
+
+    } else {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Registration failed"),
+        ),
+      );
+
+    }
+
+  } catch (e) {
+
+    print("Signup error: $e");
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error: $e")),
+    );
+
+  } finally {
+
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
+
+  }
+}
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

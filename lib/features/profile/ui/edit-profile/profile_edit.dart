@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front_end/features/profile/services/profile_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String currentName;
@@ -15,8 +16,11 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+
   late TextEditingController nameController;
   late TextEditingController mobileController;
+
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -26,14 +30,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> saveProfile() async {
+
+  if (nameController.text.trim().isEmpty ||
+      mobileController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please fill all fields")),
+    );
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  final name = nameController.text.trim();
+  final phone = mobileController.text.trim();
+
+  final success = await ProfileService.updateProfile(name, phone);
+
+  setState(() {
+    isLoading = false;
+  });
+
+  if (!mounted) return;
+
+  if (success) {
+
+    /// RETURN UPDATED DATA TO PREVIOUS SCREEN
     Navigator.pop(context, {
-      "name": nameController.text,
-      "mobile": mobileController.text,
+      "name": name,
+      "mobile": phone,
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Profile Updated Successfully")),
+    );
+
+  } else {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Failed to update profile")),
+    );
+  }
+}
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    mobileController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+
     final color = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -98,6 +148,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+
                           const Padding(
                             padding: EdgeInsets.only(left: 8),
                             child: Text(
@@ -131,6 +182,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+
                           const Padding(
                             padding: EdgeInsets.only(left: 8),
                             child: Text(
@@ -166,11 +218,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: saveProfile,
-                          child: const Text(
-                            "Save Changes",
-                            style: TextStyle(fontSize: 16),
-                          ),
+                          onPressed: isLoading ? null : saveProfile,
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Save Changes",
+                                  style: TextStyle(fontSize: 16),
+                                ),
                         ),
                       ),
                     ],

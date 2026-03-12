@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:front_end/features/profile/services/change_password_service.dart';
+import 'package:front_end/core/services/auth_storage.dart';
+
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
 
@@ -22,17 +25,38 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool obscureNew = true;
   bool obscureConfirm = true;
 
-  void _changePassword() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Password Changed Successfully"),
-        ),
+  void _changePassword() async {
+  if (_formKey.currentState!.validate()) {
+    try {
+
+      final result = await ChangePasswordService.changePassword(
+        currentPasswordController.text,
+        newPasswordController.text,
       );
 
-      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result["message"])),
+      );
+
+    } catch (e) {
+
+      if (e.toString().contains("SESSION_EXPIRED")) {
+
+        await AuthStorage.logout();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Session expired. Please login again")),
+        );
+
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          "/login",
+          (route) => false,
+        );
+      }
     }
   }
+}
 
   @override
   void dispose() {

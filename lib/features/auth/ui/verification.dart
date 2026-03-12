@@ -1,10 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 import 'package:front_end/core/widgets/custom_button.dart';
+import 'package:front_end/core/services/auth_storage.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:front_end/navigation/navigation_service.dart';
+
+import '../services/auth_service.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -22,20 +25,21 @@ class _VerificationScreenState extends State<VerificationScreen> {
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
 
-  final List<FocusNode> _focusNodes =
-      List.generate(6, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    for (final c in _controllers) {
+    for (var c in _controllers) {
       c.dispose();
     }
-    for (final f in _focusNodes) {
+
+    for (var f in _focusNodes) {
       f.dispose();
     }
+
     super.dispose();
   }
 
@@ -53,12 +57,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
   }
 
+  /// VERIFY OTP
   Future<void> _verifyCode() async {
     final code = _controllers.map((e) => e.text).join();
 
-    if (code.length < 6) {
+    if (code.length != 6) {
       setState(() {
-        _errorMessage = "Enter complete verification code";
+        _errorMessage = "Please enter the 6 digit code";
       });
       return;
     }
@@ -69,108 +74,113 @@ class _VerificationScreenState extends State<VerificationScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': widget.email,
-          'otp': code,
-        }),
+      final data = await AuthService.verifyOtp(
+        widget.email,
+        code,
       );
-
-      final data = jsonDecode(response.body);
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
+      /// SUCCESS → backend returns token
+      if (data["accessToken"] != null) {
+        final token = data["accessToken"];
+        final user = data["user"];
+
+       await AuthStorage.saveUser(
+  token: token,
+  name: user["name"],
+  email: user["email"],
+  phone: user["phone"] ?? "",
+);
+        context.read<UserProfileProvider>().setUser(
+              userName: user["name"],
+              userEmail: user["email"],
+            );
+
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => const MainNavigation(),
+            builder: (_) => const MainNavigation(),
           ),
           (route) => false,
         );
-      } else {
+      }
+
+      /// ERROR RESPONSE
+      else {
         setState(() {
-          _errorMessage = data['message'] ?? "Invalid OTP";
+          _errorMessage = data["message"] ?? "OTP verification failed";
         });
       }
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = "Server error. Please try again.";
+        _errorMessage = "Unable to verify OTP. Try again.";
       });
 
-      debugPrint("OTP Verify Error: $e");
+      debugPrint("VERIFY OTP ERROR: $e");
     }
 
     if (mounted) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-  // UPDATED RESEND OTP METHOD
+  /// RESEND OTP
   Future<void> _resendOtp() async {
     setState(() {
-      _errorMessage = null;
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/resend-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': widget.email,
-        }),
-      );
-
-      final data = jsonDecode(response.body);
+      final data = await AuthService.resendOtp(widget.email);
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        // Clear old OTP inputs
-        for (final controller in _controllers) {
-          controller.clear();
+      if (data["message"] != null) {
+        /// clear fields
+        for (var c in _controllers) {
+          c.clear();
         }
 
         _focusNodes.first.requestFocus();
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              data['message'] ?? 'New OTP sent successfully',
-            ),
-            backgroundColor: Colors.green,
+            content: Text(data["message"]),
           ),
         );
       } else {
         setState(() {
-          _errorMessage = data['message'] ?? "Failed to resend OTP";
+          _errorMessage = "Failed to resend OTP";
         });
       }
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = "Server error. Please try again.";
+        _errorMessage = "Unable to resend OTP";
       });
 
-      debugPrint("Resend OTP Error: $e");
+      debugPrint("RESEND OTP ERROR: $e");
     }
 
     if (mounted) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
     final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Scaffold(
       body: SafeArea(
@@ -185,7 +195,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 20),
 
                   Icon(
-                    Icons.shield_outlined,
+                    Icons.verified_user_outlined,
                     size: 56,
                     color: colors.primary,
                   ),
@@ -193,7 +203,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 16),
 
                   Text(
-                    'Verify Your Email',
+                    "Verify Your Email",
                     textAlign: TextAlign.center,
                     style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -202,8 +212,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                   const SizedBox(height: 8),
 
-                  Text(
-                    "We've sent a 6-digit code to",
+                  const Text(
+                    "Enter the 6 digit OTP sent to",
                     textAlign: TextAlign.center,
                   ),
 
@@ -219,7 +229,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                   const SizedBox(height: 30),
 
-                  /// OTP INPUTS
+                  /// OTP INPUT
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(
@@ -233,27 +243,19 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           textAlign: TextAlign.center,
                           maxLength: 1,
                           inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
+                            FilteringTextInputFormatter.digitsOnly
                           ],
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: colors.onSurface,
                           ),
-                          cursorColor: colors.primary,
                           decoration: InputDecoration(
-                            counterText: '',
+                            counterText: "",
                             filled: true,
                             fillColor: colors.surface,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: colors.primary,
-                                width: 2,
-                              ),
                             ),
                           ),
                           onChanged: (v) => _onChanged(v, index),
@@ -265,15 +267,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 16),
 
                   if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        _errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
 
@@ -282,10 +281,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Didn't receive the code? "),
+                      const Text("Didn't receive the code?"),
                       TextButton(
                         onPressed: _isLoading ? null : _resendOtp,
-                        child: const Text('Resend'),
+                        child: const Text("Resend"),
                       ),
                     ],
                   ),
@@ -293,7 +292,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 24),
 
                   CustomButton(
-                    text: _isLoading ? 'Please wait...' : 'Verify & Continue',
+                    text: _isLoading ? "Verifying..." : "Verify & Continue",
                     onPressed: _isLoading ? null : _verifyCode,
                   ),
 
@@ -302,13 +301,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   OutlinedButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back'),
+                    label: const Text("Back"),
                   ),
 
                   const SizedBox(height: 24),
 
                   Text(
-                    'Code expires in 1 minute',
+                    "OTP expires in 1 minutes",
                     textAlign: TextAlign.center,
                     style: textTheme.bodySmall,
                   ),

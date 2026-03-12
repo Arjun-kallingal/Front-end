@@ -13,6 +13,8 @@ import 'package:front_end/features/profile/ui/premium/premium_feature.dart';
 import 'package:front_end/features/profile/ui/edit-profile/profile_edit.dart';
 import 'package:front_end/features/profile/ui/support_legal/feedback.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:front_end/features/profile/ui/notifications/notification.dart';
+import 'package:front_end/core/services/auth_storage.dart';
 
 // import 'package:front_end/core/constants/app_colors.dart';
 
@@ -43,11 +45,21 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      context.read<UserProfileProvider>().loadUser();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
     final user = context.watch<UserProfileProvider>();
+    final isLight = Theme.of(context).brightness == Brightness.light;
 
     String userName = user.name;
     String email = user.email;
@@ -56,431 +68,408 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     return Scaffold(
       backgroundColor: color.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            /// ================= HEADER CONTAINER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// ================= HEADER =================
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(top: 10, bottom: 10),
+                decoration: BoxDecoration(
+                  color: isLight ? Colors.white : Colors.black,
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        color: isLight ? Colors.black : Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Profile & Settings',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isLight ? Colors.black : Colors.white,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Profile & Settings',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+
+              /// ================= PROFILE CARD =================
+              Padding(
+                padding: const EdgeInsets.only(top: 0),
+                child: Builder(
+                  builder: (context) {
+                    final color = Theme.of(context).colorScheme;
+                    final textTheme = Theme.of(context).textTheme;
+
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: color.surface,
+                        borderRadius: BorderRadius.circular(0),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          /// PROFILE INFO
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundColor:
+                                    const Color.fromARGB(255, 98, 14, 14),
+                                child: Text(
+                                  getInitials(userName),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
 
-            /// ================= SCROLLABLE CONTENT =================
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// ================= PROFILE CARD =================
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 0),
-                      child: Builder(
-                        builder: (context) {
-                          final color = Theme.of(context).colorScheme;
-                          final textTheme = Theme.of(context).textTheme;
-
-                          return Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: color.surface,
-                              borderRadius: BorderRadius.circular(0),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// PROFILE INFO
-                                Row(
+                              /// Name + Email
+                              Expanded(
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    CircleAvatar(
-                                      radius: 28,
-                                      backgroundColor:
-                                          const Color.fromARGB(255, 98, 14, 14),
-                                      child: Text(
-                                        getInitials(userName),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-
-                                    /// Name + Email
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          /// NAME + EDIT
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  userName,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: textTheme.titleMedium
-                                                      ?.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: textTheme
-                                                        .bodyLarge!.color,
-                                                  ),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed: () async {
-                                                  final result =
-                                                      await Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (_) =>
-                                                          EditProfileScreen(
-                                                        currentName: userName,
-                                                        currentMobile:
-                                                            mobileNumber,
-                                                      ),
-                                                    ),
-                                                  );
-                                                  if (result != null) {
-                                                    context
-                                                        .read<
-                                                            UserProfileProvider>()
-                                                        .updateProfile(
-                                                          newName:
-                                                              result["name"],
-                                                          newMobile:
-                                                              result["mobile"],
-                                                        );
-                                                  }
-                                                },
-                                                child: Text(
-                                                  "Edit",
-                                                  style: TextStyle(
-                                                    color: color.primary,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-
-                                          /// EMAIL
-                                          Text(
-                                            email,
+                                    /// NAME + EDIT
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            userName,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: textTheme.bodySmall,
+                                            style:
+                                                textTheme.titleMedium?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: textTheme.bodyLarge!.color,
+                                            ),
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 12),
-                                Divider(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onBackground,
-                                  thickness: 0.6,
-                                  height: 1,
-                                  indent: 10,
-                                  endIndent: 10,
-                                ),
-                                const SizedBox(height: 12),
-
-                                /// PREMIUM BUTTON
-
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const PremiumUpgradeScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFF59E0B),
-                                          Color(0xFFF97316),
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(
-                                          Icons.workspace_premium,
-                                          color: Colors.white,
-                                          size: 20,
                                         ),
-                                        SizedBox(width: 6),
-                                        Flexible(
+                                        TextButton(
+                                          onPressed: () async {
+                                            final result = await Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    EditProfileScreen(
+                                                  currentName: userName,
+                                                  currentMobile: mobileNumber,
+                                                ),
+                                              ),
+                                            );
+                                            if (result != null) {
+                                              context
+                                                  .read<UserProfileProvider>()
+                                                  .updateProfile(
+                                                    newName: result["name"],
+                                                    newMobile: result["mobile"],
+                                                  );
+                                            }
+                                          },
                                           child: Text(
-                                            "Upgrade to Premium",
-                                            overflow: TextOverflow.ellipsis,
+                                            "Edit",
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: color.primary,
                                               fontWeight: FontWeight.w600,
-                                              fontSize: 14,
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
+
+                                    /// EMAIL
+                                    Text(
+                                      email,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: textTheme.bodySmall,
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                              ),
+                            ],
+                          ),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 12),
+                          Divider(
+                            color: Theme.of(context).colorScheme.onBackground,
+                            thickness: 0.6,
+                            height: 1,
+                            indent: 10,
+                            endIndent: 10,
+                          ),
+                          const SizedBox(height: 12),
 
-                    /// ================= APPEARANCE =================
-                    _sectionWrapper(context, "Appearance", [
-                      _switchTile(
-                        context,
-                        icon: Icons.dark_mode_outlined,
-                        title: "Dark Mode",
-                        value: context.watch<ThemeProvider>().isDark,
-                        onChanged: (value) {
-                          context.read<ThemeProvider>().toggleTheme(value);
-                        },
-                      ),
-                    ]),
+                          /// PREMIUM BUTTON
 
-                    const SizedBox(height: 24),
-
-                    /// ================= NOTIFICATIONS =================
-                    _sectionWrapper(context, "Notifications", [
-                      _switchTile(context,
-                          icon: Icons.notifications_outlined,
-                          title: "Push Notifications",
-                          value: pushNotifications,
-                          onChanged: (v) =>
-                              setState(() => pushNotifications = v)),
-                      _switchTile(context,
-                          icon: Icons.payment_outlined,
-                          title: "Payment Reminders",
-                          value: paymentReminders,
-                          onChanged: (v) =>
-                              setState(() => paymentReminders = v)),
-                      _switchTile(context,
-                          icon: Icons.flag_outlined,
-                          title: "Goal Milestones",
-                          value: goalMilestones,
-                          onChanged: (v) => setState(() => goalMilestones = v)),
-                    ]),
-
-                    //  const SizedBox(height: 24),
-
-                    /// ================= SECURITY =================
-                    _sectionWrapper(context, "Security", [
-                      _navigationTile(
-                        context,
-                        icon: Icons.security_outlined,
-                        title: "Two-Factor Authentication",
-                        subtitle: twoFactorAuth ? "Enabled" : "Disabled",
-                        onTap: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TwoFactorAuthScreen(
-                                initialValue: twoFactorAuth,
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const PremiumUpgradeScreen(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFF59E0B),
+                                    Color(0xFFF97316),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(
+                                    Icons.workspace_premium,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      "Upgrade to Premium",
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-
-                          if (result != null) {
-                            setState(() => twoFactorAuth = result);
-                          }
-                        },
+                          ),
+                        ],
                       ),
-                      _navigationTile(
-                        context,
-                        icon: Icons.lock_outline,
-                        title: "Change Password",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ChangePasswordScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ]),
-
-                    const SizedBox(height: 18),
-
-                    /// ================= DATA =================
-                    _sectionWrapper(context, "Data Management", [
-                      const SizedBox(height: 8),
-                      _navigationTile(
-                        context,
-                        icon: Icons.download_outlined,
-                        title: "Export Data",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ExportDataScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ]),
-
-                    const SizedBox(height: 18),
-
-                    /// ================= SUPPORT =================
-                    _sectionWrapper(context, "Support & Legal", [
-                      const SizedBox(height: 8),
-                      _navigationTile(
-                        context,
-                        icon: Icons.help_outline,
-                        title: "Help & Support",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HelpSupportScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _navigationTile(
-                        context,
-                        icon: Icons.feedback_outlined,
-                        title: "Feedback & Rate Us",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const FeedbackScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _navigationTile(
-                        context,
-                        icon: Icons.privacy_tip_outlined,
-                        title: "Privacy Policy",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const PrivacyPolicyScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _navigationTile(
-                        context,
-                        icon: Icons.description_outlined,
-                        title: "Terms of Service",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const TermsOfServiceScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ]),
-
-                    const SizedBox(height: 18),
-
-                    /// ================= ABOUT =================
-                    _sectionWrapper(context, "About", [
-                      _navigationTile(
-                        context,
-                        icon: Icons.info_outline,
-                        title: "About WalletCare",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AboutWalletCareScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ]),
-
-                    const SizedBox(height: 30),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        child: const Text("Sign Out"),
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-                  ],
+                    );
+                  },
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 24),
+
+              /// ================= APPEARANCE =================
+              _sectionWrapper(context, "Appearance", [
+                _switchTile(
+                  context,
+                  icon: Icons.dark_mode_outlined,
+                  title: "Dark Mode",
+                  value: context.watch<ThemeProvider>().isDark,
+                  onChanged: (value) {
+                    context.read<ThemeProvider>().toggleTheme(value);
+                  },
+                ),
+              ]),
+
+              const SizedBox(height: 24),
+
+              /// ================= NOTIFICATIONS =================
+              _sectionWrapper(context, "Notifications", [
+                const SizedBox(height: 8),
+                _navigationTile(
+                  context,
+                  icon: Icons.notifications_outlined,
+                  title: "Notification Settings",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+              //  const SizedBox(height: 24),
+
+              /// ================= SECURITY =================
+              _sectionWrapper(context, "Security", [
+                _navigationTile(
+                  context,
+                  icon: Icons.security_outlined,
+                  title: "Two-Factor Authentication",
+                  subtitle: twoFactorAuth ? "Enabled" : "Disabled",
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TwoFactorAuthScreen(
+                          initialValue: twoFactorAuth,
+                        ),
+                      ),
+                    );
+
+                    if (result != null) {
+                      setState(() => twoFactorAuth = result);
+                    }
+                  },
+                ),
+                _navigationTile(
+                  context,
+                  icon: Icons.lock_outline,
+                  title: "Change Password",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChangePasswordScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+
+              const SizedBox(height: 18),
+
+              /// ================= DATA =================
+              _sectionWrapper(context, "Data Management", [
+                const SizedBox(height: 8),
+                _navigationTile(
+                  context,
+                  icon: Icons.download_outlined,
+                  title: "Export Data",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ExportDataScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+
+              const SizedBox(height: 18),
+
+              /// ================= SUPPORT =================
+              _sectionWrapper(context, "Support & Legal", [
+                const SizedBox(height: 8),
+                _navigationTile(
+                  context,
+                  icon: Icons.help_outline,
+                  title: "Help & Support",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HelpSupportScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _navigationTile(
+                  context,
+                  icon: Icons.feedback_outlined,
+                  title: "Feedback & Rate Us",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FeedbackScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _navigationTile(
+                  context,
+                  icon: Icons.privacy_tip_outlined,
+                  title: "Privacy Policy",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _navigationTile(
+                  context,
+                  icon: Icons.description_outlined,
+                  title: "Terms of Service",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TermsOfServiceScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+
+              const SizedBox(height: 18),
+
+              /// ================= ABOUT =================
+              _sectionWrapper(context, "About", [
+                _navigationTile(
+                  context,
+                  icon: Icons.info_outline,
+                  title: "About WalletCare",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AboutWalletCareScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+
+              const SizedBox(height: 30),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await AuthStorage.logout();
+
+                    context.read<UserProfileProvider>().clearUser();
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  child: const Text("Sign Out"),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );
@@ -527,6 +516,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     String? subtitle,
     required VoidCallback onTap,
   }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final iconColor = isLight ? Colors.black : Colors.white;
+
     final color = Theme.of(context).colorScheme;
 
     return GestureDetector(
@@ -535,11 +527,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         padding: const EdgeInsets.only(left: 25, top: 14, bottom: 14),
         decoration: BoxDecoration(
           color: color.background,
-          borderRadius: BorderRadius.circular(0),
         ),
         child: Row(
           children: [
-            Icon(icon, color: color.primary),
+            Icon(icon, color: iconColor),
 
             const SizedBox(width: 12),
 
@@ -594,6 +585,8 @@ Widget _switchTile(BuildContext context,
     required bool value,
     required ValueChanged<bool> onChanged}) {
   final color = Theme.of(context).colorScheme;
+  final isLight = Theme.of(context).brightness == Brightness.light;
+  final iconColor = isLight ? Colors.black : Colors.white;
 
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
@@ -603,7 +596,7 @@ Widget _switchTile(BuildContext context,
     ),
     child: Row(
       children: [
-        Icon(icon, color: color.primary),
+        Icon(icon, color: iconColor),
         const SizedBox(width: 12),
         Expanded(
           child: Text(title,
