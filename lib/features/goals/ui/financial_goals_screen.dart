@@ -70,7 +70,7 @@ class _FinancialGoalsScreenState
           "Delete Goal",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            // color: AppColors.textPrimary,
           ),
         ),
         content: const Text(
