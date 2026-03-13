@@ -57,14 +57,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   if (success) {
 
     /// RETURN UPDATED DATA TO PREVIOUS SCREEN
-    Navigator.pop(context, {
-      "name": name,
-      "mobile": phone,
-    });
+   ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(content: Text("Profile Updated Successfully")),
+);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Profile Updated Successfully")),
-    );
+Navigator.pop(context, {
+  "name": name,
+  "mobile": phone,
+});
 
   } else {
 

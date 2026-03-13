@@ -8,14 +8,12 @@ import 'package:front_end/features/profile/ui/support_legal/privacy_policy.dart'
 import 'package:front_end/features/profile/ui/support_legal/terms_service.dart';
 import 'package:front_end/features/profile/ui/about/about.dart';
 import 'package:front_end/features/profile/ui/share/export_data.dart';
-import 'package:front_end/features/auth/ui/login_screen.dart';
 import 'package:front_end/features/profile/ui/premium/premium_feature.dart';
 import 'package:front_end/features/profile/ui/edit-profile/profile_edit.dart';
 import 'package:front_end/features/profile/ui/support_legal/feedback.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:front_end/features/profile/ui/notifications/notification.dart';
-import 'package:front_end/core/services/auth_storage.dart';
-
+import 'package:front_end/features/profile/ui/account/sign_out_screen.dart';
 // import 'package:front_end/core/constants/app_colors.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -110,7 +108,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
               /// ================= PROFILE CARD =================
               Padding(
-                padding: const EdgeInsets.only(top: 0),
+                padding: const EdgeInsets.only(left: 20,right: 20),
                 child: Builder(
                   builder: (context) {
                     final color = Theme.of(context).colorScheme;
@@ -119,8 +117,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     return Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: color.surface,
-                        borderRadius: BorderRadius.circular(0),
+                        color: const Color(0xFF008080), // teal color
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,8 +129,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 28,
-                                backgroundColor:
-                                    const Color.fromARGB(255, 98, 14, 14),
+                               backgroundColor: const Color(0xFF14B8A6),
                                 child: Text(
                                   getInitials(userName),
                                   style: const TextStyle(
@@ -187,8 +184,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                           child: Text(
                                             "Edit",
                                             style: TextStyle(
-                                              color: color.primary,
-                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w800,
                                             ),
                                           ),
                                         ),
@@ -428,6 +425,23 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
               const SizedBox(height: 18),
 
+/// ================= ACCOUNT =================
+_sectionWrapper(context, "Account", [
+  _navigationTile(
+    context,
+    icon: Icons.logout,
+    title: "Sign Out",
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SignOutScreen(),
+        ),
+      );
+    },
+  ),
+]),
+
               /// ================= ABOUT =================
               _sectionWrapper(context, "About", [
                 _navigationTile(
@@ -445,27 +459,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
               ]),
 
-              const SizedBox(height: 30),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await AuthStorage.logout();
-
-                    context.read<UserProfileProvider>().clearUser();
-
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                  child: const Text("Sign Out"),
-                ),
-              ),
 
               const SizedBox(height: 30),
             ],
@@ -578,7 +571,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 }
-
 Widget _switchTile(BuildContext context,
     {required IconData icon,
     required String title,
@@ -609,7 +601,11 @@ Widget _switchTile(BuildContext context,
           scale: 0.8,
           child: Switch(
             value: value,
-            activeColor: color.primary,
+            activeThumbColor: isLight ? Colors.black : Colors.black,
+            activeTrackColor: isLight ? Colors.black54 : Colors.white,
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor:
+                isLight ? Colors.black : Colors.black,
             onChanged: onChanged,
           ),
         ),

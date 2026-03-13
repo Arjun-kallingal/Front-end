@@ -11,7 +11,6 @@ class UserProfileProvider extends ChangeNotifier {
   Future<void> loadUser() async {
     name = await AuthStorage.getName() ?? "";
     email = await AuthStorage.getEmail() ?? "";
-    mobile = await AuthStorage.getPhone() ?? "";
 
     notifyListeners();
   }
@@ -24,7 +23,6 @@ class UserProfileProvider extends ChangeNotifier {
   }) {
     name = userName;
     email = userEmail;
-    mobile = userMobile;
 
     notifyListeners();
   }

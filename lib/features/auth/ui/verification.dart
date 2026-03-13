@@ -1,3 +1,6 @@
+
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +28,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
 
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  final List<FocusNode> _focusNodes =
+      List.generate(6, (_) => FocusNode());
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -43,15 +47,30 @@ class _VerificationScreenState extends State<VerificationScreen> {
     super.dispose();
   }
 
-  void _onChanged(String value, int index) {
+  /// HANDLE OTP INPUT + PASTE
+  void _handleInput(String value, int index) {
     if (_errorMessage != null) {
       setState(() => _errorMessage = null);
     }
 
-    if (value.length == 1 && index < 5) {
+    /// OTP PASTE SUPPORT
+    if (value.length > 1) {
+      final digits = value.replaceAll(RegExp(r'\D'), '').split('');
+
+      for (int i = 0; i < digits.length && i < 6; i++) {
+        _controllers[i].text = digits[i];
+      }
+
+      _focusNodes.last.requestFocus();
+      return;
+    }
+
+    /// MOVE FORWARD
+    if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
 
+    /// MOVE BACKWARD
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
@@ -81,17 +100,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
       if (!mounted) return;
 
-      /// SUCCESS → backend returns token
       if (data["accessToken"] != null) {
         final token = data["accessToken"];
         final user = data["user"];
 
-       await AuthStorage.saveUser(
-  token: token,
-  name: user["name"],
-  email: user["email"],
-  phone: user["phone"] ?? "",
-);
+        await AuthStorage.saveUser(
+          token: token,
+          name: user["name"],
+          email: user["email"],
+          phone: user["phone"] ?? "",
+        );
+
         context.read<UserProfileProvider>().setUser(
               userName: user["name"],
               userEmail: user["email"],
@@ -104,10 +123,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
           ),
           (route) => false,
         );
-      }
-
-      /// ERROR RESPONSE
-      else {
+      } else {
         setState(() {
           _errorMessage = data["message"] ?? "OTP verification failed";
         });
@@ -142,7 +158,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
       if (!mounted) return;
 
       if (data["message"] != null) {
-        /// clear fields
         for (var c in _controllers) {
           c.clear();
         }
@@ -150,9 +165,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         _focusNodes.first.requestFocus();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data["message"]),
-          ),
+          SnackBar(content: Text(data["message"])),
         );
       } else {
         setState(() {
@@ -230,38 +243,59 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 30),
 
                   /// OTP INPUT
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(
-                      6,
-                      (index) => SizedBox(
-                        width: 56,
-                        child: TextField(
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
-                          ),
-                          decoration: InputDecoration(
-                            counterText: "",
-                            filled: true,
-                            fillColor: colors.surface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final boxWidth =
+                          max(50.0, (constraints.maxWidth - 40) / 6);
+
+                      return Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                        children: List.generate(
+                          6,
+                          (index) => SizedBox(
+                            width: boxWidth,
+                            child: TextField(
+                              controller: _controllers[index],
+                              focusNode: _focusNodes[index],
+                              keyboardType:
+                                  TextInputType.number,
+                              textAlign: TextAlign.center,
+                              maxLength: 1,
+                              autofillHints: const [
+                                AutofillHints.oneTimeCode
+                              ],
+                              textInputAction: index == 5
+                                  ? TextInputAction.done
+                                  : TextInputAction.next,
+                              inputFormatters: [
+                                FilteringTextInputFormatter
+                                    .digitsOnly
+                              ],
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: colors.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                counterText: "",
+                                filled: true,
+                                fillColor: colors.surface,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(12),
+                                ),
+                              ),
+                              onChanged: (v) =>
+                                  _handleInput(v, index),
                             ),
                           ),
-                          onChanged: (v) => _onChanged(v, index),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 16),
@@ -283,7 +317,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     children: [
                       const Text("Didn't receive the code?"),
                       TextButton(
-                        onPressed: _isLoading ? null : _resendOtp,
+                        onPressed:
+                            _isLoading ? null : _resendOtp,
                         child: const Text("Resend"),
                       ),
                     ],
@@ -292,8 +327,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 24),
 
                   CustomButton(
-                    text: _isLoading ? "Verifying..." : "Verify & Continue",
-                    onPressed: _isLoading ? null : _verifyCode,
+                    text: _isLoading
+                        ? "Verifying..."
+                        : "Verify & Continue",
+                    onPressed:
+                        _isLoading ? null : _verifyCode,
                   ),
 
                   const SizedBox(height: 12),
@@ -307,7 +345,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 24),
 
                   Text(
-                    "OTP expires in 1 minutes",
+                    "OTP expires in 1 minute",
                     textAlign: TextAlign.center,
                     style: textTheme.bodySmall,
                   ),

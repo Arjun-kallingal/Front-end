@@ -1,5 +1,3 @@
-
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -50,7 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
       print("LOGIN RESPONSE: $data");
 
       if (response.statusCode == 200 && data["accessToken"] != null) {
-
         final token = data["accessToken"];
         final user = data["user"];
 
@@ -60,18 +57,18 @@ class _LoginScreenState extends State<LoginScreen> {
         /// Save token + user locally
         final phone = user["phone"] ?? "";
 
-await AuthStorage.saveUser(
-  token: token,
-  name: name,
-  email: email,
-  phone: phone,
-);
+        await AuthStorage.saveUser(
+          token: token,
+          name: name,
+          email: email,
+          phone: phone,
+        );
 
         /// Save user in Provider
         context.read<UserProfileProvider>().setUser(
-          userName: name,
-          userEmail: email,
-        );
+              userName: name,
+              userEmail: email,
+            );
 
         if (!mounted) return;
 
@@ -83,9 +80,7 @@ await AuthStorage.saveUser(
         );
 
         Navigator.pushReplacementNamed(context, '/main');
-
       } else {
-
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,9 +90,7 @@ await AuthStorage.saveUser(
           ),
         );
       }
-
     } catch (e) {
-
       print("LOGIN ERROR: $e");
 
       if (!mounted) return;
@@ -113,7 +106,6 @@ await AuthStorage.saveUser(
 
   @override
   Widget build(BuildContext context) {
-
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -127,7 +119,6 @@ await AuthStorage.saveUser(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-
                 const SizedBox(height: 40),
 
                 /// LOGO
@@ -236,7 +227,6 @@ await AuthStorage.saveUser(
                 CustomButton(
                   text: 'Sign In',
                   onPressed: () {
-
                     final isValid = _formKey.currentState!.validate();
 
                     if (isValid) {
@@ -259,18 +249,15 @@ await AuthStorage.saveUser(
                 /// CREATE ACCOUNT
                 OutlinedButton(
                   onPressed: () {
-
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const SignupScreen(),
                       ),
                     );
-
                   },
                   child: const Text('Create Account'),
                 ),
-
               ],
             ),
           ),
@@ -279,4 +266,3 @@ await AuthStorage.saveUser(
     );
   }
 }
-

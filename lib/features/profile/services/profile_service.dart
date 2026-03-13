@@ -48,3 +48,25 @@ class ProfileService {
     }
   }
 }
+
+
+
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 20),
+              //   child: ElevatedButton(
+              //     onPressed: () async {
+              //       await AuthStorage.logout();
+
+              //       context.read<UserProfileProvider>().clearUser();
+
+              //       Navigator.pushAndRemoveUntil(
+              //         context,
+              //         MaterialPageRoute(
+              //           builder: (_) => const LoginScreen(),
+              //         ),
+              //         (route) => false,
+              //       );
+              //     },
+              //     child: const Text("Sign Out"),
+              //   ),
+              // ),
