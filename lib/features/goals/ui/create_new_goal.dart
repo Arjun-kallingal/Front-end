@@ -29,9 +29,11 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   late TextEditingController titleController;
   late TextEditingController targetController;
 
-  // --- Backend State ---
+  // 1️⃣ FIXED: Changed to 10.0.2.2 for Android Emulator. 
+  // If MockAuthService has a token getter, use it here instead of returning null!
   late final GoalService _goalService = GoalService(
-    baseUrl: "http://localhost:5000/api", // Use 10.0.2.2 for Android Emulator
+    baseUrl: "http://localhost:5000/api", 
+    // getToken: () async => "YOUR_MOCK_TOKEN_HERE", // 👈 Replace with real token logic if you have it
   );
 
   String? _currentUserId;
@@ -139,11 +141,20 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
       currentAmount: widget.existingGoal?.currentAmount ?? 0.0,
       targetDate: selectedDate!,
       status: widget.existingGoal?.status ?? 'active',
+        createdAt: widget.existingGoal?.createdAt ?? DateTime.now(), 
     );
 
     try {
-      await _goalService.createGoal(goalToSave);
-      if (mounted) Navigator.pop(context, true);
+      // 2️⃣ FIXED: Capture the success boolean instead of ignoring it
+      final success = await _goalService.createGoal(goalToSave);
+      
+      if (mounted) {
+        if (success) {
+          Navigator.pop(context, true); // Only close if it actually saved!
+        } else {
+          _showSnackBar("Failed to save goal. Check server logs.", isError: true);
+        }
+      }
     } catch (e) {
       _showSnackBar("Error saving goal: $e", isError: true);
     } finally {
@@ -195,7 +206,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
         height: 54,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue, // Changed from black to blue
+            backgroundColor: Colors.blue, 
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: _isSaving ? null : _saveGoal,
@@ -322,7 +333,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                       selectedDate == null ? "Select Deadline" : DateFormat('dd MMM, yyyy').format(selectedDate!),
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        color: selectedDate == null ? Colors.grey : Colors.blue, // Changed active text to blue
+                                        color: selectedDate == null ? Colors.grey : Colors.blue, 
                                       ),
                                     ),
                                     const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
@@ -360,7 +371,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: isSelected ? Colors.blue : Colors.grey.shade200, // Changed active border to blue
+                                        color: isSelected ? Colors.blue : Colors.grey.shade200, 
                                         width: 2,
                                       ),
                                     ),
@@ -374,7 +385,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                           style: TextStyle(
                                             fontSize: 11, 
                                             fontWeight: FontWeight.bold,
-                                            color: isSelected ? Colors.blue : Colors.black54, // Changed active text to blue
+                                            color: isSelected ? Colors.blue : Colors.black54, 
                                           )
                                         ),
                                       ],

@@ -6,7 +6,8 @@ import 'package:front_end/features/auth/ui/verification.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
 import 'api_config.dart';
-
+import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -69,17 +70,27 @@ class _SignupScreenState extends State<SignupScreen> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        if (!mounted) return;
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => VerificationScreen(
-              email: emailController.text.trim(),
-            ),
-          ),
-        );
-      } else {
+  final name = nameController.text.trim();
+  final email = emailController.text.trim();
+
+  // save user in provider
+  if (!mounted) return;
+
+  context.read<UserProfileProvider>().setUser(
+        userName: name,
+        userEmail: email,
+      );
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => VerificationScreen(
+        email: email,
+      ),
+    ),
+  );
+} else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(data["message"] ?? "Registration failed"),
