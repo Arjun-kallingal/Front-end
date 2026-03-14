@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:front_end/core/services/mock_auth.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
 import 'balance_card.dart';
-import 'quick_action_section.dart';
 import 'package:intl/intl.dart';
 import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
@@ -91,11 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   BalanceCard(userId: _currentUserId!),
 
                 const SizedBox(height: 10),
-
-                /// QUICK ACTIONS
-                const QuickActionsSection(),
-
-                const SizedBox(height: 20),
 
                 /// RECENT HEADER
                 _buildRecentHeader(),
@@ -326,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    "${isIncome ? '+' : '-'}₹${tx.amount.abs().toStringAsFixed(0)}",
+                    "₹${tx.amount.abs().toStringAsFixed(0)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -342,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Icon(
                         isCash ? Icons.wallet : Icons.account_balance,
-                        size: 14,
+                        size: 12,
                       ),
                       const SizedBox(width: 4),
                       Text(
