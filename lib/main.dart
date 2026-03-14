@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'core/theme/theme_provider.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
@@ -8,12 +7,13 @@ import 'core/services/local_storage_service.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'navigation/navigation_service.dart';
 import 'features/analytics/provider/analytics_provider.dart';
-import 'package:front_end/core/providers/user_profile_provider.dart';
-
+import 'core/providers/user_profile_provider.dart';
+import 'core/providers/transaction_provider.dart';
+import 'core/providers/account_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Check if JWT exists
+  /// CHECK LOGIN STATUS
   final bool isLoggedIn = await LocalStorageService.isLoggedIn();
 
   runApp(
@@ -22,6 +22,10 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AnalyticsNotifier()),
         ChangeNotifierProvider(create: (_) => UserProfileProvider()),
+
+        /// ✅ TRANSACTION PROVIDER ADDED
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider(create: (_) => AccountProvider()),
       ],
       child: WalletCareApp(isLoggedIn: isLoggedIn),
     ),
@@ -39,27 +43,31 @@ class WalletCareApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Moneycart',
+      title: 'WalletCare',
 
+      /// THEMES
       theme: LightTheme.theme,
       darkTheme: DarkTheme.theme,
       themeMode: themeProvider.themeMode,
       themeAnimationDuration: const Duration(milliseconds: 300),
 
-      // ✅ Set initial route based on login state
+      /// INITIAL ROUTE BASED ON LOGIN
       initialRoute: isLoggedIn ? '/main' : '/login',
 
       routes: {
         '/login': (_) => const LoginScreen(),
         '/main': (_) => const MainNavigation(),
+
         '/signup': (_) => const Scaffold(
               body: Center(child: Text('Signup Screen')),
             ),
+
         '/forgot-password': (_) => const Scaffold(
               body: Center(child: Text('Forgot Password')),
             ),
       },
 
+      /// GLOBAL TEXT SCALE FIX
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context)

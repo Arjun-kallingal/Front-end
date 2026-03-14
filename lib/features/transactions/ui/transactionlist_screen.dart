@@ -380,6 +380,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         bool isReserved = tx.direction == "GOAL_ALLOCATION";
         Color moneyColor =
             isIncome ? Colors.green : (isReserved ? goalBlue : primaryRed);
+        bool isCash = tx.accountName.toLowerCase().contains('cash');
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -436,25 +437,27 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Text(
-                      tx.accountType,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey.shade800,
-                        fontWeight: FontWeight.w600,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCash ? Icons.wallet : Icons.account_balance,
+                        size: 14,
                       ),
-                    ),
+                      const SizedBox(width: 4),
+                      Text(
+                        tx.accountName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade800,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ],
-              ),
+              )
             ],
           ),
         );
