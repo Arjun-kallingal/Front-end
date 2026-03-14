@@ -13,8 +13,9 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
-          ChangeNotifierProvider(create: (_) => AnalyticsNotifier()),
-        ],
+ChangeNotifierProvider(
+  create: (_) => AnalyticsProvider(),
+)        ],
         child: const WalletCareApp(
           isLoggedIn: false, // ✅ ADD THIS
         ),
