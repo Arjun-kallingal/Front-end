@@ -1,24 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/material.dart';
 import '../models/account_model.dart';
-import '../models/global_summary.dart';
+// import '../models/global_summary.dart'; // Uncomment if you have this file
 
 class AccountService {
-  // FIX: Web-safe platform checking!
+  // Web-safe platform checking
   static String get baseUrl {
-    if (kIsWeb) {
-      // If running in Chrome/Edge
-      return "http://localhost:5000/api/account"; 
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // If running on Android Emulator
-      return "http://192.168.29.189:5000/api/account";
-    } else {
-      // If running on iOS Simulator or Desktop
-      return "http://localhost:5000/api/account";
-    }
-  }
+     {
 
+    return "http://localhost:5000/api/account"; 
+  }
+}
   static Future<Map<String, dynamic>> getAccountDashboard(String userId, {String type = ""}) async {
     Uri uri = Uri.parse('$baseUrl/balances/$userId');
     
@@ -36,11 +29,11 @@ class AccountService {
             .map((acc) => AccountModel.fromJson(acc))
             .toList();
 
-        GlobalSummary summary = GlobalSummary.fromJson(data['globalSummary'] ?? {});
+        // GlobalSummary summary = GlobalSummary.fromJson(data['globalSummary'] ?? {});
 
         return {
           'accounts': accounts,
-          'summary': summary,
+          // 'summary': summary, 
         };
       } else {
         throw Exception("Server Error: ${response.statusCode}");
@@ -67,6 +60,19 @@ class AccountService {
 
     if (response.statusCode != 201) {
       throw Exception("Could not create account: ${response.body}");
+    }
+  }
+
+  static Future<bool> setPrimaryAccount(String accountId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/$accountId/primary'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint("Failed to set primary account: $e");
+      return false;
     }
   }
 }

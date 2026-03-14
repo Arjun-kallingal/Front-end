@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'core/theme/theme_provider.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
@@ -10,27 +9,25 @@ import 'features/auth/ui/login_screen.dart';
 import 'navigation/navigation_service.dart';
 
 import 'features/analytics/provider/analytics_provider.dart';
-
+import 'core/providers/user_profile_provider.dart';
+import 'core/providers/transaction_provider.dart';
+import 'core/providers/account_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Check JWT token from local storage
+  /// CHECK LOGIN STATUS
   final bool isLoggedIn = await LocalStorageService.isLoggedIn();
 
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ChangeNotifier()),
+        ChangeNotifierProvider(create: (_) => UserProfileProvider()),
 
-        /// Theme Provider
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
-        ),
-
-        /// Analytics Provider
-        ChangeNotifierProvider(
-          create: (_) => AnalyticsProvider(),
-        ),
-
+        /// ✅ TRANSACTION PROVIDER ADDED
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider(create: (_) => AccountProvider()),
       ],
       child: WalletCareApp(isLoggedIn: isLoggedIn),
     ),
@@ -53,7 +50,7 @@ class WalletCareApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Moneycart',
+      title: 'WalletCare',
 
       /// THEMES
       theme: LightTheme.theme,
@@ -62,7 +59,7 @@ class WalletCareApp extends StatelessWidget {
 
       themeAnimationDuration: const Duration(milliseconds: 300),
 
-      /// ROUTES
+      /// INITIAL ROUTE BASED ON LOGIN
       initialRoute: isLoggedIn ? '/main' : '/login',
 
       routes: {
@@ -73,14 +70,10 @@ class WalletCareApp extends StatelessWidget {
         /// Main Navigation (Bottom Navigation)
         '/main': (_) => const MainNavigation(),
 
-        /// Signup placeholder
         '/signup': (_) => const Scaffold(
-          body: Center(
-            child: Text('Signup Screen'),
-          ),
-        ),
+              body: Center(child: Text('Signup Screen')),
+            ),
 
-        /// Forgot password placeholder
         '/forgot-password': (_) => const Scaffold(
           body: Center(
             child: Text('Forgot Password'),
@@ -88,7 +81,7 @@ class WalletCareApp extends StatelessWidget {
         ),
       },
 
-      /// Prevent system font scaling breaking UI
+      /// GLOBAL TEXT SCALE FIX
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(

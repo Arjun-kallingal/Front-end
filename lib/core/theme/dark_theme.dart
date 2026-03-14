@@ -6,9 +6,7 @@ class DarkTheme {
     return ThemeData(
       brightness: Brightness.dark,
       fontFamily: 'Inter',
-
       scaffoldBackgroundColor: AppColors.bgPrimary,
-
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.accentOrange,
@@ -16,12 +14,10 @@ class DarkTheme {
         surface: AppColors.bgSecondary,
         error: AppColors.error,
       ),
-
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.bgPrimary,
         elevation: 0,
       ),
-
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.bgSecondary,
@@ -38,15 +34,13 @@ class DarkTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.error),
         ),
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -58,7 +52,6 @@ class DarkTheme {
           elevation: 0,
         ),
       ),
-
       dividerColor: AppColors.divider,
     );
   }

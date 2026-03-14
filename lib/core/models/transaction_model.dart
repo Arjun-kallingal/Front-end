@@ -1,4 +1,3 @@
-
 /// 1. THE INDIVIDUAL TRANSACTION OBJECT
 class TransactionModel {
   final String id;
@@ -8,8 +7,11 @@ class TransactionModel {
   final DateTime date;
   final String type;
   final String category; // 👈 Now properly mapped
-  final String direction; 
+  final String direction;
   final String accountType;
+  final String accountName;
+  final String action;
+  final String? idempotencyKey;
 
   TransactionModel({
     required this.id,
@@ -21,32 +23,38 @@ class TransactionModel {
     required this.category,
     required this.direction,
     required this.accountType,
+    required this.accountName,
+    required this.action,
+    required this.idempotencyKey,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      
+
       // We use 'category' as the main title (e.g., Food, Salary)
       title: json['category'] ?? 'General',
-      
+
       // We use 'description' as the subtitle
       subtitle: json['description'] ?? '',
-      
+
       amount: double.tryParse(json['amount'].toString()) ?? 0.0,
-      
-      date: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+
+      date: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-          
+
       type: (json['transactionType'] ?? 'expense').toString().toLowerCase(),
 
       // 🎯 FIXED: Mapping the category field so the getter works in your UI
-      category: json['category'] ?? 'General', 
+      category: json['category'] ?? 'General',
 
       direction: (json['direction'] ?? 'NORMAL').toString().toUpperCase(),
-      
+      accountName: (json['accountName'] ?? 'Unknown Account').toString(),
+      action: (json['action'] ?? 'STANDARD').toString(),
+
       accountType: (json['accountType'] ?? 'cash').toString().toLowerCase(),
+      idempotencyKey: json['idempotencyKey']?.toString(),
     );
   }
 }
@@ -76,9 +84,8 @@ class TransactionHistoryResponse {
       expense: (summary['expense'] ?? 0.0).toDouble(),
       reserved: (summary['reserved'] ?? 0.0).toDouble(),
       balance: (summary['balance'] ?? 0.0).toDouble(),
-      transactions: dataList
-          .map((item) => TransactionModel.fromJson(item))
-          .toList(),
+      transactions:
+          dataList.map((item) => TransactionModel.fromJson(item)).toList(),
     );
   }
 }

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-
 import '../features/home/ui/home_screen.dart';
-// 🎯 Ensure this filename matches your actual file in the folder
-import '../features/transactions/ui/transactionlist_screen.dart'; 
 import '../features/analytics/ui/analytics_dashboardscreen.dart';
-import '../features/profile/ui/profile_screen.dart';
+import '../features/accounts/ui/account.dart';
+import '../features/goals/ui/financial_goals_screen.dart';
 
 /// GLOBAL NAV SERVICE
 class NavigationService {
   static final ValueNotifier<int> bottomIndex = ValueNotifier(0);
+
+  static String? selectedAccountName;
 }
 
 class MainNavigation extends StatelessWidget {
@@ -16,10 +16,29 @@ class MainNavigation extends StatelessWidget {
 
   static const List<Widget> _screens = [
     HomeScreen(),
+    FinancialGoalsScreen(),
+    AccountsOverviewScreen(),
     AnalyticsDashboardScreen(),
-    TransactionListScreen (), // 🎯 UPDATED: Matches the class name in transactionlist_screen.dart
-    ProfileSettingsScreen(),
   ];
+
+  void _handleSwipe(DragEndDetails details) {
+    int index = NavigationService.bottomIndex.value;
+
+    /// Swipe Left → Next Page
+    if (details.primaryVelocity! < 0) {
+      if (index < _screens.length - 1) {
+        NavigationService.bottomIndex.value = index + 1;
+      }
+    }
+
+    /// Swipe Right → Previous Page
+    if (details.primaryVelocity! > 0) {
+      if (index > 0) {
+        NavigationService.bottomIndex.value = index - 1;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -28,42 +47,56 @@ class MainNavigation extends StatelessWidget {
       valueListenable: NavigationService.bottomIndex,
       builder: (context, index, _) {
         return Scaffold(
-          // IndexedStack preserves the state (scroll position/filters) of each tab
-          body: IndexedStack(
-            index: index,
-            children: _screens,
+
+          /// SWIPE DETECTOR
+          body: GestureDetector(
+            onHorizontalDragEnd: _handleSwipe,
+
+            child: IndexedStack(
+              index: index,
+              children: _screens,
+            ),
           ),
+
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: index,
             onTap: (i) => NavigationService.bottomIndex.value = i,
-            backgroundColor: theme.bottomNavigationBarTheme.backgroundColor 
+
+            backgroundColor: theme.bottomNavigationBarTheme.backgroundColor
                 ?? theme.scaffoldBackgroundColor,
+
             selectedItemColor: theme.colorScheme.primary,
+
             unselectedItemColor: theme.brightness == Brightness.light
                 ? Colors.black54
                 : Colors.grey.shade400,
+
             type: BottomNavigationBarType.fixed,
             elevation: 8,
+
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.home_outlined),
                 activeIcon: Icon(Icons.home),
                 label: 'Home',
               ),
+
               BottomNavigationBarItem(
-                icon: Icon(Icons.pie_chart_outline),
-                activeIcon: Icon(Icons.pie_chart),
+                icon: Icon(Icons.ads_click),
+                activeIcon: Icon(Icons.ads_click),
+                label: 'Goals',
+              ),
+
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_outlined),
+                activeIcon: Icon(Icons.account_balance),
+                label: 'Accounts',
+              ),
+
+              BottomNavigationBarItem(
+                icon: Icon(Icons.bar_chart_outlined),
+                activeIcon: Icon(Icons.bar_chart),
                 label: 'Analytics',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.history),
-                activeIcon: Icon(Icons.history_toggle_off),
-                label: 'History',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'Profile',
               ),
             ],
           ),

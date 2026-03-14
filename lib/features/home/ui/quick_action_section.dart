@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-// import 'stat_card.dart';
-import 'action_button_card.dart';
+// import '../../../core/constants/app_colors.dart';
+// import 'action_button_card.dart';
 import 'move_to_savings_card.dart';
-import 'package:front_end/features/home/widget/add_income_screen.dart';
-import 'package:front_end/features/home/widget/add_expense_screen.dart';
+import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
+
+// ✅ Change these imports to point to your new parent screen
+// import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
@@ -16,9 +17,7 @@ class QuickActionsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          // _StatCardsRow(),
-          SizedBox(height: 24),
-          _ActionButtonsRow(),
+          // _ActionButtonsRow(),
           SizedBox(height: 16),
           _MoveToSavingsSection(),
         ],
@@ -27,86 +26,50 @@ class QuickActionsSection extends StatelessWidget {
   }
 }
 
-// class _StatCardsRow extends StatelessWidget {
-  // const _StatCardsRow();
+// class _ActionButtonsRow extends StatelessWidget {
+//   const _ActionButtonsRow();
 
-  // @override
-  // Widget build(BuildContext context) {
-    // return Row(
-      // children: const [
-        // StatCard(
-        //   icon: Icons.trending_up,
-        //   title: "Income",
-        //   amount: "₹6,270",
-        //   subtitle: "This month",
-        //   amountColor: AppColors.incomeAmount,
-        //   iconBg: AppColors.incomeIconBg,
-        // ),
-        // SizedBox(width: 12),
-        // StatCard(
-        //   icon: Icons.trending_down,
-        //   title: "Expense",
-        //   amount: "₹1,655",
-        //   subtitle: "This month",
-        //   amountColor: AppColors.expenseAmount,
-        //   iconBg: AppColors.expenseIconBg,
-        // ),
-        // SizedBox(width: 12),
-        // StatCard(
-        //   icon: Icons.savings,
-        //   title: "Reserved",
-        //   amount: "₹800",
-        //   subtitle: "This month",
-        //   amountColor: AppColors.savingsPrimary,
-        //   iconBg: AppColors.savingsIconBg,
-        // ),
-      // ],
-    // );
-  // }
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       children: [
+//         ActionButtonCard(
+//           icon: Icons.trending_up,
+//           label: "Add Income",
+//           onTap: () {
+//             // ✅ Route to Parent Screen, defaulting to Income tab
+//             Navigator.push(
+//               context,
+//               MaterialPageRoute(
+//                 builder: (_) => const AddTransactionScreen(initialIsExpense: false),
+//               ),
+//             );
+//           },
+//           iconBg: AppColors.incomeIconBg,
+//           iconColor: AppColors.incomeAmount,
+//         ),
+
+//         const SizedBox(width: 20),
+
+//         ActionButtonCard(
+//           icon: Icons.trending_down,
+//           label: "Add Expense",
+//           onTap: () {
+//             // ✅ Route to Parent Screen, defaulting to Expense tab
+//             Navigator.push(
+//               context,
+//               MaterialPageRoute(
+//                 builder: (_) => const AddTransactionScreen(initialIsExpense: true),
+//               ),
+//             );
+//           },
+//           iconBg: AppColors.expenseIconBg,
+//           iconColor: AppColors.expenseAmount,
+//         ),
+//       ],
+//     );
+//   }
 // }
-
-class _ActionButtonsRow extends StatelessWidget {
-  const _ActionButtonsRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        ActionButtonCard(
-          icon: Icons.trending_up,
-          label: "Add Income",
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const AddIncomeScreen(),
-              ),
-            );
-          },
-          iconBg: AppColors.incomeIconBg,
-          iconColor: AppColors.incomeAmount,
-        ),
-
-        const SizedBox(width: 20),
-
-        ActionButtonCard(
-          icon: Icons.trending_down,
-          label: "Add Expense",
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const AddExpenseScreen(),
-              ),
-            );
-          },
-          iconBg: AppColors.expenseIconBg,
-          iconColor: AppColors.expenseAmount,
-        ),
-      ],
-    );
-  }
-}
 
 class _MoveToSavingsSection extends StatelessWidget {
   const _MoveToSavingsSection();
@@ -115,7 +78,14 @@ class _MoveToSavingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return MoveToSavingsCard(
       onTap: () {
-        // TODO: Navigate to Goals Screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            // ✅ 3. USE THE CORRECT CLASS NAME: FinancialGoalsScreen
+            // And ensure 'const' is removed here.
+            builder: (_) => const FinancialGoalsScreen(), 
+          ),
+        );
       },
     );
   }
