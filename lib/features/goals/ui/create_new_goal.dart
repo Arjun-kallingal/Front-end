@@ -141,6 +141,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
       currentAmount: widget.existingGoal?.currentAmount ?? 0.0,
       targetDate: selectedDate!,
       status: widget.existingGoal?.status ?? 'active',
+        createdAt: widget.existingGoal?.createdAt ?? DateTime.now(), 
     );
 
     try {

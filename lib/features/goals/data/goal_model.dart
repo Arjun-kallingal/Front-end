@@ -7,6 +7,7 @@ class GoalModel {
   double targetAmount;
   double currentAmount;
   DateTime targetDate;
+  DateTime createdAt;
   String status;
 
   // CALCULATED FIELDS FROM BACKEND
@@ -25,6 +26,7 @@ class GoalModel {
     required this.currentAmount,
     required this.targetDate,
     required this.status,
+    required this.createdAt,
     this.daysLeft,
     this.requiredDailySaving,
     this.progressPercentage,
@@ -42,7 +44,7 @@ class GoalModel {
       currentAmount: (json['currentAmount'] ?? 0).toDouble(),
       targetDate: DateTime.tryParse(json['targetDate'] ?? '') ?? DateTime.now(),
       status: json['status'] ?? 'active',
-      
+      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       daysLeft: json['daysLeft'] is int ? json['daysLeft'] : null,
       requiredDailySaving: (json['requiredDailySaving'] ?? 0).toDouble(),
       progressPercentage: (json['progressPercentage'] ?? 0).toDouble(),
@@ -52,7 +54,7 @@ class GoalModel {
 
   Map<String, dynamic> toJson() {
     return {
-      if (id.isNotEmpty) "_id": id, 
+      if (id.isNotEmpty) "_id": id,
       "userId": userId,
       "accountId": accountId,
       "title": title,
