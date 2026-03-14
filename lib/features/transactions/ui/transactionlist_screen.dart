@@ -429,7 +429,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    "${isIncome ? '+' : '-'}₹${tx.amount.abs().toStringAsFixed(0)}",
+                    
+                    "₹${tx.amount.abs().toStringAsFixed(0)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -442,7 +443,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     children: [
                       Icon(
                         isCash ? Icons.wallet : Icons.account_balance,
-                        size: 14,
+                        size: 12,
                       ),
                       const SizedBox(width: 4),
                       Text(

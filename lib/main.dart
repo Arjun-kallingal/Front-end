@@ -12,6 +12,7 @@ import 'features/analytics/provider/analytics_provider.dart';
 import 'core/providers/user_profile_provider.dart';
 import 'core/providers/transaction_provider.dart';
 import 'core/providers/account_provider.dart';
+import 'features/goals/provider/goal_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -28,6 +29,7 @@ void main() async {
         /// ✅ TRANSACTION PROVIDER ADDED
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
+        ChangeNotifierProvider(create: (_) => GoalProvider()),
       ],
       child: WalletCareApp(isLoggedIn: isLoggedIn),
     ),
