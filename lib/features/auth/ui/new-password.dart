@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
+import '../services/authentication_service.dart';
+
 
 class NewPasswordScreen extends StatefulWidget {
+
   final String email;
+  final String resetToken;
 
-  const NewPasswordScreen({super.key, required this.email});
-
+  const NewPasswordScreen({
+    super.key,
+    required this.email,
+    required this.resetToken,
+  });
   @override
   State<NewPasswordScreen> createState() => _NewPasswordScreenState();
 }
@@ -67,28 +74,49 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  CustomButton(
-                    text: 'Set Password',
-                    onPressed: () {
-                      final password = passwordController.text.trim();
-                      final confirm = confirmController.text.trim();
-                      if (password.isEmpty || confirm.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Fill all fields')),
-                        );
-                      } else if (password != confirm) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Passwords do not match')),
-                        );
-                      } else {
-                        // Call API to update password
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Password Reset Successful')),
-                        );
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                      }
-                    },
-                  ),
+
+
+                CustomButton(
+  text: 'Set Password',
+  onPressed: () async {
+
+    final password = passwordController.text.trim();
+    final confirm = confirmController.text.trim();
+
+    if (password.isEmpty || confirm.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fill all fields')),
+      );
+      return;
+    }
+
+    if (password != confirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    final success =
+        await AuthService.resetPassword(widget.resetToken, password);
+
+    if (success) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset successful')),
+      );
+
+      Navigator.popUntil(context, (route) => route.isFirst);
+
+    } else {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reset failed')),
+      );
+
+    }
+  },
+),
                 ],
               ),
             ),

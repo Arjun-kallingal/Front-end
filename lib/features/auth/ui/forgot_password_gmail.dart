@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
+
 import 'forgot-password-otp-verification.dart';
+import '../services/authentication_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -10,8 +12,11 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
+
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -19,20 +24,48 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _sendOtp() {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _sendOtp() async {
 
-    // Navigate to OTP verification screen
+  if (!_formKey.currentState!.validate()) return;
+
+  final email = emailController.text.trim();
+
+  setState(() {
+    isLoading = true;
+  });
+
+  final message = await AuthService.forgotPassword(email);
+
+  if (!mounted) return;
+
+  setState(() {
+    isLoading = false;
+  });
+
+  if (message == "OTP sent successfully") {
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => OtpVerificationScreen(email: emailController.text),
+        builder: (_) => OtpVerificationScreen(
+          email: email,
+        ),
       ),
     );
-  }
 
+  } else {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Email doesn't exist"),
+      ),
+    );
+
+  }
+}
   @override
   Widget build(BuildContext context) {
+
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colors = theme.colorScheme;
@@ -49,9 +82,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+
                     const SizedBox(height: 20),
-                    Icon(Icons.shield_outlined, size: 56, color: colors.primary),
+
+                    Icon(
+                      Icons.shield_outlined,
+                      size: 56,
+                      color: colors.primary,
+                    ),
+
                     const SizedBox(height: 16),
+
                     Text(
                       'Forgot Password?',
                       textAlign: TextAlign.center,
@@ -59,13 +100,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(height: 6),
+
                     Text(
                       'No worries, we’ll send you a 6-digit OTP',
                       textAlign: TextAlign.center,
                       style: textTheme.bodyMedium,
                     ),
+
                     const SizedBox(height: 30),
+
                     Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
@@ -76,46 +121,77 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text('Email Address', style: textTheme.labelLarge),
+
+                            Text(
+                              'Email Address',
+                              style: textTheme.labelLarge,
+                            ),
+
                             const SizedBox(height: 8),
+
                             TextFormField(
                               controller: emailController,
                               keyboardType: TextInputType.emailAddress,
-                              validator: (v) => v != null && v.contains('@')
-                                  ? null
-                                  : 'Enter valid email',
+                              validator: (value) {
+
+                                if (value == null || value.isEmpty) {
+                                  return "Enter your email";
+                                }
+
+                                if (!value.contains("@")) {
+                                  return "Enter a valid email";
+                                }
+
+                                return null;
+                              },
                               decoration: const InputDecoration(
-                                hintText: '',
+                                hintText: "Enter your email",
                                 prefixIcon: Icon(Icons.email_outlined),
                               ),
                             ),
+
                             const SizedBox(height: 20),
-                            CustomButton(
-                              text: 'Send OTP',
-                              onPressed: _sendOtp,
-                            ),
+
+                            isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : CustomButton(
+                                    text: 'Send OTP',
+                                    onPressed: _sendOtp,
+                                  ),
+
                             const SizedBox(height: 16),
+
                             OutlinedButton.icon(
                               onPressed: () => Navigator.pop(context),
                               icon: const Icon(Icons.arrow_back),
                               label: const Text('Back to Sign In'),
                             ),
+
                           ],
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+
                         const Icon(Icons.lock_outline, size: 14),
+
                         const SizedBox(width: 6),
+
                         Text(
                           'OTP will be valid for 15 minutes',
                           style: textTheme.bodySmall,
                         ),
+
                       ],
                     ),
+
                   ],
                 ),
               ),

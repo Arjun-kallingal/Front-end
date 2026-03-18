@@ -3,12 +3,10 @@ import 'package:front_end/features/profile/services/profile_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String currentName;
-  final String currentMobile;
 
   const EditProfileScreen({
     super.key,
     required this.currentName,
-    required this.currentMobile,
   });
 
   @override
@@ -18,7 +16,6 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
 
   late TextEditingController nameController;
-  late TextEditingController mobileController;
 
   bool isLoading = false;
 
@@ -26,58 +23,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.currentName);
-    mobileController = TextEditingController(text: widget.currentMobile);
   }
 
   Future<void> saveProfile() async {
 
-  if (nameController.text.trim().isEmpty ||
-      mobileController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please fill all fields")),
-    );
-    return;
+    if (nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a username")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final name = nameController.text.trim();
+
+    final success = await ProfileService.updateProfile(name);
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (!mounted) return;
+
+    if (success) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile Updated Successfully")),
+      );
+
+      Navigator.pop(context, {
+        "name": name,
+      });
+
+    } else {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to update profile")),
+      );
+    }
   }
-
-  setState(() {
-    isLoading = true;
-  });
-
-  final name = nameController.text.trim();
-  final phone = mobileController.text.trim();
-
-  final success = await ProfileService.updateProfile(name, phone);
-
-  setState(() {
-    isLoading = false;
-  });
-
-  if (!mounted) return;
-
-  if (success) {
-
-    /// RETURN UPDATED DATA TO PREVIOUS SCREEN
-   ScaffoldMessenger.of(context).showSnackBar(
-  const SnackBar(content: Text("Profile Updated Successfully")),
-);
-
-Navigator.pop(context, {
-  "name": name,
-  "mobile": phone,
-});
-
-  } else {
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Failed to update profile")),
-    );
-  }
-}
 
   @override
   void dispose() {
     nameController.dispose();
-    mobileController.dispose();
     super.dispose();
   }
 
@@ -164,41 +155,6 @@ Navigator.pop(context, {
 
                           TextField(
                             controller: nameController,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: color.background,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      /// MOBILE NUMBER
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8),
-                            child: Text(
-                              "Mobile Number",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          TextField(
-                            controller: mobileController,
-                            keyboardType: TextInputType.phone,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: color.background,

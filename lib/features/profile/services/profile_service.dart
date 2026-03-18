@@ -5,7 +5,7 @@ import '../../../core/services/auth_storage.dart';
 
 class ProfileService {
 
-  static Future<bool> updateProfile(String name, String mobile) async {
+  static Future<bool> updateProfile(String name) async {
 
     try {
 
@@ -20,7 +20,6 @@ class ProfileService {
         },
         body: jsonEncode({
           "name": name,
-          "phone": mobile,
         }),
       );
 
@@ -29,12 +28,12 @@ class ProfileService {
 
       if (response.statusCode == 200) {
 
-        /// SAVE UPDATED DATA LOCALLY
+        /// UPDATE LOCAL STORAGE
         await AuthStorage.saveUser(
           token: token ?? "",
           name: name,
           email: email ?? "",
-          phone: mobile,
+          phone: "", // not used anymore
         );
 
         return true;
@@ -48,25 +47,3 @@ class ProfileService {
     }
   }
 }
-
-
-
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 20),
-              //   child: ElevatedButton(
-              //     onPressed: () async {
-              //       await AuthStorage.logout();
-
-              //       context.read<UserProfileProvider>().clearUser();
-
-              //       Navigator.pushAndRemoveUntil(
-              //         context,
-              //         MaterialPageRoute(
-              //           builder: (_) => const LoginScreen(),
-              //         ),
-              //         (route) => false,
-              //       );
-              //     },
-              //     child: const Text("Sign Out"),
-              //   ),
-              // ),

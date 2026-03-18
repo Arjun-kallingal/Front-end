@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:front_end/features/profile/ui/security/change_password.dart';
-import 'package:front_end/features/profile/ui/security/two_factor_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/theme/theme_provider.dart';
 import 'package:front_end/features/profile/ui/support_legal/help_support.dart';
@@ -61,7 +60,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     String userName = user.name;
     String email = user.email;
-    String mobileNumber = user.mobile;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -168,7 +166,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                                 builder: (_) =>
                                                     EditProfileScreen(
                                                   currentName: userName,
-                                                  currentMobile: mobileNumber,
                                                 ),
                                               ),
                                             );
@@ -309,26 +306,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
               /// ================= SECURITY =================
               _sectionWrapper(context, "Security", [
-                _navigationTile(
-                  context,
-                  icon: Icons.security_outlined,
-                  title: "Two-Factor Authentication",
-                  subtitle: twoFactorAuth ? "Enabled" : "Disabled",
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TwoFactorAuthScreen(
-                          initialValue: twoFactorAuth,
-                        ),
-                      ),
-                    );
-
-                    if (result != null) {
-                      setState(() => twoFactorAuth = result);
-                    }
-                  },
-                ),
+              
                 _navigationTile(
                   context,
                   icon: Icons.lock_outline,
