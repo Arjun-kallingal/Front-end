@@ -133,7 +133,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   Widget _getTransactionLeading(TransactionModel tx) {
-    if (tx.direction == "GOAL_ALLOCATION") {
+    if ( tx.type=="transfer" && tx.direction == "GOAL_ALLOCATION") {
       return CircleAvatar(
         radius: 22,
         backgroundColor: goalBlue.withOpacity(0.1),
@@ -315,154 +315,180 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       child: _buildTransactionList(),
                     ),
             ),
+            
           ],
         ),
       ),
     );
   }
+Widget _buildTransactionList() {
+  final list = _transactions.where((tx) {
+    /// SEARCH
+    final mSearch =
+        tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+        tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
 
-  Widget _buildTransactionList() {
-    final list = _transactions.where((tx) {
-      final mSearch =
-          tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
-      final mCat = selectedCategory == "All" || tx.category == selectedCategory;
+    /// CATEGORY
+    final mCategory = selectedCategory == "All" ||
+        tx.category.toLowerCase() == selectedCategory.toLowerCase();
 
-      bool mType = true;
-      if (selectedType == "Income") {
-        mType = tx.type == "income";
-      } else if (selectedType == "Expense") {
-        mType = tx.type == "expense" && tx.direction != "GOAL_ALLOCATION";
-      } else if (selectedType == "Reserved") {
+    /// ACCOUNT
+    final mAccount = selectedAccountName == "All Accounts" ||
+        tx.accountName == selectedAccountName;
+
+    /// TYPE
+    bool mType = true;
+
+    switch (selectedType) {
+      case "Income":
+        mType = tx.type.toLowerCase() == "income";
+        break;
+
+      case "Expense":
+        mType = tx.type.toLowerCase() == "expense" &&
+            tx.direction != "GOAL_ALLOCATION";
+        break;
+
+      case "Reserved":
         mType = tx.direction == "GOAL_ALLOCATION";
-      } else if (selectedType == "Transfer") {
-        mType = tx.type == "transfer";
-      }
+        break;
 
-      bool mDate = true;
-      if (startDate != null && endDate != null) {
-        mDate = tx.date.isAfter(startDate!.subtract(const Duration(days: 1))) &&
-            tx.date.isBefore(endDate!.add(const Duration(days: 1)));
-      }
+      case "Transfer":
+        mType = tx.type.toLowerCase() == "transfer";
+        break;
 
-      return mSearch && mCat && mType && mDate;
-    }).toList();
-
-    if (list.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-          const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Center(
-            child: Text(
-              "No transactions found",
-              style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      );
+      default:
+        mType = true;
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: list.length,
-      separatorBuilder: (context, index) =>
-          Divider(color: Colors.grey.shade200, height: 1),
-      itemBuilder: (context, i) {
-        final tx = list[i];
-        bool isIncome = tx.type == 'income';
-        bool isReserved = tx.direction == "GOAL_ALLOCATION";
-        Color moneyColor =
-            isIncome ? Colors.green : (isReserved ? goalBlue : primaryRed);
-        bool isCash = tx.accountName.toLowerCase().contains('cash');
+    /// DATE
+    bool mDate = true;
+    if (startDate != null && endDate != null) {
+      final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+      final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
+      final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          child: Row(
-            children: [
-              _getTransactionLeading(tx),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tx.title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 15),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Text(
-                          DateFormat('dd MMM yyyy').format(tx.date),
-                          style: TextStyle(color: textMuted, fontSize: 12),
-                        ),
-                        if (tx.subtitle.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Text("•",
-                              style: TextStyle(color: Colors.grey.shade400)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              tx.subtitle,
-                              style: TextStyle(color: textMuted, fontSize: 12),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+      mDate = txDate.isAfter(start.subtract(const Duration(days: 1))) &&
+          txDate.isBefore(end.add(const Duration(days: 1)));
+    }
+
+    return mSearch && mCategory && mAccount && mType && mDate;
+  }).toList();
+
+  if (list.isEmpty) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+        const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+        const SizedBox(height: 16),
+        const Center(
+          child: Text(
+            "No transactions found",
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  return ListView.separated(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    physics: const AlwaysScrollableScrollPhysics(),
+    itemCount: list.length,
+    separatorBuilder: (context, index) =>
+        Divider(color: Colors.grey.shade200, height: 1),
+    itemBuilder: (context, i) {
+      final tx = list[i];
+
+      bool isIncome = tx.type == 'income';
+      bool isReserved = tx.direction == "GOAL_ALLOCATION";
+
+      Color moneyColor =
+          isIncome ? Colors.green : (isReserved ? goalBlue : primaryRed);
+
+      bool isCash = tx.accountName.toLowerCase().contains('cash');
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            _getTransactionLeading(tx),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    
-                    "₹${tx.amount.abs().toStringAsFixed(0)}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: moneyColor,
-                    ),
+                    tx.title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                   const SizedBox(height: 6),
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        isCash ? Icons.wallet : Icons.account_balance,
-                        size: 12,
-                      ),
-                      const SizedBox(width: 4),
                       Text(
-                        tx.accountName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade800,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                        DateFormat('dd MMM yyyy').format(tx.date),
+                        style: TextStyle(color: textMuted, fontSize: 12),
                       ),
+                      if (tx.subtitle.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Text("•",
+                            style: TextStyle(color: Colors.grey.shade400)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            tx.subtitle,
+                            style: TextStyle(color: textMuted, fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  "₹${tx.amount.abs().toStringAsFixed(0)}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: moneyColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isCash ? Icons.wallet : Icons.account_balance,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      tx.accountName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade800,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          ],
+        ),
+      );
+    },
+  );
+}
 }

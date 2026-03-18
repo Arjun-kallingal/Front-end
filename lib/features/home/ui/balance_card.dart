@@ -38,7 +38,9 @@ class BalanceCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         
-          color: const Color(0xFF008080), // teal color// Blue to Black Gradient
+          gradient: const LinearGradient(
+          colors: [Color(0xFF0052D4), Color(0xFF1A1A1A)],
+        ), // teal color// Blue to Black Gradient
         
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [

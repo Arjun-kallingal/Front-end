@@ -239,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
       itemBuilder: (context, index) {
         final tx = transactions[index];
 
-        bool isIncome = tx.type == "income";
+        bool isIncome = tx.type == "transfer";
         bool isReserved = tx.direction == "GOAL_ALLOCATION";
 
         Color moneyColor =
