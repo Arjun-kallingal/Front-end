@@ -38,13 +38,70 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     }
 
     return Scaffold(
+
       backgroundColor: AppColors.bgPrimary,
+
+      /// NEW APP BAR
+      appBar: AppBar(
+        backgroundColor: AppColors.bgPrimary,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Analytics & Reports",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
 
       body: Column(
         children: [
 
-          /// HEADER
-          _headerSection(provider),
+          /// NEW ANALYTICS CARD HEADER
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+
+              padding: const EdgeInsets.all(20),
+
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(28),
+              ),
+
+              child: Column(
+                children: [
+
+                  /// FILTER
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _dropdownFilter(provider),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  /// NET / INCOME / EXPENSE
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+
+                      _summaryItem("Net", provider.balance),
+
+                      _summaryItem("Income", provider.income),
+
+                      _summaryItem("Expense", provider.expense),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           /// REST OF PAGE
           Expanded(
@@ -85,103 +142,6 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  /// HEADER SECTION
-  Widget _headerSection(AnalyticsProvider provider) {
-
-    return Container(
-      width: double.infinity,
-
-      padding: const EdgeInsets.fromLTRB(20, 50, 20, 25),
-
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryRedDark,
-            const Color.fromARGB(255, 177, 14, 14),
-          ],
-        ),
-
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-
-        children: [
-
-          /// TITLE + FILTER
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-
-              const Row(
-                children: [
-
-                  Icon(Icons.arrow_back, color: Colors.white),
-
-                  SizedBox(width: 12),
-
-                  Text(
-                    "Analytics & Reports",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-
-              _dropdownFilter(provider),
-            ],
-          ),
-
-          const SizedBox(height: 22),
-
-          /// NET / INCOME / EXPENSE CARD
-          Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 18,
-              horizontal: 10,
-            ),
-
-            decoration: BoxDecoration(
-
-              /// DARK GLASS EFFECT (matches Figma)
-              color: const Color.fromARGB(255, 60, 21, 21).withOpacity(0.25),
-
-              borderRadius: BorderRadius.circular(16),
-
-              boxShadow: [
-                BoxShadow(
-                  color: const Color.fromARGB(255, 68, 21, 21).withOpacity(0.25),
-                  blurRadius: 10,
-                  offset: const Offset(0, 6),
-                )
-              ],
-            ),
-
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-              children: [
-
-                _summaryItem("Net", provider.balance),
-
-                _summaryItem("Income", provider.income),
-
-                _summaryItem("Expense", provider.expense),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
   /// DROPDOWN
   Widget _dropdownFilter(AnalyticsProvider provider) {
 
@@ -199,9 +159,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         items: const [
 
           DropdownMenuItem(value: "All", child: Text("All")),
-
           DropdownMenuItem(value: "Cash", child: Text("Cash")),
-
           DropdownMenuItem(value: "Account", child: Text("Account")),
         ],
 
@@ -222,45 +180,50 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   /// SUMMARY TEXT
   Widget _summaryItem(String title, double value) {
 
-  Color amountColor = Colors.white;
+    Color amountColor = Colors.white;
 
-  if (title == "Income" || title == "Net") {
-    amountColor = AppColors.chartIncome;   // GREEN from your theme
+    if (title == "Income" || title == "Net") {
+      amountColor = AppColors.chartIncome;
+    }
+
+    if (title == "Expense") {
+      amountColor = AppColors.chartExpense;
+    }
+
+    return Column(
+      children: [
+
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 13,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        Text(
+          "₹${value.toStringAsFixed(0)}",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: amountColor,
+          ),
+        ),
+      ],
+    );
   }
 
-  if (title == "Expense") {
-    amountColor = AppColors.chartExpense;  // RED from your theme
-  }
-
-  return Column(
-    children: [
-
-      Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 13,
-        ),
-      ),
-
-      const SizedBox(height: 6),
-
-      Text(
-        "\$${value.toStringAsFixed(0)}",
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: amountColor,
-        ),
-      ),
-    ],
-  );
-}
+  /// -------------------
+  /// KEEP YOUR EXISTING CHART METHODS BELOW
+  /// (incomeExpenseChart, monthlyTrend, categoryChart, etc.)
+  /// -------------------
   /// DONUT CHART
   
 
 
- Widget _incomeExpenseChart(AnalyticsProvider provider) {
+Widget _incomeExpenseChart(AnalyticsProvider provider) {
 
   final total = provider.income + provider.expense;
 

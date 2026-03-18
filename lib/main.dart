@@ -8,7 +8,7 @@ import 'core/services/local_storage_service.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'navigation/navigation_service.dart';
 
-import 'features/analytics/provider/analytics_provider.dart';
+ import 'features/analytics/provider/analytics_provider.dart';
 import 'core/providers/user_profile_provider.dart';
 import 'core/providers/transaction_provider.dart';
 import 'core/providers/account_provider.dart';
@@ -30,6 +30,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => GoalProvider()),
+                ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
+
       ],
       child: WalletCareApp(isLoggedIn: isLoggedIn),
     ),
