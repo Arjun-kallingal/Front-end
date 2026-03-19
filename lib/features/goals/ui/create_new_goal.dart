@@ -30,7 +30,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   late TextEditingController targetController;
 
   late final GoalService _goalService = GoalService(
-    baseUrl: "http://10.0.2.2:5000/api",
+    baseUrl: "http://localhost:5000/api",
   );
 
   String? _currentUserId;
