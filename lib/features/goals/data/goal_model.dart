@@ -9,8 +9,11 @@ class GoalModel {
   DateTime targetDate;
   DateTime createdAt;
   String status;
+  String? description;
+  String reminderFrequency;
+  String transactionType;
 
-  // CALCULATED FIELDS FROM BACKEND
+  // Calculated fields from backend
   final int? daysLeft;
   final double? requiredDailySaving;
   final double? progressPercentage;
@@ -27,6 +30,9 @@ class GoalModel {
     required this.targetDate,
     required this.status,
     required this.createdAt,
+    this.description,
+    this.reminderFrequency = 'weekly',
+    this.transactionType = 'expense',
     this.daysLeft,
     this.requiredDailySaving,
     this.progressPercentage,
@@ -40,21 +46,32 @@ class GoalModel {
       accountId: json['accountId'] ?? '',
       title: json['title'] ?? '',
       category: json['category'] ?? '',
-      targetAmount: (json['targetAmount'] ?? 0).toDouble(),
-      currentAmount: (json['currentAmount'] ?? 0).toDouble(),
+      targetAmount: (json['targetAmount'] as num? ?? 0).toDouble(),
+      currentAmount: (json['currentAmount'] as num? ?? 0).toDouble(),
       targetDate: DateTime.tryParse(json['targetDate'] ?? '') ?? DateTime.now(),
       status: json['status'] ?? 'active',
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      daysLeft: json['daysLeft'] is int ? json['daysLeft'] : null,
-      requiredDailySaving: (json['requiredDailySaving'] ?? 0).toDouble(),
-      progressPercentage: (json['progressPercentage'] ?? 0).toDouble(),
+      description: json['description'],
+      reminderFrequency: json['reminderFrequency'] ?? 'weekly',
+      transactionType: json['transactionType'] ?? 'expense',
+
+      // ✅ Safe null-aware casting for calculated fields
+      daysLeft: json['daysLeft'] != null
+          ? (json['daysLeft'] as num).toInt()
+          : null,
+      requiredDailySaving: json['requiredDailySaving'] != null
+          ? (json['requiredDailySaving'] as num).toDouble()
+          : null,
+      progressPercentage: json['progressPercentage'] != null
+          ? (json['progressPercentage'] as num).toDouble()
+          : null,
       isOverdue: json['isOverdue'] ?? false,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool isCreate = false}) {
     return {
-      if (id.isNotEmpty) "_id": id,
+      if (!isCreate && id.isNotEmpty) "_id": id,
       "userId": userId,
       "accountId": accountId,
       "title": title,
@@ -63,10 +80,16 @@ class GoalModel {
       "currentAmount": currentAmount,
       "status": status,
       "targetDate": targetDate.toIso8601String(),
+      if (description != null && description!.isNotEmpty)
+        "description": description,
+      "reminderFrequency": reminderFrequency,
+      "transactionType": transactionType,
     };
   }
 
   double get progress => progressPercentage != null && progressPercentage! > 0
       ? (progressPercentage! / 100).clamp(0.0, 1.0)
-      : (targetAmount == 0 ? 0 : (currentAmount / targetAmount).clamp(0.0, 1.0));
+      : (targetAmount == 0
+          ? 0
+          : (currentAmount / targetAmount).clamp(0.0, 1.0));
 }
