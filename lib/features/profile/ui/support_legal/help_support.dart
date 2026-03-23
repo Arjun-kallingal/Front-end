@@ -39,7 +39,6 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     }
   }
 
-  /// ================= NAVIGATION HANDLER =================
   void _handleNavigation(String type) {
     if (type == "email") {
       _launchEmail();
@@ -59,43 +58,39 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
       body: SafeArea(
         child: Column(
           children: [
+
             /// ================= HEADER =================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(top: 10, bottom: 10),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
-                
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : Colors.white,
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     "Help & Support",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ],
@@ -116,7 +111,6 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
-                      /// SUPPORT OPTIONS
                       _supportTile(
                         context,
                         icon: Icons.email_outlined,
@@ -147,12 +141,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
                       const SizedBox(height: 30),
 
-                      /// FAQ TITLE
                       Text(
                         "Frequently Asked Questions",
                         key: faqKey,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
 
@@ -198,7 +192,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
@@ -210,26 +206,36 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: color.primary),
+            Icon(icon,
+                color: isDark ? Colors.white : Colors.black),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                        fontSize: 13, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios,
-                size: 16, color: color.primary),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: isDark ? Colors.white : Colors.black,
+            ),
           ],
         ),
       ),
@@ -238,7 +244,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   /// ================= ANIMATED FAQ =================
   Widget _animatedFaq(int index, String question, String answer) {
-    final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final bool isExpanded = expandedIndex == index;
 
     return AnimatedContainer(
@@ -255,16 +263,18 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             expandedIndex = value ? index : null;
           });
         },
-        iconColor: color.primary,
-        collapsedIconColor: color.primary,
+        iconColor: isDark ? Colors.white : Colors.black,
+        collapsedIconColor: isDark ? Colors.white : Colors.black,
         tilePadding:
             const EdgeInsets.symmetric(horizontal: 16),
         childrenPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Text(
           question,
-          style:
-              const TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black,
+          ),
         ),
         children: [
           AnimatedOpacity(
@@ -272,8 +282,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             duration: const Duration(milliseconds: 300),
             child: Text(
               answer,
-              style:
-                  const TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
             ),
           ),
         ],

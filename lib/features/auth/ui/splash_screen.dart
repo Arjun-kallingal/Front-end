@@ -11,34 +11,32 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+
   @override
   void initState() {
     super.initState();
-    startApp();
+    _startApp();
   }
 
-  Future<void> startApp() async {
-    // Delay for splash animation
-    await Future.delayed(const Duration(seconds: 2));
+  Future<void> _startApp() async {
+    try {
+      /// Splash delay
+      await Future.delayed(const Duration(seconds: 2));
 
-    final token = await AuthStorage.getToken();
+      /// Get token
+      final token = await AuthStorage.getToken();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (token != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const MainNavigation(),
-        ),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        ),
-      );
+      /// Navigate based on token
+      if (token != null && token.isNotEmpty) {
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -61,15 +59,12 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-           
-          
-            const SizedBox(height: 20),
 
-            // App Name with custom font (Inter)
+            /// APP NAME
             const Text(
               "SproutPay",
               style: TextStyle(
-                fontFamily: 'Inter', // Use the font declared in pubspec.yaml
+                fontFamily: 'Inter',
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -79,10 +74,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
             const SizedBox(height: 30),
 
-            // Loading indicator
-            const CircularProgressIndicator(
-              color: Colors.white,
-            ),
+            /// LOADER
+            const CircularProgressIndicator(color: Colors.white),
           ],
         ),
       ),

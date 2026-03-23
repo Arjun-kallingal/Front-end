@@ -7,6 +7,7 @@ class AboutWalletCareScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -21,27 +22,22 @@ class AboutWalletCareScreen extends StatelessWidget {
                 top: 20,
                 bottom: 30,
               ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : Colors.white,
                 borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(30)),
+                    const BorderRadius.vertical(bottom: Radius.circular(30)),
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                       size: 20,
                     ),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       "About WalletCare",
                       maxLines: 1,
@@ -49,7 +45,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                   ),
@@ -73,7 +69,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                       Icon(
                         Icons.account_balance_wallet_outlined,
                         size: 80,
-                        color: theme.colorScheme.primary,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
 
                       const SizedBox(height: 20),
@@ -83,6 +79,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                         "WalletCare",
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
 
@@ -91,7 +88,9 @@ class AboutWalletCareScreen extends StatelessWidget {
                       /// Version
                       Text(
                         "Version 1.0.0",
-                        style: theme.textTheme.bodyMedium,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
 
                       const SizedBox(height: 24),
@@ -103,6 +102,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           height: 1.6,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
 
@@ -112,7 +112,9 @@ class AboutWalletCareScreen extends StatelessWidget {
                       Text(
                         "© 2026 WalletCare. All rights reserved.",
                         textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
 
                       const SizedBox(height: 20),

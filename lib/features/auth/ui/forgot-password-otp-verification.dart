@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../services/authentication_service.dart';
+import 'new-password.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String? email;
@@ -12,10 +14,12 @@ class OtpVerificationScreen extends StatefulWidget {
   });
 
   @override
-  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+  State<OtpVerificationScreen> createState() =>
+      _OtpVerificationScreenState();
 }
 
-class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
+class _OtpVerificationScreenState
+    extends State<OtpVerificationScreen> {
 
   final List<TextEditingController> controllers =
       List.generate(6, (_) => TextEditingController());
@@ -26,6 +30,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Timer? timer;
   int resendSeconds = 60;
   bool canResend = false;
+  bool isLoading = false;
 
   String getOtp() {
     return controllers.map((e) => e.text).join();
@@ -38,7 +43,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void startTimer() {
-
     setState(() {
       resendSeconds = 60;
       canResend = false;
@@ -47,78 +51,98 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     timer?.cancel();
 
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
-
       if (resendSeconds == 0) {
         t.cancel();
-
-        setState(() {
-          canResend = true;
-        });
-
+        setState(() => canResend = true);
       } else {
-
-        setState(() {
-          resendSeconds--;
-        });
-
+        setState(() => resendSeconds--);
       }
-
     });
   }
 
-  void verifyOtp() {
+  Future<void> verifyOtp() async {
+    final otp = getOtp();
 
-    if (getOtp().length != 6) {
+    if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Enter valid OTP")),
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("OTP Verified (UI only)")),
-    );
-  }
-void resendOtp() async {
-
-  if (!canResend) return;
-
-  if (widget.email == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Email not found")),
-    );
-    return;
-  }
-
-  final success = await AuthService.resendOtp(widget.email!);
-
-  if (!mounted) return;
-
-  if (success) {
-
-    for (var c in controllers) {
-      c.clear();
+    if (widget.email == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email missing")),
+      );
+      return;
     }
 
-    focusNodes.first.requestFocus();
+    setState(() => isLoading = true);
 
-    startTimer();
+    final resetToken =
+        await AuthService.verifyOtp(widget.email!, otp);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("New OTP sent to email")),
-    );
+    if (!mounted) return;
 
-  } else {
+    setState(() => isLoading = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Failed to resend OTP")),
-    );
-
+    if (resetToken != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => NewPasswordScreen(
+            email: widget.email!,
+            resetToken: resetToken,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Invalid or expired OTP"),
+        ),
+      );
+    }
   }
-}
+
+  Future<void> resendOtp() async {
+    if (!canResend) return;
+
+    if (widget.email == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email not found")),
+      );
+      return;
+    }
+
+    final success =
+        await AuthService.resendOtp(widget.email!);
+
+    if (!mounted) return;
+
+    if (success) {
+      for (var c in controllers) {
+        c.clear();
+      }
+
+      focusNodes.first.requestFocus();
+      startTimer();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("New OTP sent to email"),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please wait before retrying"),
+        ),
+      );
+    }
+  }
 
   Widget otpBox(int index) {
-
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -141,8 +165,9 @@ void resendOtp() async {
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
           ],
-          onChanged: (value) {
 
+          /// Auto move focus
+          onChanged: (value) {
             if (value.isNotEmpty && index < 5) {
               FocusScope.of(context).nextFocus();
             }
@@ -151,6 +176,21 @@ void resendOtp() async {
               FocusScope.of(context).previousFocus();
             }
 
+            /// AUTO VERIFY when 6 digits entered
+            if (getOtp().length == 6) {
+              verifyOtp();
+            }
+          },
+
+          /// Paste full OTP
+          onTap: () async {
+            final data = await Clipboard.getData('text/plain');
+            if (data != null && data.text!.length == 6) {
+              for (int i = 0; i < 6; i++) {
+                controllers[i].text = data.text![i];
+              }
+              verifyOtp();
+            }
           },
         ),
       ),
@@ -159,7 +199,6 @@ void resendOtp() async {
 
   @override
   void dispose() {
-
     timer?.cancel();
 
     for (var c in controllers) {
@@ -175,7 +214,6 @@ void resendOtp() async {
 
   @override
   Widget build(BuildContext context) {
-
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -188,7 +226,6 @@ void resendOtp() async {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-
                   Icon(
                     Icons.security_outlined,
                     size: 64,
@@ -199,9 +236,8 @@ void resendOtp() async {
 
                   Text(
                     "Verify OTP",
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 10),
@@ -213,7 +249,6 @@ void resendOtp() async {
 
                   const SizedBox(height: 5),
 
-                  /// SAFE EMAIL DISPLAY
                   Text(
                     widget.email ?? "your email",
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -224,15 +259,18 @@ void resendOtp() async {
                   const SizedBox(height: 30),
 
                   Row(
-                    children: List.generate(6, (index) => otpBox(index)),
+                    children:
+                        List.generate(6, (index) => otpBox(index)),
                   ),
 
                   const SizedBox(height: 24),
 
-                  ElevatedButton(
-                    onPressed: verifyOtp,
-                    child: const Text("Verify OTP"),
-                  ),
+                  isLoading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: verifyOtp,
+                          child: const Text("Verify OTP"),
+                        ),
 
                   const SizedBox(height: 16),
 
@@ -252,7 +290,6 @@ void resendOtp() async {
                     icon: const Icon(Icons.arrow_back),
                     label: const Text("Back"),
                   ),
-
                 ],
               ),
             ),

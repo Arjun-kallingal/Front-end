@@ -1,198 +1,130 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/constants/app_colors.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import '../data/goal_model.dart';
+import '../services/goal_service.dart';
 
 class GoalDetailsScreen extends StatefulWidget {
-  final Map<String, dynamic> goal;
+  final GoalModel goal;
 
-  const GoalDetailsScreen({
-    super.key,
-    required this.goal,
-  });
+  const GoalDetailsScreen({super.key, required this.goal});
 
   @override
-  State<GoalDetailsScreen> createState() =>
-      _GoalDetailsScreenState();
+  State<GoalDetailsScreen> createState() => _GoalDetailsScreenState();
 }
 
-class _GoalDetailsScreenState
-    extends State<GoalDetailsScreen> {
+class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
+  final TextEditingController _amountController = TextEditingController();
 
-  late double saved;
-  late double target;
-  late DateTime deadline;
+  bool _isDepositing = false;
+  bool _isWithdrawing = false;
 
-  final TextEditingController _amountController =
-      TextEditingController();
+  late final GoalService _goalService =
+      GoalService(baseUrl: "http://localhost:5000/api");
 
-  DateTime? selectedDate;
+  late double _currentAmount;
 
-  late List<Map<String, dynamic>> history;
+  List<dynamic> _history = [];
+  bool _isLoadingHistory = true;
 
   @override
   void initState() {
     super.initState();
-
-    saved = widget.goal["saved"] ?? 0.0;
-    target = widget.goal["target"] ?? 0.0;
-    deadline = widget.goal["deadline"];
-
-    // 🔥 Load existing history if available
-    history =
-        widget.goal["history"] != null
-            ? List<Map<String, dynamic>>.from(
-                widget.goal["history"])
-            : [];
+    _currentAmount = widget.goal.currentAmount;
+    _loadHistory();
   }
 
-  /// =============================
-  /// PICK DATE
-  /// =============================
-  Future<void> _pickDate() async {
-    DateTime? pickedDate =
-        await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
 
-    if (pickedDate != null) {
+  Future<void> _loadHistory() async {
+    final history = await _goalService.getGoalHistory(widget.goal.id);
+
+    if (mounted) {
       setState(() {
-        selectedDate = pickedDate;
+        _history = history;
+        _isLoadingHistory = false;
       });
     }
   }
 
-  /// =============================
-  /// ADD AMOUNT
-  /// =============================
-  void _addAmount() {
-    double? amount =
-        double.tryParse(_amountController.text);
+  Future<void> _processDeposit() async {
+    if (_amountController.text.isEmpty) return;
 
-    if (amount != null && amount > 0) {
-      setState(() {
-        saved += amount;
+    final depositAmount = double.tryParse(_amountController.text) ?? 0;
 
-        history.add({
-          "amount": amount,
-          "date": selectedDate ?? DateTime.now(),
+    if (depositAmount <= 0) {
+      _showSnackBar("Enter a valid amount", true);
+      return;
+    }
+
+    setState(() => _isDepositing = true);
+
+    final success =
+        await _goalService.depositToGoal(widget.goal.id, depositAmount);
+
+    if (mounted) {
+      setState(() => _isDepositing = false);
+
+      if (success) {
+        setState(() {
+          _currentAmount += depositAmount;
+          _amountController.clear();
         });
 
-        // 🔥 Update main goal map
-        widget.goal["saved"] = saved;
-        widget.goal["history"] = history;
-      });
-
-      _amountController.clear();
-      selectedDate = null;
+        _loadHistory();
+        _showSnackBar("Funds added successfully!", false);
+      } else {
+        _showSnackBar("Failed to add funds", true);
+      }
     }
   }
 
-  /// =============================
-  /// EDIT TRANSACTION
-  /// =============================
-  void _editTransaction(int index) {
-    TextEditingController editController =
-        TextEditingController(
-            text: history[index]["amount"]
-                .toString());
+  Future<void> _processWithdraw() async {
+    if (_amountController.text.isEmpty) return;
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Edit Transaction"),
-        content: TextField(
-          controller: editController,
-          keyboardType:
-              TextInputType.number,
-          decoration:
-              const InputDecoration(
-            hintText: "Enter new amount",
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double? newAmount =
-                  double.tryParse(
-                      editController.text);
+    final withdrawAmount = double.tryParse(_amountController.text) ?? 0;
 
-              if (newAmount != null &&
-                  newAmount > 0) {
-                setState(() {
-                  saved -=
-                      history[index]["amount"];
-                  saved += newAmount;
+    if (withdrawAmount <= 0) {
+      _showSnackBar("Enter a valid amount", true);
+      return;
+    }
 
-                  history[index]["amount"] =
-                      newAmount;
+    if (withdrawAmount > _currentAmount) {
+      _showSnackBar("Insufficient balance", true);
+      return;
+    }
 
-                  // 🔥 Update main goal
-                  widget.goal["saved"] =
-                      saved;
-                  widget.goal["history"] =
-                      history;
-                });
-              }
+    setState(() => _isWithdrawing = true);
 
-              Navigator.pop(context);
-            },
-            child:
-                const Text("Update"),
-          ),
-        ],
-      ),
-    );
+    final success =
+        await _goalService.withdrawFromGoal(widget.goal.id, withdrawAmount);
+
+    if (mounted) {
+      setState(() => _isWithdrawing = false);
+
+      if (success) {
+        setState(() {
+          _currentAmount -= withdrawAmount;
+          _amountController.clear();
+        });
+
+        _loadHistory();
+        _showSnackBar("Amount withdrawn successfully!", false);
+      } else {
+        _showSnackBar("Withdraw failed", true);
+      }
+    }
   }
 
-  /// =============================
-  /// DELETE TRANSACTION
-  /// =============================
-  void _deleteTransaction(int index) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title:
-            const Text("Delete Transaction"),
-        content: const Text(
-            "Amount will be removed from this goal."),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.red),
-            onPressed: () {
-              setState(() {
-                saved -= history[index]
-                    ["amount"];
-
-                history.removeAt(index);
-
-                // 🔥 Update main goal
-                widget.goal["saved"] =
-                    saved;
-                widget.goal["history"] =
-                    history;
-              });
-
-              Navigator.pop(context);
-            },
-            child:
-                const Text("Delete"),
-          ),
-        ],
+  void _showSnackBar(String message, bool isError) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -200,300 +132,192 @@ class _GoalDetailsScreenState
   @override
   Widget build(BuildContext context) {
     double progress =
-        target == 0
-            ? 0
-            : (saved / target)
-                .clamp(0.0, 1.0);
-
-    int daysLeft =
-        deadline.difference(
-                DateTime.now())
-            .inDays;
+        (_currentAmount / widget.goal.targetAmount).clamp(0.0, 1.0);
 
     return Scaffold(
-      backgroundColor:
-          AppColors.bgPrimary,
-      body: SafeArea(
-        child: Column(
-          children: [
-
-            /// =============================
-            /// HEADER CONTAINER
-            /// =============================
-            Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.all(20),
-              decoration:
-                  const BoxDecoration(
-                gradient:
-                    LinearGradient(
-                  colors: [
-                    AppColors
-                        .headerGradientStart,
-                    AppColors
-                        .headerGradientEnd,
-                  ],
-                ),
-                borderRadius:
-                    BorderRadius.only(
-                  bottomLeft:
-                      Radius.circular(
-                          25),
-                  bottomRight:
-                      Radius.circular(
-                          25),
-                ),
-              ),
-              child: Row(
+      backgroundColor: const Color(0xFFF8F9FB),
+      body: Column(
+        children: [
+          _buildHeader(progress),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    onPressed: () =>
-                        Navigator.pop(
-                            context),
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color:
-                          Colors.white,
-                    ),
+                  const Text(
+                    "Add Funds",
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  Expanded(
-                    child: Text(
-                      widget.goal[
-                          "title"],
-                      textAlign:
-                          TextAlign
-                              .center,
-                      style:
-                          const TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight
-                                .bold,
-                        color:
-                            Colors.white,
-                      ),
-                    ),
+                  const SizedBox(height: 12),
+                  _buildDepositCard(),
+                  const SizedBox(height: 25),
+                  const Text(
+                    "Transaction History",
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(
-                      width: 48),
+                  const SizedBox(height: 12),
+                  _buildHistoryList(),
                 ],
               ),
             ),
+          )
+        ],
+      ),
+    );
+  }
 
-            /// =============================
-            /// BODY
-            /// =============================
-            Expanded(
-              child:
-                  SingleChildScrollView(
-                padding:
-                    const EdgeInsets
-                        .all(20),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                  children: [
-
-                    const Text(
-                        "Currently Saved"),
-                    const SizedBox(
-                        height: 5),
-
-                    Text(
-                      "\$${saved.toStringAsFixed(0)}",
-                      style:
-                          TextStyle(
-                        fontSize: 28,
-                        fontWeight:
-                            FontWeight
-                                .bold,
-                        color: widget
-                                .goal[
-                            "color"],
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 20),
-
-                    LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 8,
-                      backgroundColor:
-                          Colors.grey
-                              .shade300,
-                      valueColor:
-                          AlwaysStoppedAnimation(
-                              widget.goal[
-                                  "color"]),
-                    ),
-
-                    const SizedBox(
-                        height: 10),
-
-                    Text(
-                        "Target: \$${target.toStringAsFixed(0)}"),
-
-                    Text(
-                      daysLeft >= 0
-                          ? "$daysLeft days remaining"
-                          : "Goal expired",
-                      style: TextStyle(
-                        color:
-                            daysLeft >= 0
-                                ? Colors
-                                    .green
-                                : Colors
-                                    .red,
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 30),
-
-                    /// ADD AMOUNT
-                    const Text(
-                      "Add Amount",
-                      style: TextStyle(
-                          fontWeight:
-                              FontWeight
-                                  .bold),
-                    ),
-
-                    const SizedBox(
-                        height: 10),
-
-                    TextField(
-                      controller:
-                          _amountController,
-                      keyboardType:
-                          TextInputType
-                              .number,
-                      decoration:
-                          const InputDecoration(
-                        hintText:
-                            "Enter amount",
-                        border:
-                            OutlineInputBorder(),
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 10),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child:
-                              OutlinedButton(
-                            onPressed:
-                                _pickDate,
-                            child: Text(
-                              selectedDate ==
-                                      null
-                                  ? "Pick Date"
-                                  : DateFormat(
-                                          "dd MMM yyyy")
-                                      .format(
-                                          selectedDate!),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                            width: 10),
-                        Expanded(
-                          child:
-                              ElevatedButton(
-                            onPressed:
-                                _addAmount,
-                            child:
-                                const Text(
-                                    "Add"),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(
-                        height: 30),
-
-                    if (history
-                        .isNotEmpty)
-                      const Text(
-                        "Transaction History",
-                        style: TextStyle(
-                            fontWeight:
-                                FontWeight
-                                    .bold),
-                      ),
-
-                    const SizedBox(
-                        height: 10),
-
-                    ...List.generate(
-                        history.length,
-                        (index) {
-                      var item =
-                          history[
-                              index];
-
-                      return Card(
-                        child:
-                            ListTile(
-                          title: Text(
-                              "+ \$${item["amount"]}"),
-                          subtitle: Text(
-                            DateFormat(
-                                    "dd MMM yyyy - hh:mm a")
-                                .format(
-                                    item["date"]),
-                          ),
-                          trailing:
-                              PopupMenuButton<
-                                  String>(
-                            onSelected:
-                                (value) {
-                              if (value ==
-                                  "edit") {
-                                _editTransaction(
-                                    index);
-                              } else if (value ==
-                                  "delete") {
-                                _deleteTransaction(
-                                    index);
-                              }
-                            },
-                            itemBuilder:
-                                (context) =>
-                                    const [
-                              PopupMenuItem(
-                                value:
-                                    "edit",
-                                child:
-                                    Text(
-                                        "Edit"),
-                              ),
-                              PopupMenuItem(
-                                value:
-                                    "delete",
-                                child:
-                                    Text(
-                                        "Delete"),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-          ],
+  Widget _buildHeader(double progress) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0052D4), Color(0xFF1A1A1A)],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios,
+                        color: Colors.white),
+                    onPressed: () => Navigator.pop(context, true),
+                  ),
+                  Expanded(
+                    child: Text(
+                      widget.goal.title,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "₹${_currentAmount.toStringAsFixed(0)}",
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "of ₹${widget.goal.targetAmount.toStringAsFixed(0)} Target",
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 20),
+              LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDepositCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          TextField(
+            controller: _amountController,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
+            ],
+            decoration: InputDecoration(
+              prefixText: "₹ ",
+              hintText: "0.00",
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isDepositing ? null : _processDeposit,
+                  child: const Text("Deposit"),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red),
+                  onPressed: _isWithdrawing ? null : _processWithdraw,
+                  child: const Text("Withdraw"),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryList() {
+    if (_isLoadingHistory) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_history.isEmpty) {
+      return const Text("No transactions yet");
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _history.length,
+      itemBuilder: (context, index) {
+        final item = _history[index];
+
+        final type = item['type'];
+        final amount = item['amount'];
+
+        DateTime date;
+        if (item['createdAt'] != null) {
+          date = DateTime.parse(item['createdAt']);
+        } else {
+          date = DateTime.now();
+        }
+
+        return ListTile(
+          leading: Icon(
+            type == "deposit" ? Icons.arrow_downward : Icons.arrow_upward,
+            color: type == "deposit" ? Colors.green : Colors.red,
+          ),
+          title: Text(type == "deposit" ? "Deposit" : "Withdraw"),
+          subtitle: Text(
+            "${date.day}/${date.month}/${date.year} • ${date.hour}:${date.minute.toString().padLeft(2, '0')}",
+          ),
+          trailing: Text("₹$amount"),
+        );
+      },
     );
   }
 }

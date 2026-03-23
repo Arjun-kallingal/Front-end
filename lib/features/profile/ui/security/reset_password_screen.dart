@@ -9,13 +9,15 @@ class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  State<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-
+class _ResetPasswordScreenState
+    extends State<ResetPasswordScreen> {
   final newPasswordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
+  final confirmPasswordController =
+      TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -25,7 +27,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool showConfirmPassword = false;
 
   Future<void> resetPassword() async {
-
     if (!_formKey.currentState!.validate()) return;
 
     final resetToken =
@@ -51,17 +52,32 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => isLoading = false);
 
-    if (response.statusCode == 200) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
+    if (response.statusCode == 200) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Success"),
-          content: const Text("Password updated successfully"),
+          backgroundColor:
+              isDark ? Colors.black : Colors.white,
+          title: Text(
+            "Success",
+            style: TextStyle(
+              color:
+                  isDark ? Colors.white : Colors.black,
+            ),
+          ),
+          content: Text(
+            "Password updated successfully",
+            style: TextStyle(
+              color:
+                  isDark ? Colors.white : Colors.black,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () {
-
                 Navigator.pop(context);
 
                 Navigator.pushNamedAndRemoveUntil(
@@ -69,114 +85,235 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   "/profileSettings",
                   (route) => false,
                 );
-
               },
-              child: const Text("OK"),
+              child: Text(
+                "OK",
+                style: TextStyle(
+                  color: isDark
+                      ? Colors.white
+                      : Colors.black,
+                ),
+              ),
             )
           ],
         ),
       );
-
     } else {
-
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Error"),
-          content: Text(data["message"]),
+          backgroundColor:
+              isDark ? Colors.black : Colors.white,
+          title: Text(
+            "Error",
+            style: TextStyle(
+              color:
+                  isDark ? Colors.white : Colors.black,
+            ),
+          ),
+          content: Text(
+            data["message"],
+            style: TextStyle(
+              color:
+                  isDark ? Colors.white : Colors.black,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
+              child: Text(
+                "OK",
+                style: TextStyle(
+                  color: isDark
+                      ? Colors.white
+                      : Colors.black,
+                ),
+              ),
             )
           ],
         ),
       );
-
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Reset Password")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
+      backgroundColor: color.background,
+      body: SafeArea(
+        child: Column(
+          children: [
 
-              TextFormField(
-                controller: newPasswordController,
-                obscureText: !showNewPassword,
-                decoration: InputDecoration(
-                  labelText: "New Password",
-                  suffixIcon: IconButton(
+            /// ================= HEADER =================
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(vertical: 12),
+              color: isDark ? Colors.black : Colors.white,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
                     icon: Icon(
-                      showNewPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                      Icons.arrow_back_ios_new,
+                      color: isDark
+                          ? Colors.white
+                          : Colors.black,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        showNewPassword = !showNewPassword;
-                      });
-                    },
+                  ),
+                  Text(
+                    "Reset Password",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? Colors.white
+                          : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// ================= BODY =================
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: color.surface,
+                    borderRadius:
+                        BorderRadius.circular(16),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+
+                        /// NEW PASSWORD
+                        _passwordField(
+                          controller: newPasswordController,
+                          label: "New Password",
+                          obscure: !showNewPassword,
+                          toggle: () {
+                            setState(() {
+                              showNewPassword =
+                                  !showNewPassword;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null ||
+                                value.length < 8) {
+                              return "Minimum 8 characters";
+                            }
+                            return null;
+                          },
+                          isDark: isDark,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        /// CONFIRM PASSWORD
+                        _passwordField(
+                          controller:
+                              confirmPasswordController,
+                          label: "Confirm Password",
+                          obscure: !showConfirmPassword,
+                          toggle: () {
+                            setState(() {
+                              showConfirmPassword =
+                                  !showConfirmPassword;
+                            });
+                          },
+                          validator: (value) {
+                            if (value !=
+                                newPasswordController.text) {
+                              return "Passwords do not match";
+                            }
+                            return null;
+                          },
+                          isDark: isDark,
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        /// BUTTON
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed:
+                                isLoading ? null : resetPassword,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
+                            child: isLoading
+                                ? CircularProgressIndicator(
+                                    color: isDark
+                                        ? Colors.black
+                                        : Colors.white,
+                                  )
+                                : Text(
+                                    "Reset Password",
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.black
+                                          : Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.length < 8) {
-                    return "Password must be at least 8 characters";
-                  }
-                  return null;
-                },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              const SizedBox(height: 20),
-
-              TextFormField(
-                controller: confirmPasswordController,
-                obscureText: !showConfirmPassword,
-                decoration: InputDecoration(
-                  labelText: "Confirm Password",
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      showConfirmPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        showConfirmPassword = !showConfirmPassword;
-                      });
-                    },
-                  ),
-                ),
-                validator: (value) {
-                  if (value != newPasswordController.text) {
-                    return "Passwords do not match";
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : resetPassword,
-                  child: isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Reset Password"),
-                ),
-              )
-
-            ],
+  Widget _passwordField({
+    required TextEditingController controller,
+    required String label,
+    required bool obscure,
+    required VoidCallback toggle,
+    required String? Function(String?) validator,
+    required bool isDark,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      validator: validator,
+      style: TextStyle(
+        color: isDark ? Colors.white : Colors.black,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: isDark ? Colors.white : Colors.black,
+        ),
+        filled: true,
+        fillColor:
+            isDark ? Colors.black : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscure ? Icons.visibility_off : Icons.visibility,
+            color: isDark ? Colors.white : Colors.black,
           ),
+          onPressed: toggle,
         ),
       ),
     );

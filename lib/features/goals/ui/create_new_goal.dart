@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/constants/app_colors.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+// --- SERVICE & MODEL IMPORTS ---
+import '../data/goal_model.dart';
+import '../services/goal_service.dart';
+import 'package:front_end/core/models/account_model.dart';
+import 'package:front_end/core/services/account_service.dart';
+import 'package:front_end/core/services/mock_auth.dart';
+
 class CreateNewGoalScreen extends StatefulWidget {
-  final Map<String, dynamic>? existingGoal;
+  final GoalModel? existingGoal;
   final int? index;
 
   const CreateNewGoalScreen({
@@ -22,30 +29,54 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   late TextEditingController titleController;
   late TextEditingController targetController;
 
-  DateTime? selectedDate;
+  late final GoalService _goalService = GoalService(
+    baseUrl: "http://10.0.2.2:5000/api",
+  );
 
+  String? _currentUserId;
+  bool _isFetchingAccounts = true;
+  bool _isSaving = false;
+  List<AccountModel> _accounts = [];
+
+  DateTime? selectedDate;
   String selectedCategory = "Savings";
-  String? selectedAccountType;
-  String? transactionType;
+  String? selectedAccountId;
+  bool _showAccountOptions = false;
+  String? _selectedAccountName;
 
   IconData selectedIcon = Icons.trending_up_rounded;
-  Color selectedColor = Colors.green;
-
-  final List<String> accountTypes = ["Cash", "Account"];
-
-  final List<String> transactionTypes = [
-    "Reserved",
-    "Expense",
-    "Transaction"
-  ];
 
   final List<Map<String, dynamic>> categories = [
-    {"name": "Savings", "icon": Icons.trending_up_rounded, "color": Colors.green},
-    {"name": "Emergency", "icon": Icons.error_outline_rounded, "color": Colors.red},
-    {"name": "Bills", "icon": Icons.receipt_long_rounded, "color": Colors.orange},
-    {"name": "Business", "icon": Icons.work_outline_rounded, "color": Colors.blue},
-    {"name": "Travel", "icon": Icons.flight_takeoff_rounded, "color": Colors.purple},
-    {"name": "Other", "icon": Icons.category_rounded, "color": Colors.teal},
+    {
+      "name": "Savings",
+      "icon": Icons.trending_up_rounded,
+      "color": Colors.green.shade800
+    },
+    {
+      "name": "Emergency",
+      "icon": Icons.error_outline_rounded,
+      "color": Colors.red.shade800
+    },
+    {
+      "name": "Bills",
+      "icon": Icons.receipt_long_rounded,
+      "color": Colors.orange.shade800
+    },
+    {
+      "name": "Business",
+      "icon": Icons.work_outline_rounded,
+      "color": Colors.blue.shade800
+    },
+    {
+      "name": "Travel",
+      "icon": Icons.flight_takeoff_rounded,
+      "color": Colors.purple.shade800
+    },
+    {
+      "name": "Other",
+      "icon": Icons.category_rounded,
+      "color": Colors.grey.shade800
+    },
   ];
 
   @override
@@ -53,412 +84,356 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     super.initState();
 
     titleController =
-        TextEditingController(text: widget.existingGoal?["title"] ?? "");
+        TextEditingController(text: widget.existingGoal?.title ?? "");
 
-    targetController =
-        TextEditingController(text: widget.existingGoal?["target"]?.toString() ?? "");
+    targetController = TextEditingController(
+      text: (widget.existingGoal?.targetAmount ?? 0) > 0
+          ? widget.existingGoal!.targetAmount.toString()
+          : "",
+    );
 
-    selectedDate = widget.existingGoal?["deadline"];
+    selectedDate = widget.existingGoal?.targetDate;
 
     if (widget.existingGoal != null) {
-      selectedIcon = widget.existingGoal!["icon"];
-      selectedColor = widget.existingGoal!["color"];
-      selectedCategory = widget.existingGoal!["category"];
-      selectedAccountType = widget.existingGoal!["accountType"];
-      transactionType = widget.existingGoal!["transactionType"];
-    }
-  }
+      selectedCategory = widget.existingGoal!.category;
+      selectedAccountId = widget.existingGoal!.accountId;
 
-  void _selectCategory(Map<String, dynamic> category) {
-    setState(() {
-      selectedCategory = category["name"];
-      selectedIcon = category["icon"];
-      selectedColor = category["color"];
-    });
-  }
+      final matchedCategory = categories.firstWhere(
+        (cat) => cat["name"] == selectedCategory,
+        orElse: () => categories.first,
+      );
 
-  void _showAlert(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.cardBg,
-          title: const Text(
-            "Notification",
-            style: TextStyle(color: Colors.white),
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(color: Colors.white70),
-          ),
-          actions: [
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () => Navigator.pop(context),
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  void _saveGoal() {
-    if (!_formKey.currentState!.validate()) {
-      return;
+      selectedIcon = matchedCategory["icon"];
     }
 
-    if (selectedDate == null) {
-      _showAlert("Please select a deadline");
-      return;
-    }
-
-    final goal = {
-      "title": titleController.text,
-      "target": double.tryParse(targetController.text) ?? 0.0,
-      "deadline": selectedDate,
-      "icon": selectedIcon,
-      "color": selectedColor,
-      "category": selectedCategory,
-      "accountType": selectedAccountType,
-      "transactionType": transactionType,
-    };
-
-    Navigator.pop(context, goal);
+    _initializeUser();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: SafeArea(
-        child: Column(
-          children: [
+  void dispose() {
+    titleController.dispose();
+    targetController.dispose();
+    super.dispose();
+  }
 
-            /// HEADER
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.headerGradientStart,
-                    AppColors.headerGradientEnd,
-                  ],
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
-                  bottomRight: Radius.circular(28),
-                ),
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const CircleAvatar(
-                      backgroundColor: AppColors.profileAvatarBg,
-                      child: Icon(Icons.arrow_back,
-                          color: AppColors.textPrimary),
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  const Text(
-                    "Create New Goal",
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 22,
+  Future<void> _initializeUser() async {
+    final userid = MockAuthService.currentUserId;
+
+    if (userid.isNotEmpty && mounted) {
+      setState(() => _currentUserId = userid);
+      _loadAccounts();
+    }
+  }
+
+  Future<void> _loadAccounts() async {
+    try {
+      final result = await AccountService.getAccountDashboard(_currentUserId!);
+
+      if (!mounted) return;
+
+      setState(() {
+        _accounts = result['accounts'];
+
+        if (selectedAccountId == null && _accounts.isNotEmpty) {
+          selectedAccountId = _accounts.first.id;
+          _selectedAccountName = _accounts.first.name;
+        } else if (selectedAccountId != null && _accounts.isNotEmpty) {
+          final acc = _accounts.firstWhere(
+            (a) => a.id == selectedAccountId,
+            orElse: () => _accounts.first,
+          );
+          _selectedAccountName = acc.name;
+        }
+
+        _isFetchingAccounts = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _isFetchingAccounts = false);
+    }
+  }
+
+  void _saveGoal() async {
+    if (!_formKey.currentState!.validate() ||
+        selectedDate == null ||
+        selectedAccountId == null) {
+      _showSnackBar(
+        selectedDate == null
+            ? "Please select a deadline"
+            : "Please fill all fields",
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    final goalToSave = GoalModel(
+      id: widget.existingGoal?.id ?? '',
+      userId: _currentUserId!,
+      accountId: selectedAccountId!,
+      title: titleController.text.trim(),
+      category: selectedCategory,
+      targetAmount: double.parse(targetController.text),
+      currentAmount: widget.existingGoal?.currentAmount ?? 0.0,
+      targetDate: selectedDate!,
+      status: widget.existingGoal?.status ?? 'active',
+      createdAt: widget.existingGoal?.createdAt ?? DateTime.now(),
+    );
+
+    try {
+      final success = await _goalService.createGoal(goalToSave);
+
+      if (mounted) {
+        if (success) {
+          Navigator.pop(context, true);
+        } else {
+          _showSnackBar("Failed to save goal", isError: true);
+        }
+      }
+    } catch (e) {
+      _showSnackBar("Error saving goal: $e", isError: true);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(
+          text,
+          style: const TextStyle(
+              color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+      );
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          ),
+          Text(
+            widget.existingGoal == null ? "Create New Goal" : "Edit Goal",
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStickySaveButton() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 54,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          onPressed: _isSaving ? null : _saveGoal,
+          child: _isSaving
+              ? const CircularProgressIndicator(color: Colors.white)
+              : Text(
+                  widget.existingGoal == null ? "Save Goal" : "Update Goal",
+                  style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    children: [
-
-                      /// SECTION TITLE
-                      const Text(
-                        "Goal Details",
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      /// GOAL TITLE
-                      TextFormField(
-                        controller: titleController,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration:
-                            _inputDecoration("Goal Title", Icons.flag_rounded),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please enter goal title";
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      /// TARGET AMOUNT
-                      TextFormField(
-                        controller: targetController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: _inputDecoration(
-                            "Target Amount", Icons.attach_money_rounded),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Enter target amount";
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      /// DEADLINE
-                      GestureDetector(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate ?? DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-
-                          if (picked != null) {
-                            setState(() {
-                              selectedDate = picked;
-                            });
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: AppColors.cardBg,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.calendar_month_rounded,
-                                  size: 20, color: Colors.grey),
-                              const SizedBox(width: 10),
-                              Text(
-                                selectedDate == null
-                                    ? "Select Deadline"
-                                    : DateFormat("dd MMM yyyy")
-                                        .format(selectedDate!),
-                                style: TextStyle(
-                                  color: selectedDate == null
-                                      ? Colors.grey
-                                      : AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 25),
-
-                      /// ACCOUNT SECTION
-                      const Text(
-                        "Account Information",
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      /// ACCOUNT TYPE
-                      DropdownButtonFormField<String>(
-                        value: selectedAccountType,
-                        hint: const Text(
-                          "Select Account Type",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        dropdownColor: AppColors.cardBg,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: _inputDecoration(
-                            "Account Type",
-                            Icons.account_balance_wallet_rounded),
-                        items: accountTypes.map((type) {
-                          return DropdownMenuItem(
-                            value: type,
-                            child: Text(type),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedAccountType = value;
-                          });
-                        },
-                        validator: (value) =>
-                            value == null ? "Select account type" : null,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      /// TRANSACTION TYPE
-                      DropdownButtonFormField<String>(
-                        value: transactionType,
-                        hint: const Text(
-                          "Select Transaction Type",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        dropdownColor: AppColors.cardBg,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration:
-                            _inputDecoration("Transaction Type", Icons.swap_horiz),
-                        items: transactionTypes.map((type) {
-                          return DropdownMenuItem(
-                            value: type,
-                            child: Text(type),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            transactionType = value;
-                          });
-
-                          if (value == "Expense") {
-                            _showAlert("Your amount removed from the reserved amount");
-                          }
-
-                          if (value == "Reserved") {
-                            _showAlert("Amount moved to reserved");
-                          }
-                        },
-                        validator: (value) =>
-                            value == null ? "Select transaction type" : null,
-                      ),
-
-                      const SizedBox(height: 25),
-
-                      /// CATEGORY TITLE
-                      const Text(
-                        "Goal Category",
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      /// CATEGORY GRID
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: categories.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 1.4,
-                        ),
-                        itemBuilder: (context, index) {
-                          final category = categories[index];
-                          final bool isSelected =
-                              selectedCategory == category["name"];
-
-                          return GestureDetector(
-                            onTap: () => _selectCategory(category),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? category["color"].withOpacity(0.2)
-                                    : AppColors.cardBg,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? category["color"]
-                                      : Colors.white12,
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(category["icon"],
-                                      size: 20,
-                                      color: category["color"]),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    category["name"],
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      /// SAVE BUTTON
-                      SizedBox(
-                        height: 52,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: selectedColor,
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          onPressed: _saveGoal,
-                          child: const Text(
-                            "Save Goal",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                      fontSize: 16),
                 ),
-              ),
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountSelectorBox() {
+    return InkWell(
+      onTap: () => setState(() => _showAccountOptions = !_showAccountOptions),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(_selectedAccountName ?? "Select Account"),
+            const Icon(Icons.keyboard_arrow_down),
           ],
         ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
-    return InputDecoration(
-      hintText: hint,
-      prefixIcon: Icon(icon, size: 20, color: Colors.grey),
-      filled: true,
-      fillColor: AppColors.cardBg,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(
+  Widget _buildAccountList() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      constraints: const BoxConstraints(maxHeight: 200),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        children: _accounts.map((acc) {
+          return ListTile(
+            dense: true,
+            title: Text(acc.name,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () {
+              setState(() {
+                selectedAccountId = acc.id; // FIXED
+                _selectedAccountName = acc.name;
+                _showAccountOptions = false;
+              });
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            _isFetchingAccounts
+                ? const Expanded(
+                    child: Center(child: CircularProgressIndicator()))
+                : Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel("Goal Title"),
+                            TextFormField(
+                              controller: titleController,
+                              validator: (v) =>
+                                  v == null || v.isEmpty ? "Required" : null,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildLabel("Target Amount"),
+                            TextFormField(
+                              controller: targetController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,2}'))
+                              ],
+                              validator: (v) =>
+                                  v == null || v.isEmpty ? "Required" : null,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildLabel("Target Date"),
+                            InkWell(
+                              onTap: () async {
+                                final d = await showDatePicker(
+                                  context: context,
+                                  initialDate: selectedDate ?? DateTime.now(),
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime(2100),
+                                );
+                                if (d != null) setState(() => selectedDate = d);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(selectedDate == null
+                                        ? "Select Deadline"
+                                        : DateFormat('dd MMM, yyyy')
+                                            .format(selectedDate!)),
+                                    const Icon(Icons.calendar_month),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            _buildLabel("Funding Account"),
+                            _buildAccountSelectorBox(),
+                            if (_showAccountOptions) _buildAccountList(),
+                            const SizedBox(height: 24),
+                            _buildLabel("Category"),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: categories.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                                childAspectRatio: 1.2,
+                              ),
+                              itemBuilder: (context, index) {
+                                final category = categories[index];
+                                final isSelected =
+                                    selectedCategory == category["name"];
+
+                                return GestureDetector(
+                                  onTap: () => setState(() =>
+                                      selectedCategory = category["name"]),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? Colors.blue
+                                            : Colors.grey.shade200,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(category["icon"]),
+                                        const SizedBox(height: 6),
+                                        Text(category["name"]),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+            _buildStickySaveButton(),
+          ],
+        ),
       ),
     );
   }

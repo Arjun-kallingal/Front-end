@@ -24,8 +24,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  Future<void> _sendOtp() async {
-
+ Future<void> _sendOtp() async {
   if (!_formKey.currentState!.validate()) return;
 
   final email = emailController.text.trim();
@@ -42,26 +41,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     isLoading = false;
   });
 
-  if (message == "OTP sent successfully") {
+  /// Always show neutral message (security best practice)
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("If the email exists, an OTP has been sent"),
+    ),
+  );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OtpVerificationScreen(
-          email: email,
-        ),
+  /// Navigate regardless of response
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => OtpVerificationScreen(
+        email: email,
       ),
-    );
-
-  } else {
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Email doesn't exist"),
-      ),
-    );
-
-  }
+    ),
+  );
 }
   @override
   Widget build(BuildContext context) {

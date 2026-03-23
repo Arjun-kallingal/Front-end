@@ -575,18 +575,22 @@ Widget _switchTile(BuildContext context,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).textTheme.bodyLarge!.color)),
         ),
-        Transform.scale(
-          scale: 0.8,
-          child: Switch(
-            value: value,
-            activeThumbColor: isLight ? Colors.black : Colors.black,
-            activeTrackColor: isLight ? Colors.black54 : Colors.white,
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor:
-                isLight ? Colors.black : Colors.black,
-            onChanged: onChanged,
-          ),
-        ),
+       Transform.scale(
+  scale: 0.8,
+  child: Switch(
+    value: value,
+
+    /// ACTIVE (ON)
+    activeThumbColor: isLight ? Colors.black : Colors.white,
+    activeTrackColor: isLight ? Colors.black54 : Colors.white54,
+
+    /// INACTIVE (OFF)
+    inactiveThumbColor: isLight ? Colors.black : Colors.black,
+    inactiveTrackColor: isLight ? Colors.white : Colors.white24,
+
+    onChanged: onChanged,
+  ),
+),
       ],
     ),
   );

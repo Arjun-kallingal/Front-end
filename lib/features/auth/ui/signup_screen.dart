@@ -32,8 +32,8 @@ class _SignupScreenState extends State<SignupScreen> {
     confirmPasswordController.dispose();
     super.dispose();
   }
-Future<void> _submit() async {
 
+  Future<void> _submit() async {
   if (!_formKey.currentState!.validate()) return;
 
   if (!agreeTerms) {
@@ -45,23 +45,21 @@ Future<void> _submit() async {
     return;
   }
 
+  if (isLoading) return; // ✅ prevent double click
+
   setState(() => isLoading = true);
 
   try {
-
     final data = await AuthService.signup(
       nameController.text.trim(),
       emailController.text.trim(),
       passwordController.text.trim(),
     );
 
-    print("Signup response: $data");
-
     if (!mounted) return;
 
-    /// Navigate if backend returned any message
-    if (data["message"] != null) {
-
+    /// ✅ ONLY navigate on success
+    if (data["success"] == true) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -70,31 +68,18 @@ Future<void> _submit() async {
           ),
         ),
       );
-
     } else {
-
+      /// ❌ show backend error
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Registration failed"),
-        ),
+        SnackBar(content: Text(data["message"])),
       );
-
     }
-
   } catch (e) {
-
-    print("Signup error: $e");
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Error: $e")),
+      SnackBar(content: Text("Something went wrong")),
     );
-
   } finally {
-
-    if (mounted) {
-      setState(() => isLoading = false);
-    }
-
+    if (mounted) setState(() => isLoading = false);
   }
 }
   @override
@@ -250,10 +235,10 @@ Future<void> _submit() async {
 
                             isLoading
                                 ? const CircularProgressIndicator()
-                                : CustomButton(
-                                    text: 'Create Account',
-                                    onPressed: _submit,
-                                  ),
+                               :CustomButton(
+  text: isLoading ? 'Creating...' : 'Create Account',
+  onPressed: isLoading ? null : _submit,
+)
                           ],
                         ),
                       ),

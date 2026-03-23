@@ -32,7 +32,7 @@ class MoveToSavingsCard extends StatelessWidget {
               radius: 22,
               backgroundColor: AppColors.savingsIconBg,
               child: Icon(
-                Icons.swap_horiz,
+                Icons.flag,
                 color: AppColors.savingsPrimary,
               ),
             ),
@@ -52,12 +52,6 @@ class MoveToSavingsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    "This does not change your total balance",
-                    style: textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
                 ],
               ),
             ),

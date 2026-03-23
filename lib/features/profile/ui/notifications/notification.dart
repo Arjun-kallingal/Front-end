@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:front_end/core/constants/app_colors.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  State<NotificationScreen> createState() =>
+      _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
-
+class _NotificationScreenState
+    extends State<NotificationScreen> {
   bool pushNotifications = true;
   bool paymentReminders = true;
   bool goalMilestones = true;
@@ -20,43 +20,39 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
-
       body: SafeArea(
         child: Column(
           children: [
 
-            /// HEADER
+            /// ================= HEADER =================
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
-              ),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 12),
+              color: isDark ? Colors.black : Colors.white,
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                      color: isDark
+                          ? Colors.white
+                          : Colors.black,
                     ),
                   ),
-                  const Expanded(
-                    child: Text(
-                      "Notifications",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                  Text(
+                    "Notifications",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? Colors.white
+                          : Colors.black,
                     ),
                   ),
                 ],
@@ -65,10 +61,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
             const SizedBox(height: 25),
 
-            /// CONTENT
+            /// ================= CONTENT =================
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
 
@@ -76,7 +73,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       "Push Notifications",
                       "Receive general app notifications",
                       pushNotifications,
-                      (v) => setState(() => pushNotifications = v),
+                      (v) =>
+                          setState(() => pushNotifications = v),
+                      isDark,
                     ),
 
                     const SizedBox(height: 15),
@@ -85,7 +84,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       "Payment Reminders",
                       "Get reminders for upcoming payments",
                       paymentReminders,
-                      (v) => setState(() => paymentReminders = v),
+                      (v) =>
+                          setState(() => paymentReminders = v),
+                      isDark,
                     ),
 
                     const SizedBox(height: 15),
@@ -94,7 +95,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       "Goal Milestones",
                       "Notifications when you reach savings goals",
                       goalMilestones,
-                      (v) => setState(() => goalMilestones = v),
+                      (v) =>
+                          setState(() => goalMilestones = v),
+                      isDark,
                     ),
 
                     const SizedBox(height: 15),
@@ -103,7 +106,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       "Weekly Reports",
                       "Receive weekly spending summaries",
                       weeklyReports,
-                      (v) => setState(() => weeklyReports = v),
+                      (v) =>
+                          setState(() => weeklyReports = v),
+                      isDark,
                     ),
 
                     const SizedBox(height: 15),
@@ -112,7 +117,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       "Promotions & Offers",
                       "Get notified about special offers",
                       promotions,
-                      (v) => setState(() => promotions = v),
+                      (v) =>
+                          setState(() => promotions = v),
+                      isDark,
                     ),
 
                     const SizedBox(height: 80),
@@ -126,41 +133,50 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  /// Notification Tile Widget
+  /// ================= TILE =================
   Widget _notificationTile(
-      String title,
-      String subtitle,
-      bool value,
-      ValueChanged<bool> onChanged) {
-
+    String title,
+    String subtitle,
+    bool value,
+    ValueChanged<bool> onChanged,
+    bool isDark,
+  ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        color: isDark ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white24
+              : Colors.black12,
+        ),
       ),
       child: Row(
         children: [
 
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
-
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: isDark
+                        ? Colors.white
+                        : Colors.black,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: isDark
+                        ? Colors.white70
+                        : Colors.black54,
                     fontSize: 13,
                   ),
                 ),
@@ -173,7 +189,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppColors.switchActive,
+              activeColor:
+                  isDark ? Colors.white : Colors.black,
             ),
           ),
         ],

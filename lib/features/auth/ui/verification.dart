@@ -1,6 +1,4 @@
-
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -39,11 +37,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
     for (var c in _controllers) {
       c.dispose();
     }
-
     for (var f in _focusNodes) {
       f.dispose();
     }
-
     super.dispose();
   }
 
@@ -53,7 +49,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
       setState(() => _errorMessage = null);
     }
 
-    /// OTP PASTE SUPPORT
+    // PASTE SUPPORT
     if (value.length > 1) {
       final digits = value.replaceAll(RegExp(r'\D'), '').split('');
 
@@ -65,12 +61,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
       return;
     }
 
-    /// MOVE FORWARD
+    // MOVE FORWARD
     if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
 
-    /// MOVE BACKWARD
+    // MOVE BACKWARD
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
@@ -78,6 +74,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   /// VERIFY OTP
   Future<void> _verifyCode() async {
+    if (_isLoading) return;
+
     final code = _controllers.map((e) => e.text).join();
 
     if (code.length != 6) {
@@ -100,20 +98,21 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
       if (!mounted) return;
 
+      /// ✅ FIXED SUCCESS CHECK
       if (data["accessToken"] != null) {
         final token = data["accessToken"];
-        final user = data["user"];
+        final user = data["user"] ?? {};
 
         await AuthStorage.saveUser(
           token: token,
-          name: user["name"],
-          email: user["email"],
+          name: user["name"] ?? "",
+          email: user["email"] ?? "",
           phone: user["phone"] ?? "",
         );
 
         context.read<UserProfileProvider>().setUser(
-              userName: user["name"],
-              userEmail: user["email"],
+              userName: user["name"] ?? "",
+              userEmail: user["email"] ?? "",
             );
 
         Navigator.pushAndRemoveUntil(
@@ -125,7 +124,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
         );
       } else {
         setState(() {
-          _errorMessage = data["message"] ?? "OTP verification failed";
+          _errorMessage =
+              data["message"] ?? "OTP verification failed";
         });
       }
     } catch (e) {
@@ -147,6 +147,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   /// RESEND OTP
   Future<void> _resendOtp() async {
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -157,7 +159,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
       if (!mounted) return;
 
-      if (data["message"] != null) {
+      if (data["success"] == true) {
         for (var c in _controllers) {
           c.clear();
         }
@@ -165,11 +167,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
         _focusNodes.first.requestFocus();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data["message"])),
+          SnackBar(
+            content: Text(data["message"] ?? "OTP resent"),
+          ),
         );
       } else {
         setState(() {
-          _errorMessage = "Failed to resend OTP";
+          _errorMessage =
+              data["message"] ?? "Failed to resend OTP";
         });
       }
     } catch (e) {
@@ -289,8 +294,18 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                       BorderRadius.circular(12),
                                 ),
                               ),
-                              onChanged: (v) =>
-                                  _handleInput(v, index),
+                              onChanged: (v) {
+                                _handleInput(v, index);
+
+                                final code = _controllers
+                                    .map((e) => e.text)
+                                    .join();
+
+                                /// ✅ PREVENT DOUBLE CALL
+                                if (code.length == 6 && !_isLoading) {
+                                  _verifyCode();
+                                }
+                              },
                             ),
                           ),
                         ),
@@ -324,7 +339,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  if (_isLoading)
+                    const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+
+                  const SizedBox(height: 16),
 
                   CustomButton(
                     text: _isLoading

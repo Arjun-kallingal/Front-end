@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:front_end/features/profile/services/change_password_service.dart';
 import 'package:front_end/core/services/auth_storage.dart';
-
 import 'package:http/http.dart' as http;
-
 import 'package:front_end/core/services/api_config.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -18,7 +16,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   final TextEditingController currentPasswordController =
       TextEditingController();
-  final TextEditingController newPasswordController = TextEditingController();
+  final TextEditingController newPasswordController =
+      TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
@@ -28,28 +27,44 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   String? currentPasswordError;
 
-  /// SUCCESS ALERT
   void showSuccessAlert(String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text("Success"),
-        content: Text(message),
+        backgroundColor: isDark ? Colors.black : Colors.white,
+        title: Text(
+          "Success",
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context);
             },
-            child: const Text("OK"),
+            child: Text(
+              "OK",
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+              ),
+            ),
           )
         ],
       ),
     );
   }
 
-  /// CHANGE PASSWORD
   void _changePassword() async {
     setState(() {
       currentPasswordError = null;
@@ -63,7 +78,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         newPasswordController.text.trim(),
       );
 
-      /// SAVE NEW TOKEN IF RETURNED
       if (result["accessToken"] != null) {
         final name = await AuthStorage.getName();
         final email = await AuthStorage.getEmail();
@@ -76,14 +90,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         );
       }
 
-      /// SUCCESS ALERT
       showSuccessAlert(
         result["message"] ?? "Password updated successfully",
       );
     } catch (e) {
       final message = e.toString().replaceAll("Exception: ", "");
 
-      /// SHOW FORM ERROR
       if (message.toLowerCase().contains("current password")) {
         setState(() {
           currentPasswordError = message;
@@ -104,48 +116,46 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
       body: SafeArea(
         child: Column(
           children: [
-            /// HEADER
+
+            /// ================= HEADER =================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(top: 10, bottom: 10),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : Colors.white,
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     "Change Password",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ],
               ),
             ),
 
-            /// FORM
+            /// ================= FORM =================
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -159,45 +169,56 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
+
                         /// CURRENT PASSWORD
-                     _passwordField(
-  controller: currentPasswordController,
-  label: "Current Password",
-  obscure: obscureCurrent,
-  errorText: currentPasswordError,
-  toggle: () {
-    setState(() {
-      obscureCurrent = !obscureCurrent;
-    });
-  },
-  validator: (value) {
-    if (value == null || value.isEmpty) {
-      return "Enter current password";
-    }
-    return currentPasswordError;
-  },
-),
+                        _passwordField(
+                          controller: currentPasswordController,
+                          label: "Current Password",
+                          obscure: obscureCurrent,
+                          errorText: currentPasswordError,
+                          toggle: () {
+                            setState(() {
+                              obscureCurrent = !obscureCurrent;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Enter current password";
+                            }
+                            return currentPasswordError;
+                          },
+                        ),
 
-/// FORGOT PASSWORD
-Align(
-  alignment: Alignment.centerRight,
-  child: TextButton(
-    onPressed: () async {
-      final token = await AuthStorage.getToken();
+                        /// FORGOT PASSWORD
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () async {
+                              final token = await AuthStorage.getToken();
 
-      await http.post(
-        Uri.parse("${ApiConfig.baseUrl}/api/user/forgot-password"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token"
-        },
-      );
+                              await http.post(
+                                Uri.parse(
+                                    "${ApiConfig.baseUrl}/api/user/forgot-password"),
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  "Authorization": "Bearer $token"
+                                },
+                              );
 
-      Navigator.pushNamed(context, "/otpVerification");
-    },
-    child: const Text("Forgot Password?"),
-  ),
-),
+                              Navigator.pushNamed(
+                                  context, "/otpVerification");
+                            },
+                            child: Text(
+                              "Forgot Password?",
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+
                         const SizedBox(height: 10),
 
                         /// NEW PASSWORD
@@ -246,14 +267,24 @@ Align(
 
                         const SizedBox(height: 30),
 
+                        /// BUTTON
                         SizedBox(
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
                             onPressed: _changePassword,
-                            child: const Text(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  isDark ? Colors.white : Colors.black,
+                            ),
+                            child: Text(
                               "Update Password",
-                              style: TextStyle(fontSize: 16),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: isDark
+                                    ? Colors.black
+                                    : Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -277,14 +308,22 @@ Align(
     required VoidCallback toggle,
     required String? Function(String?) validator,
   }) {
-    final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       validator: validator,
+      style: TextStyle(
+        color: isDark ? Colors.white : Colors.black,
+      ),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(
+          color: isDark ? Colors.white : Colors.black,
+        ),
         errorText: errorText,
         filled: true,
         fillColor: color.background,
@@ -295,7 +334,7 @@ Align(
         suffixIcon: IconButton(
           icon: Icon(
             obscure ? Icons.visibility_off : Icons.visibility,
-            color: color.primary,
+            color: isDark ? Colors.white : Colors.black,
           ),
           onPressed: toggle,
         ),

@@ -5,8 +5,9 @@ class TermsOfServiceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -22,28 +23,21 @@ class TermsOfServiceScreen extends StatelessWidget {
                 top: 10,
                 bottom: 10,
               ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
-             
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : Colors.white,
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                       size: 20,
                     ),
                   ),
 
-                  /// prevents overflow
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       "Terms of Service",
                       maxLines: 1,
@@ -51,7 +45,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                   ),
@@ -129,6 +123,7 @@ support@walletcare.com
                   style: theme.textTheme.bodyMedium?.copyWith(
                     height: 1.6,
                     fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
               ),

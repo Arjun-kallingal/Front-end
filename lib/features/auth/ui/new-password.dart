@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
 import '../services/authentication_service.dart';
 
-
 class NewPasswordScreen extends StatefulWidget {
-
   final String email;
   final String resetToken;
 
@@ -13,6 +11,7 @@ class NewPasswordScreen extends StatefulWidget {
     required this.email,
     required this.resetToken,
   });
+
   @override
   State<NewPasswordScreen> createState() => _NewPasswordScreenState();
 }
@@ -20,7 +19,63 @@ class NewPasswordScreen extends StatefulWidget {
 class _NewPasswordScreenState extends State<NewPasswordScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmController = TextEditingController();
+
   bool showPassword = false;
+  bool isLoading = false;
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> handleReset() async {
+    final password = passwordController.text.trim();
+    final confirm = confirmController.text.trim();
+
+    if (password.isEmpty || confirm.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fill all fields')),
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters')),
+      );
+      return;
+    }
+
+    if (password != confirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    final success =
+        await AuthService.resetPassword(widget.resetToken, password);
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset successful')),
+      );
+
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reset failed. Try again')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,10 +95,22 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                 children: [
                   Text(
                     'Create a New Password',
-                    style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
+
+                  const SizedBox(height: 8),
+
+                  /// OPTIONAL: show email
+                  Text(
+                    widget.email,
+                    style: textTheme.bodySmall,
+                  ),
+
                   const SizedBox(height: 30),
+
                   TextField(
                     controller: passwordController,
                     obscureText: !showPassword,
@@ -53,7 +120,11 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       suffixIcon: IconButton(
-                        icon: Icon(showPassword ? Icons.visibility : Icons.visibility_off),
+                        icon: Icon(
+                          showPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
                         onPressed: () {
                           setState(() {
                             showPassword = !showPassword;
@@ -62,7 +133,9 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
                   TextField(
                     controller: confirmController,
                     obscureText: !showPassword,
@@ -73,50 +146,15 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 30),
 
-
-                CustomButton(
-  text: 'Set Password',
-  onPressed: () async {
-
-    final password = passwordController.text.trim();
-    final confirm = confirmController.text.trim();
-
-    if (password.isEmpty || confirm.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Fill all fields')),
-      );
-      return;
-    }
-
-    if (password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
-    }
-
-    final success =
-        await AuthService.resetPassword(widget.resetToken, password);
-
-    if (success) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset successful')),
-      );
-
-      Navigator.popUntil(context, (route) => route.isFirst);
-
-    } else {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reset failed')),
-      );
-
-    }
-  },
-),
+                  isLoading
+                      ? const CircularProgressIndicator()
+                      : CustomButton(
+                          text: 'Set Password',
+                          onPressed: handleReset,
+                        ),
                 ],
               ),
             ),

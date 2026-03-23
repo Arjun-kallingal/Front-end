@@ -1,7 +1,7 @@
 class MockAuthService {
   /// The exact ID from your Node.js authMiddleware.
   /// Change this string ONCE here, and it updates everywhere in the app!
-  static const String currentUserId = "69aa67056218083a1093140f";
+  static const String currentUserId = "69a7c2ee3b7e643684e7b2d0";
 
   /// A fake login method you can use later to test loading screens
   static Future<String> simulateLogin() async {

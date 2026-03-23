@@ -1,68 +1,62 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:front_end/core/services/api_client.dart';
 import 'package:front_end/core/models/transaction_model.dart';
 
 class TransactionService {
-   static String get _baseUrl {
-    if (kIsWeb) {
-      // If running in Chrome/Edge
-      return "http://localhost:5000/api/transaction"; 
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      // If running on Android Emulator
-      return "http://192.168.29.189:5000/api/transaction";
-    } else {
-      // If running on iOS Simulator or Desktop
-      return "http://localhost:5000/api/transaction";
-    }
+  static String get _baseUrl {
+    return "http://localhost:5000/api/transaction";
   }
 
-  /// --- 1. FETCH HISTORY (REFINED) ---
-  /// Now supports accountId and category filtering via query parameters.
- static Future<TransactionHistoryResponse> getHistory(
-  String userId, {
-  String? accountId,
-  String? category,
-}) async {
-  try {
-    final Map<String, String> queryParams = {};
+  /// --- 1. FETCH HISTORY ---
+  static Future<TransactionHistoryResponse> getHistory(
+    String userId, {
+    String? accountId,
+    String? category,
+  }) async {
+    try {
+      final Map<String, String> queryParams = {};
 
-    if (accountId != null && accountId != "All Accounts") {
-      queryParams['accountId'] = accountId;
+      if (accountId != null && accountId != "All Accounts") {
+        queryParams['accountId'] = accountId;
+      }
+
+      if (category != null && category != "All Categories") {
+        queryParams['category'] = category;
+      }
+
+      final uri = Uri.parse('$_baseUrl/history/$userId')
+          .replace(queryParameters: queryParams);
+
+      print("TRANSACTION API CALL: $uri");
+
+      /// ✅ GET HEADERS WITH TOKEN
+      final headers = await ApiClient.getHeaders();
+
+      final response = await http.get(
+        uri,
+        headers: headers,
+      );
+
+      print("STATUS CODE: ${response.statusCode}");
+      print("RESPONSE BODY: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        return TransactionHistoryResponse.fromJson(body);
+      } else if (response.statusCode == 401) {
+        throw Exception("Unauthorized - Please login again");
+      } else {
+        throw Exception("Server error: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("TRANSACTION SERVICE ERROR: $e");
+      throw Exception("Connection Error: $e");
     }
-
-    if (category != null && category != "All Categories") {
-      queryParams['category'] = category;
-    }
-
-    final uri =
-        Uri.parse('$_baseUrl/history/$userId').replace(queryParameters: queryParams);
-
-    print("TRANSACTION API CALL: $uri"); // 👈 Debug
-
-    final response = await http.get(
-      uri,
-      headers: {"Content-Type": "application/json"},
-    );
-
-    print("STATUS CODE: ${response.statusCode}");
-    print("RESPONSE BODY: ${response.body}");
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> body = jsonDecode(response.body);
-      return TransactionHistoryResponse.fromJson(body);
-    } else {
-      throw Exception("Server error: ${response.statusCode}");
-    }
-  } catch (e) {
-    print("TRANSACTION SERVICE ERROR: $e");
-    throw Exception("Connection Error: $e");
   }
-}
 
   /// --- 2. PROCESS TRANSACTION ---
-  /// Sends an atomic request to the ledger controller
   static Future<Map<String, dynamic>> processTransaction({
     required String userId,
     required String accountId,
@@ -73,9 +67,12 @@ class TransactionService {
     String direction = "NORMAL",
   }) async {
     try {
+      /// ✅ GET HEADERS WITH TOKEN
+      final headers = await ApiClient.getHeaders();
+
       final response = await http.post(
         Uri.parse('$_baseUrl/process'),
-        headers: {"Content-Type": "application/json"},
+        headers: headers,
         body: jsonEncode({
           "userId": userId,
           "accountId": accountId,
@@ -84,7 +81,6 @@ class TransactionService {
           "direction": direction,
           "category": category,
           "description": description ?? "",
-          // 🛡️ IdempotencyKey prevents double-charging on laggy connections
           "idempotencyKey": const Uuid().v4(),
         }),
       );
@@ -93,7 +89,8 @@ class TransactionService {
 
       return {
         "success": response.statusCode == 201,
-        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ??
+            (response.statusCode == 201 ? "Success" : "Failed"),
         "data": data
       };
     } catch (e) {

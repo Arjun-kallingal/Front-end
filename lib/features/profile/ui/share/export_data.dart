@@ -31,9 +31,12 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
   Future<void> _exportData() async {
     if (selectedRange == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select a date range"),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text("Please select a date range"),
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
         ),
       );
       return;
@@ -50,7 +53,10 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Data exported successfully as $selectedFormat"),
-        backgroundColor: Colors.green,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
       ),
     );
   }
@@ -60,6 +66,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -67,44 +74,35 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
         child: Column(
           children: [
 
-            /// HEADER
+            /// ================= HEADER =================
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 10,
-                bottom: 10,
-              ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
-                
+              padding: const EdgeInsets.only(top: 10, bottom: 10),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : Colors.white,
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
-                  const Text(
+                  Text(
                     "Export Data",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ],
               ),
             ),
 
-            /// SCROLLABLE CONTENT
+            /// ================= CONTENT =================
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -127,8 +125,12 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                         children: [
                           Text(
                             "Select Date Range",
-                            style: textTheme.titleMedium!
-                                .copyWith(fontWeight: FontWeight.bold),
+                            style: textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
                           ),
                           const SizedBox(height: 16),
 
@@ -139,7 +141,8 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                                   horizontal: 16, vertical: 16),
                               decoration: BoxDecoration(
                                 color: color.background,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius:
+                                    BorderRadius.circular(12),
                               ),
                               child: Row(
                                 mainAxisAlignment:
@@ -149,8 +152,18 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                                     selectedRange == null
                                         ? "Choose date range"
                                         : "${selectedRange!.start.toString().split(' ')[0]}  →  ${selectedRange!.end.toString().split(' ')[0]}",
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
                                   ),
-                                  const Icon(Icons.calendar_today),
+                                  Icon(
+                                    Icons.calendar_today,
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
                                 ],
                               ),
                             ),
@@ -173,8 +186,12 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                         children: [
                           Text(
                             "Export Format",
-                            style: textTheme.titleMedium!
-                                .copyWith(fontWeight: FontWeight.bold),
+                            style: textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
                           ),
                           const SizedBox(height: 16),
 
@@ -183,20 +200,38 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                                 const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
                               color: color.background,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius:
+                                  BorderRadius.circular(12),
                             ),
                             child: DropdownButton<String>(
                               value: selectedFormat,
                               isExpanded: true,
+                              dropdownColor: isDark
+                                  ? Colors.black
+                                  : Colors.white,
                               underline: const SizedBox(),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
                                   value: "CSV",
-                                  child: Text("CSV"),
+                                  child: Text(
+                                    "CSV",
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                  ),
                                 ),
                                 DropdownMenuItem(
                                   value: "PDF",
-                                  child: Text("PDF"),
+                                  child: Text(
+                                    "PDF",
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                  ),
                                 ),
                               ],
                               onChanged: (value) {
@@ -220,12 +255,23 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                         style: ElevatedButton.styleFrom(
                           padding:
                               const EdgeInsets.symmetric(vertical: 18),
+                          backgroundColor:
+                              isDark ? Colors.white : Colors.black,
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
+                            ? CircularProgressIndicator(
+                                color: isDark
+                                    ? Colors.black
+                                    : Colors.white,
                               )
-                            : const Text("Export Data"),
+                            : Text(
+                                "Export Data",
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.black
+                                      : Colors.white,
+                                ),
+                              ),
                       ),
                     ),
 

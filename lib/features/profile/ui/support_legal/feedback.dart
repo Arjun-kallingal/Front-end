@@ -37,7 +37,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
   }
 
-  Widget _buildStar(int index) {
+  Widget _buildStar(int index, bool isDark) {
     return IconButton(
       onPressed: () {
         setState(() {
@@ -47,7 +47,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       icon: Icon(
         Icons.star,
         size: 32,
-        color: index <= _rating ? Colors.amber : Colors.grey,
+        color: index <= _rating
+            ? (isDark ? Colors.white : Colors.black)
+            : (isDark ? Colors.white24 : Colors.black26),
       ),
     );
   }
@@ -61,46 +63,36 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
-
-      /// prevents resize overflow when keyboard opens
       resizeToAvoidBottomInset: true,
 
       body: SafeArea(
         child: Column(
           children: [
+
             /// ================= HEADER =================
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 10,
-                bottom: 10,
-              ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                 colors: [
-  Color(0xFF2E7D32), // Normal Green
-  Color(0xFF4CAF50), // Material Green
-],
-                ),
+              padding: const EdgeInsets.only(top: 10, bottom: 10),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : Colors.white,
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : Colors.black,
                       size: 20,
                     ),
                   ),
-
-                  /// prevents overflow
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       "Feedback & Rate Us",
                       maxLines: 1,
@@ -108,7 +100,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                   ),
@@ -130,11 +122,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+
                       /// rating title
                       Text(
                         "Rate Your Experience",
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
 
@@ -146,7 +140,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           alignment: WrapAlignment.center,
                           children: List.generate(
                             5,
-                            (index) => _buildStar(index + 1),
+                            (index) => _buildStar(index + 1, isDark),
                           ),
                         ),
                       ),
@@ -158,6 +152,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         "Your Feedback",
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
 
@@ -167,8 +162,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       TextFormField(
                         controller: _feedbackController,
                         maxLines: 4,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: InputDecoration(
                           hintText: "Write your feedback here...",
+                          hintStyle: TextStyle(
+                            color:
+                                isDark ? Colors.white54 : Colors.black45,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -186,7 +188,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       /// email title
                       Text(
                         "Email (optional)",
-                        style: theme.textTheme.bodyMedium,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
 
                       const SizedBox(height: 8),
@@ -195,8 +199,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: InputDecoration(
                           hintText: "Enter your email",
+                          hintStyle: TextStyle(
+                            color:
+                                isDark ? Colors.white54 : Colors.black45,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -212,17 +223,18 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
-                                const Color.fromARGB(255, 184, 20, 20),
+                                isDark ? Colors.white : Colors.black,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           onPressed: _submitFeedback,
-                          child: const Text(
+                          child: Text(
                             "Submit Feedback",
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white,
+                              color:
+                                  isDark ? Colors.black : Colors.white,
                             ),
                           ),
                         ),
