@@ -10,14 +10,27 @@ class SignOutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme;
+    final isLight = theme.brightness == Brightness.light;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: isLight ? Colors.white : Colors.black,
+
       appBar: AppBar(
-        title: const Text("Sign Out"),
+        backgroundColor: isLight ? Colors.white : Colors.black,
+        elevation: 0,
         centerTitle: true,
+        title: Text(
+          "Sign Out",
+          style: TextStyle(
+            color: isLight ? Colors.black : Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        iconTheme: IconThemeData(
+          color: isLight ? Colors.black : Colors.white,
+        ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -28,7 +41,7 @@ class SignOutScreen extends StatelessWidget {
             Icon(
               Icons.logout,
               size: 70,
-              color: color.primary,
+              color: isLight ? Colors.black : Colors.white,
             ),
 
             const SizedBox(height: 20),
@@ -37,20 +50,25 @@ class SignOutScreen extends StatelessWidget {
             Text(
               "Are you sure you want to sign out?",
               textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: isLight ? Colors.black : Colors.white,
+              ),
             ),
 
             const SizedBox(height: 40),
 
-            /// SIGN OUT BUTTON (YOUR CODE ADDED HERE)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            /// SIGN OUT BUTTON
+            SizedBox(
+              width: double.infinity,
+              height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor:
+                      isLight ? Colors.black : Colors.white,
+                  foregroundColor:
+                      isLight ? Colors.white : Colors.black,
                 ),
                 onPressed: () async {
-
                   await AuthStorage.logout();
 
                   context.read<UserProfileProvider>().clearUser();
@@ -63,7 +81,10 @@ class SignOutScreen extends StatelessWidget {
                     (route) => false,
                   );
                 },
-                child: const Text("Sign Out"),
+                child: const Text(
+                  "Sign Out",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
 
@@ -72,11 +93,22 @@ class SignOutScreen extends StatelessWidget {
             /// CANCEL BUTTON
             SizedBox(
               width: double.infinity,
+              height: 50,
               child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: isLight ? Colors.black : Colors.white,
+                  ),
+                ),
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: const Text("Cancel"),
+                child: Text(
+                  "Cancel",
+                  style: TextStyle(
+                    color: isLight ? Colors.black : Colors.white,
+                  ),
+                ),
               ),
             ),
           ],

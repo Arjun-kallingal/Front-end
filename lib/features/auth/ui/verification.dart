@@ -103,13 +103,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
         final token = data["accessToken"];
         final user = data["user"] ?? {};
 
-        await AuthStorage.saveUser(
-          token: token,
-          name: user["name"] ?? "",
-          email: user["email"] ?? "",
-          phone: user["phone"] ?? "",
-        );
-
+       await AuthStorage.saveUser(
+  token: data["accessToken"],
+ refreshToken: data["refreshToken"] ?? "",
+  name: user["name"] ?? "",
+  email: user["email"] ?? "",
+);
         context.read<UserProfileProvider>().setUser(
               userName: user["name"] ?? "",
               userEmail: user["email"] ?? "",

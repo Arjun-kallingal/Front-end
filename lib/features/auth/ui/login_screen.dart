@@ -44,27 +44,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final data = jsonDecode(response.body);
 
-      /// DEBUG
-      print("LOGIN RESPONSE: $data");
-
       if (response.statusCode == 200 && data["accessToken"] != null) {
         final token = data["accessToken"];
         final user = data["user"];
 
         final name = user["name"];
         final email = user["email"];
+await AuthStorage.saveUser(
+  token: data["accessToken"],
+  refreshToken: data["refreshToken"] ?? "", // SAFE
+  name: name,
+  email: email,
+);
 
-        /// Save token + user locally
-        final phone = user["phone"] ?? "";
-
-        await AuthStorage.saveUser(
-          token: token,
-          name: name,
-          email: email,
-          phone: phone,
-        );
-
-        /// Save user in Provider
         context.read<UserProfileProvider>().setUser(
               userName: name,
               userEmail: email,
@@ -75,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(data["message"] ?? "Login successful"),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.black,
           ),
         );
 
@@ -86,19 +78,17 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(data["message"] ?? "Login failed"),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.black,
           ),
         );
       }
     } catch (e) {
-      print("LOGIN ERROR: $e");
-
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Unable to connect to server"),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.black,
         ),
       );
     }
@@ -107,10 +97,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final isLight = theme.brightness == Brightness.light;
     final textTheme = theme.textTheme;
 
     return Scaffold(
+      backgroundColor: isLight ? Colors.white : Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -128,19 +119,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       Icon(
                         Icons.shield_outlined,
                         size: 64,
-                        color: colors.primary,
+                        color: isLight ? Colors.black : Colors.white,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         'Wallet Care',
                         style: textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: isLight ? Colors.black : Colors.white,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Secure Financial Management',
-                        style: textTheme.bodyMedium,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color:
+                              isLight ? Colors.black54 : Colors.white70,
+                        ),
                       ),
                     ],
                   ),
@@ -165,17 +160,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 14),
 
-                /// PASSWORD
+                /// PASSWORD LABEL
                 Text(
                   'Password',
-                  style: textTheme.labelLarge,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: isLight ? Colors.black : Colors.white,
+                  ),
                 ),
 
                 const SizedBox(height: 8),
 
+                /// PASSWORD FIELD
                 TextFormField(
                   controller: passwordController,
                   obscureText: obscurePassword,
+                  style: TextStyle(
+                    color: isLight ? Colors.black : Colors.white,
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
@@ -187,18 +188,38 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Enter your password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    hintStyle: TextStyle(
+                      color: isLight
+                          ? Colors.black54
+                          : Colors.white54,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: isLight
+                          ? Colors.black54
+                          : Colors.white54,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         obscurePassword
                             ? Icons.visibility_off
                             : Icons.visibility,
+                        color: isLight
+                            ? Colors.black54
+                            : Colors.white54,
                       ),
                       onPressed: () {
                         setState(() {
                           obscurePassword = !obscurePassword;
                         });
                       },
+                    ),
+                    filled: true,
+                    fillColor:
+                        isLight ? Colors.grey[100] : Colors.grey[900],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
                   ),
                 ),
@@ -214,20 +235,28 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen(),
+                            builder: (_) =>
+                                const ForgotPasswordScreen(),
                           ),
                         );
                       },
-                      child: const Text('Forgot password?'),
+                      child: Text(
+                        'Forgot password?',
+                        style: TextStyle(
+                          color:
+                              isLight ? Colors.black : Colors.white,
+                        ),
+                      ),
                     ),
                   ],
                 ),
 
-                /// SIGN IN
+                /// SIGN IN BUTTON
                 CustomButton(
                   text: 'Sign In',
                   onPressed: () {
-                    final isValid = _formKey.currentState!.validate();
+                    final isValid =
+                        _formKey.currentState!.validate();
 
                     if (isValid) {
                       loginUser();
@@ -240,7 +269,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: Text(
                     'NEW TO WALLET CARE?',
-                    style: textTheme.labelMedium,
+                    style: textTheme.labelMedium?.copyWith(
+                      color:
+                          isLight ? Colors.black54 : Colors.white70,
+                    ),
                   ),
                 ),
 
@@ -248,6 +280,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 /// CREATE ACCOUNT
                 OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: isLight
+                          ? Colors.black
+                          : Colors.white,
+                    ),
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -256,7 +295,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   },
-                  child: const Text('Create Account'),
+                  child: Text(
+                    'Create Account',
+                    style: TextStyle(
+                      color:
+                          isLight ? Colors.black : Colors.white,
+                    ),
+                  ),
                 ),
               ],
             ),

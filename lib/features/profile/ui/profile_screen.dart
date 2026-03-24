@@ -12,6 +12,9 @@ import 'package:front_end/features/profile/ui/edit-profile/profile_edit.dart';
 import 'package:front_end/features/profile/ui/support_legal/feedback.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:front_end/features/profile/ui/notifications/notification.dart';
+
+import 'package:front_end/features/profile/ui/account/delete_account_screen.dart';
+
 import 'package:front_end/features/profile/ui/account/sign_out_screen.dart';
 // import 'package:front_end/core/constants/app_colors.dart';
 
@@ -30,17 +33,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   ///  SAFE INITIALS METHOD
   String getInitials(String name) {
-    if (name.trim().isEmpty) return "U";
+  if (name.trim().isEmpty) return "U";
 
-    final parts = name.trim().split(" ");
+  final parts = name
+      .trim()
+      .split(" ")
+      .where((e) => e.isNotEmpty)
+      .toList();
 
-    if (parts.length == 1) {
-      return parts[0][0].toUpperCase();
-    }
+  if (parts.isEmpty) return "U";
 
-    return (parts[0][0] + parts[1][0]).toUpperCase();
+  if (parts.length == 1) {
+    return parts[0][0].toUpperCase();
   }
 
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
   @override
   void initState() {
     super.initState();
@@ -109,7 +117,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 padding: const EdgeInsets.only(left: 20,right: 20),
                 child: Builder(
                   builder: (context) {
-                    final color = Theme.of(context).colorScheme;
                     final textTheme = Theme.of(context).textTheme;
 
                     return Container(
@@ -174,7 +181,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                                   .read<UserProfileProvider>()
                                                   .updateProfile(
                                                     newName: result["name"],
-                                                    newMobile: result["mobile"],
                                                   );
                                             }
                                           },
@@ -404,7 +410,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               const SizedBox(height: 18),
 
 /// ================= ACCOUNT =================
+/// ================= ACCOUNT =================
 _sectionWrapper(context, "Account", [
+  
+  /// SIGN OUT
   _navigationTile(
     context,
     icon: Icons.logout,
@@ -418,8 +427,22 @@ _sectionWrapper(context, "Account", [
       );
     },
   ),
-]),
 
+  /// DELETE ACCOUNT
+ _navigationTile(
+  context,
+  icon: Icons.delete_outline,
+  title: "Delete Account",
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const DeleteAccountScreen(),
+      ),
+    );
+  },
+),
+]),
               /// ================= ABOUT =================
               _sectionWrapper(context, "About", [
                 _navigationTile(
@@ -581,8 +604,8 @@ Widget _switchTile(BuildContext context,
     value: value,
 
     /// ACTIVE (ON)
-    activeThumbColor: isLight ? Colors.black : Colors.white,
-    activeTrackColor: isLight ? Colors.black54 : Colors.white54,
+    activeThumbColor: isLight ? Colors.white : Colors.black,
+    activeTrackColor: isLight ? Colors.black : Colors.white,
 
     /// INACTIVE (OFF)
     inactiveThumbColor: isLight ? Colors.black : Colors.black,

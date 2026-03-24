@@ -3,6 +3,7 @@ import 'package:front_end/features/profile/services/change_password_service.dart
 import 'package:front_end/core/services/auth_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:front_end/core/services/api_config.dart';
+import 'package:front_end/core/services/auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -16,8 +17,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   final TextEditingController currentPasswordController =
       TextEditingController();
-  final TextEditingController newPasswordController =
-      TextEditingController();
+  final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
@@ -78,15 +78,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         newPasswordController.text.trim(),
       );
 
-      if (result["accessToken"] != null) {
+      /// ✅ SAVE NEW TOKENS (IMPORTANT)
+      if (result["accessToken"] != null && result["refreshToken"] != null) {
         final name = await AuthStorage.getName();
         final email = await AuthStorage.getEmail();
 
         await AuthStorage.saveUser(
           token: result["accessToken"],
+          refreshToken: result["refreshToken"],
           name: name ?? "",
           email: email ?? "",
-          phone: "",
         );
       }
 
@@ -125,7 +126,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       body: SafeArea(
         child: Column(
           children: [
-
             /// ================= HEADER =================
             Container(
               width: double.infinity,
@@ -169,7 +169,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
-
                         /// CURRENT PASSWORD
                         _passwordField(
                           controller: currentPasswordController,
@@ -194,9 +193,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () async {
-                              final token = await AuthStorage.getToken();
+                              String? token = await AuthStorage.getToken();
 
-                              await http.post(
+                              http.Response response = await http.post(
                                 Uri.parse(
                                     "${ApiConfig.baseUrl}/api/user/forgot-password"),
                                 headers: {
@@ -205,15 +204,41 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 },
                               );
 
-                              Navigator.pushNamed(
-                                  context, "/otpVerification");
+                              /// 🔥 HANDLE TOKEN EXPIRED
+                              if (response.statusCode == 401) {
+                                final newToken =
+                                    await AuthService.refreshAccessToken();
+
+                                if (newToken == null) {
+                                  await AuthStorage.logout();
+                                  return;
+                                }
+
+                                response = await http.post(
+                                  Uri.parse(
+                                      "${ApiConfig.baseUrl}/api/user/forgot-password"),
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": "Bearer $newToken"
+                                  },
+                                );
+                              }
+
+                              /// ✅ ONLY NAVIGATE IF SUCCESS
+                              if (response.statusCode == 200) {
+                                Navigator.pushNamed(
+                                    context, "/otpVerification");
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text("Failed to send OTP")),
+                                );
+                              }
                             },
                             child: Text(
                               "Forgot Password?",
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                           ),
@@ -281,9 +306,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                               "Update Password",
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isDark
-                                    ? Colors.black
-                                    : Colors.white,
+                                color: isDark ? Colors.black : Colors.white,
                               ),
                             ),
                           ),
