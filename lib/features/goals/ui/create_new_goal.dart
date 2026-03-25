@@ -47,12 +47,36 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   IconData selectedIcon = Icons.trending_up_rounded;
 
   final List<Map<String, dynamic>> categories = [
-    {"name": "Savings", "icon": Icons.trending_up_rounded, "color": Colors.green.shade800},
-    {"name": "Emergency", "icon": Icons.error_outline_rounded, "color": Colors.red.shade800},
-    {"name": "Bills", "icon": Icons.receipt_long_rounded, "color": Colors.orange.shade800},
-    {"name": "Business", "icon": Icons.work_outline_rounded, "color": Colors.blue.shade800},
-    {"name": "Travel", "icon": Icons.flight_takeoff_rounded, "color": Colors.purple.shade800},
-    {"name": "Other", "icon": Icons.category_rounded, "color": Colors.grey.shade800},
+    {
+      "name": "Savings",
+      "icon": Icons.trending_up_rounded,
+      "color": Colors.green.shade800
+    },
+    {
+      "name": "Emergency",
+      "icon": Icons.error_outline_rounded,
+      "color": Colors.red.shade800
+    },
+    {
+      "name": "Bills",
+      "icon": Icons.receipt_long_rounded,
+      "color": Colors.orange.shade800
+    },
+    {
+      "name": "Business",
+      "icon": Icons.work_outline_rounded,
+      "color": Colors.blue.shade800
+    },
+    {
+      "name": "Travel",
+      "icon": Icons.flight_takeoff_rounded,
+      "color": Colors.purple.shade800
+    },
+    {
+      "name": "Other",
+      "icon": Icons.category_rounded,
+      "color": Colors.grey.shade800
+    },
   ];
 
   @override
@@ -207,8 +231,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
           ),
           Text(
             widget.existingGoal == null ? "Create New Goal" : "Edit Goal",
-            style: const TextStyle(
-                fontSize: 19, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -306,7 +329,8 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
           children: [
             _buildHeader(),
             _isFetchingAccounts
-                ? const Expanded(child: Center(child: CircularProgressIndicator()))
+                ? const Expanded(
+                    child: Center(child: CircularProgressIndicator()))
                 : Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
@@ -322,7 +346,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                   v == null || v.isEmpty ? "Required" : null,
                             ),
                             const SizedBox(height: 16),
-
                             _buildLabel("Target Amount"),
                             TextFormField(
                               controller: targetController,
@@ -337,7 +360,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                   v == null || v.isEmpty ? "Required" : null,
                             ),
                             const SizedBox(height: 16),
-
                             _buildLabel("Target Date"),
                             InkWell(
                               onTap: () async {
@@ -367,15 +389,11 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 24),
-
                             _buildLabel("Funding Account"),
                             _buildAccountSelectorBox(),
                             if (_showAccountOptions) _buildAccountList(),
-
                             const SizedBox(height: 24),
-
                             _buildLabel("Category"),
                             GridView.builder(
                               shrinkWrap: true,
@@ -394,8 +412,8 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                     selectedCategory == category["name"];
 
                                 return GestureDetector(
-                                  onTap: () => setState(
-                                      () => selectedCategory = category["name"]),
+                                  onTap: () => setState(() =>
+                                      selectedCategory = category["name"]),
                                   child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(16),

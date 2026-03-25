@@ -16,7 +16,7 @@ class TransactionService {
  static Future<TransactionHistoryResponse> getHistory(
   String userId, {
   String? accountId,
-  String? category,
+  String? category, String? lastId,
 }) async {
   try {
     final Map<String, String> queryParams = {};
@@ -63,7 +63,7 @@ class TransactionService {
     required String type,
     required String category,
     String? description,
-    String direction = "NORMAL",
+    String direction = "NORMAL", required String idempotencyKey,
   }) async {
     try {
       final response = await http.post(
