@@ -100,7 +100,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
       /// ✅ FIXED SUCCESS CHECK
       if (data["accessToken"] != null) {
-        final token = data["accessToken"];
+      //  final token = data["accessToken"];
         final user = data["user"] ?? {};
 
        await AuthStorage.saveUser(

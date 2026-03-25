@@ -63,10 +63,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
     final isLight = theme.brightness == Brightness.light;
 
     return Scaffold(
-      backgroundColor: isLight ? Colors.white : Colors.black,
+      backgroundColor: color.background,
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -78,7 +79,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isLight ? Colors.black : Colors.white,
+                  color: color.primary,
                 ),
                 child: Row(
                   children: [
@@ -86,7 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       onPressed: () => Navigator.pop(context),
                       icon: Icon(
                         Icons.arrow_back_ios_new,
-                        color: isLight ? Colors.white : Colors.black,
+                        color: color.onPrimary,
                         size: 20,
                       ),
                     ),
@@ -96,7 +97,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: isLight ? Colors.white : Colors.black,
+                        color: color.onPrimary,
                       ),
                     ),
                   ],
@@ -109,8 +110,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color:
-                        isLight ? Colors.grey[100] : Colors.grey[900],
+                    color: color.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -125,9 +125,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isLight
-                                  ? Colors.black
-                                  : Colors.white,
+                              color: color.onSurface,
                             ),
                           ),
 
@@ -136,31 +134,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           TextField(
                             controller: nameController,
                             style: TextStyle(
-                              color: isLight
-                                  ? Colors.black
-                                  : Colors.white,
+                              color: color.onSurface,
                             ),
                             decoration: InputDecoration(
                               hintText: "Enter your name",
                               hintStyle: TextStyle(
-                                color: isLight
-                                    ? Colors.black54
-                                    : Colors.white54,
+                                color: color.onSurface.withOpacity(0.6),
                               ),
 
                               filled: true,
-                              fillColor: isLight
-                                  ? Colors.white
-                                  : Colors.black,
+                              fillColor: color.background,
 
                               /// NORMAL BORDER
                               enabledBorder: OutlineInputBorder(
                                 borderRadius:
                                     BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: isLight
-                                      ? Colors.black
-                                      : Colors.white,
+                                  color: color.onSurface,
                                 ),
                               ),
 
@@ -169,9 +159,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 borderRadius:
                                     BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: isLight
-                                      ? Colors.black
-                                      : Colors.white,
+                                  color: color.onSurface,
                                   width: 2,
                                 ),
                               ),
@@ -188,12 +176,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         height: 50,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isLight
-                                ? Colors.black
-                                : Colors.white,
-                            foregroundColor: isLight
-                                ? Colors.white
-                                : Colors.black,
+                            backgroundColor: color.primary,
+                            foregroundColor: color.onPrimary,
                           ),
                           onPressed:
                               isLoading ? null : saveProfile,
@@ -204,9 +188,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   child:
                                       CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: isLight
-                                        ? Colors.white
-                                        : Colors.black,
+                                    color: color.onPrimary,
                                   ),
                                 )
                               : const Text(

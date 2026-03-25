@@ -14,18 +14,14 @@ class OtpVerificationScreen extends StatefulWidget {
   });
 
   @override
-  State<OtpVerificationScreen> createState() =>
-      _OtpVerificationScreenState();
+  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
 
-class _OtpVerificationScreenState
-    extends State<OtpVerificationScreen> {
-
+class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final List<TextEditingController> controllers =
       List.generate(6, (_) => TextEditingController());
 
-  final List<FocusNode> focusNodes =
-      List.generate(6, (_) => FocusNode());
+  final List<FocusNode> focusNodes = List.generate(6, (_) => FocusNode());
 
   Timer? timer;
   int resendSeconds = 60;
@@ -79,8 +75,7 @@ class _OtpVerificationScreenState
 
     setState(() => isLoading = true);
 
-    final resetToken =
-        await AuthService.verifyOtp(widget.email!, otp);
+    final resetToken = await AuthService.verifyOtp(widget.email!, otp);
 
     if (!mounted) return;
 
@@ -115,8 +110,7 @@ class _OtpVerificationScreenState
       return;
     }
 
-    final success =
-        await AuthService.resendOtp(widget.email!);
+    final success = await AuthService.resendOtp(widget.email!);
 
     if (!mounted) return;
 
@@ -146,6 +140,7 @@ class _OtpVerificationScreenState
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
+        height: 60,
         child: TextField(
           controller: controllers[index],
           focusNode: focusNodes[index],
@@ -153,36 +148,28 @@ class _OtpVerificationScreenState
           textAlign: TextAlign.center,
           maxLength: 1,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
           decoration: InputDecoration(
             counterText: "",
+            contentPadding: const EdgeInsets.symmetric(vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-
-          /// Auto move focus
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onChanged: (value) {
             if (value.isNotEmpty && index < 5) {
               FocusScope.of(context).nextFocus();
             }
-
             if (value.isEmpty && index > 0) {
               FocusScope.of(context).previousFocus();
             }
-
-            /// AUTO VERIFY when 6 digits entered
             if (getOtp().length == 6) {
               verifyOtp();
             }
           },
-
-          /// Paste full OTP
           onTap: () async {
             final data = await Clipboard.getData('text/plain');
             if (data != null && data.text!.length == 6) {
@@ -231,49 +218,36 @@ class _OtpVerificationScreenState
                     size: 64,
                     color: theme.colorScheme.primary,
                   ),
-
                   const SizedBox(height: 20),
-
                   Text(
                     "Verify OTP",
                     style: theme.textTheme.headlineSmall
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 10),
-
                   Text(
                     "Enter the 6-digit OTP sent to",
                     style: theme.textTheme.bodyMedium,
                   ),
-
                   const SizedBox(height: 5),
-
                   Text(
                     widget.email ?? "your email",
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
                   Row(
-                    children:
-                        List.generate(6, (index) => otpBox(index)),
+                    children: List.generate(6, (index) => otpBox(index)),
                   ),
-
                   const SizedBox(height: 24),
-
                   isLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
                           onPressed: verifyOtp,
                           child: const Text("Verify OTP"),
                         ),
-
                   const SizedBox(height: 16),
-
                   TextButton(
                     onPressed: canResend ? resendOtp : null,
                     child: Text(
@@ -282,9 +256,7 @@ class _OtpVerificationScreenState
                           : "Resend OTP in $resendSeconds s",
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   TextButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back),

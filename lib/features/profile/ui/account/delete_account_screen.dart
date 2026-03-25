@@ -118,172 +118,113 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       deleteAccount();
     }
   }
+@override
+Widget build(BuildContext context) {
+  final theme = Theme.of(context);
+  final color = theme.colorScheme;
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isLight = theme.brightness == Brightness.light;
+  return Scaffold(
+    backgroundColor: color.background,
 
-    return Scaffold(
-      backgroundColor: isLight ? Colors.white : Colors.black,
-      appBar: AppBar(
-        title: const Text("Delete Account"),
-        centerTitle: true,
-        backgroundColor: isLight ? Colors.white : Colors.black,
-        foregroundColor: isLight ? Colors.black : Colors.white,
-        elevation: 0,
+    appBar: AppBar(
+      title: const Text("Delete Account"),
+      centerTitle: true,
+    ),
+
+    body: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+
+          /// ICON
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.surface.withOpacity(0.6),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.delete_outline,
+              size: 60,
+              color: color.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          /// TITLE
+          Text(
+            "Delete Your Account",
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          /// DESCRIPTION
+          Text(
+            "This will deactivate your account.\n\n"
+            "It will be permanently deleted after 14 days unless you log in again.",
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium,
+          ),
+
+          const SizedBox(height: 30),
+
+          /// PASSWORD FIELD (THEME CONTROLLED)
+          TextField(
+            controller: passwordController,
+            obscureText: obscurePassword,
+            decoration: InputDecoration(
+              hintText: "Enter your password",
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscurePassword
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    obscurePassword = !obscurePassword;
+                  });
+                },
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          /// DELETE BUTTON (FROM THEME)
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : confirmDelete,
+              child: isLoading
+                  ? CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.onPrimary,
+                    )
+                  : const Text("Delete Account"),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          /// CANCEL BUTTON (FROM THEME)
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            /// ICON
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isLight ? Colors.grey[200] : Colors.grey[800],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.delete_outline,
-                size: 60,
-                color: isLight ? Colors.black : Colors.white,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// TITLE
-            Text(
-              "Delete Your Account",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isLight ? Colors.black : Colors.white,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            /// UPDATED DESCRIPTION ✅
-            Text(
-              "This will deactivate your account.\n\n"
-              "It will be permanently deleted after 14 days unless you log in again.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isLight ? Colors.black54 : Colors.white70,
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            /// PASSWORD FIELD
-            TextField(
-              controller: passwordController,
-              obscureText: obscurePassword,
-              style: TextStyle(
-                color: isLight ? Colors.black : Colors.white,
-              ),
-              decoration: InputDecoration(
-                hintText: "Enter your password",
-                hintStyle: TextStyle(
-                  color: isLight ? Colors.black54 : Colors.white54,
-                ),
-                prefixIcon: Icon(
-                  Icons.lock_outline,
-                  color: isLight ? Colors.black54 : Colors.white54,
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    obscurePassword
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                    color: isLight ? Colors.black54 : Colors.white54,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      obscurePassword = !obscurePassword;
-                    });
-                  },
-                ),
-                filled: true,
-                fillColor: isLight ? Colors.grey[100] : Colors.grey[900],
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isLight ? Colors.black : Colors.white,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isLight ? Colors.black : Colors.white,
-                    width: 2,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            /// DELETE BUTTON WITH CONFIRMATION
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      isLight ? Colors.black : Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: isLoading ? null : confirmDelete,
-                child: isLoading
-                    ? CircularProgressIndicator(
-                        color:
-                            isLight ? Colors.white : Colors.black,
-                        strokeWidth: 2,
-                      )
-                    : Text(
-                        "Delete Account",
-                        style: TextStyle(
-                          color:
-                              isLight ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            /// CANCEL BUTTON
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(
-                    color: isLight ? Colors.black : Colors.white,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  "Cancel",
-                  style: TextStyle(
-                    color: isLight ? Colors.black : Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 }

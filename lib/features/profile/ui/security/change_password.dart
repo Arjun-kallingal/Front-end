@@ -28,23 +28,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   String? currentPasswordError;
 
   void showSuccessAlert(String message) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        backgroundColor: isDark ? Colors.black : Colors.white,
+        backgroundColor: color.surface,
         title: Text(
           "Success",
           style: TextStyle(
-            color: isDark ? Colors.white : Colors.black,
+            color: color.primary,
           ),
         ),
         content: Text(
           message,
           style: TextStyle(
-            color: isDark ? Colors.white : Colors.black,
+            color: color.primary,
           ),
         ),
         actions: [
@@ -56,7 +57,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             child: Text(
               "OK",
               style: TextStyle(
-                color: isDark ? Colors.white : Colors.black,
+                color: color.primary,
               ),
             ),
           )
@@ -119,7 +120,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -131,7 +131,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               width: double.infinity,
               padding: const EdgeInsets.only(top: 10, bottom: 10),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black : Colors.white,
+                color: color.background,
               ),
               child: Row(
                 children: [
@@ -139,7 +139,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: color.primary,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -148,7 +148,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: color.primary,
                     ),
                   ),
                 ],
@@ -204,7 +204,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 },
                               );
 
-                              /// 🔥 HANDLE TOKEN EXPIRED
                               if (response.statusCode == 401) {
                                 final newToken =
                                     await AuthService.refreshAccessToken();
@@ -224,7 +223,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 );
                               }
 
-                              /// ✅ ONLY NAVIGATE IF SUCCESS
                               if (response.statusCode == 200) {
                                 Navigator.pushNamed(
                                     context, "/otpVerification");
@@ -238,7 +236,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             child: Text(
                               "Forgot Password?",
                               style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
+                                color: color.primary,
                               ),
                             ),
                           ),
@@ -299,14 +297,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           child: ElevatedButton(
                             onPressed: _changePassword,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  isDark ? Colors.white : Colors.black,
+                              backgroundColor: color.primary,
                             ),
                             child: Text(
                               "Update Password",
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isDark ? Colors.black : Colors.white,
+                                color: color.onPrimary,
                               ),
                             ),
                           ),
@@ -333,19 +330,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       validator: validator,
       style: TextStyle(
-        color: isDark ? Colors.white : Colors.black,
+        color: color.primary,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          color: isDark ? Colors.white : Colors.black,
+          color: color.primary,
         ),
         errorText: errorText,
         filled: true,
@@ -357,7 +353,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         suffixIcon: IconButton(
           icon: Icon(
             obscure ? Icons.visibility_off : Icons.visibility,
-            color: isDark ? Colors.white : Colors.black,
+            color: color.primary,
           ),
           onPressed: toggle,
         ),

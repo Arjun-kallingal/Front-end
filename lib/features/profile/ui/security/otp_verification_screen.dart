@@ -125,7 +125,9 @@ class _OtpVerificationScreenState
     }
   }
 
-  Widget otpBox(int index, bool isDark) {
+  Widget otpBox(int index, ThemeData theme) {
+    final color = theme.colorScheme;
+
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -135,10 +137,9 @@ class _OtpVerificationScreenState
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
-          style: TextStyle(
+          style: theme.textTheme.bodyLarge?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
           ),
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
@@ -147,8 +148,7 @@ class _OtpVerificationScreenState
           decoration: InputDecoration(
             counterText: "",
             filled: true,
-            fillColor:
-                isDark ? Colors.black : Colors.white,
+            fillColor: color.surface, // ✅ THEME CONTROLLED
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -195,7 +195,6 @@ class _OtpVerificationScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -208,26 +207,21 @@ class _OtpVerificationScreenState
               width: double.infinity,
               padding:
                   const EdgeInsets.symmetric(vertical: 12),
-              color: isDark ? Colors.black : Colors.white,
+              color: color.background, // ✅ THEME
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
+                      color: color.onBackground,
                     ),
                   ),
                   Text(
                     "OTP Verification",
-                    style: TextStyle(
-                      fontSize: 20,
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
+                      color: color.onBackground,
                     ),
                   ),
                 ],
@@ -247,11 +241,8 @@ class _OtpVerificationScreenState
 
                       Text(
                         "Enter the 6-digit OTP sent to your email",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark
-                              ? Colors.white
-                              : Colors.black,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color.onBackground,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -260,7 +251,9 @@ class _OtpVerificationScreenState
 
                       Row(
                         children: List.generate(
-                            6, (index) => otpBox(index, isDark)),
+                          6,
+                          (index) => otpBox(index, theme),
+                        ),
                       ),
 
                       const SizedBox(height: 20),
@@ -272,9 +265,7 @@ class _OtpVerificationScreenState
                           Text(
                             "Didn't receive the OTP? ",
                             style: TextStyle(
-                              color: isDark
-                                  ? Colors.white
-                                  : Colors.black,
+                              color: color.onBackground,
                             ),
                           ),
                           TextButton(
@@ -282,9 +273,7 @@ class _OtpVerificationScreenState
                             child: Text(
                               "Resend OTP",
                               style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: color.primary,
                               ),
                             ),
                           ),
@@ -299,24 +288,15 @@ class _OtpVerificationScreenState
                         child: ElevatedButton(
                           onPressed:
                               isLoading ? null : verifyOtp,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark
-                                ? Colors.white
-                                : Colors.black,
-                          ),
                           child: isLoading
                               ? CircularProgressIndicator(
-                                  color: isDark
-                                      ? Colors.black
-                                      : Colors.white,
+                                  color: color.onPrimary,
                                 )
                               : Text(
                                   "Verify OTP",
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: isDark
-                                        ? Colors.black
-                                        : Colors.white,
+                                    color: color.onPrimary,
                                   ),
                                 ),
                         ),
@@ -330,16 +310,12 @@ class _OtpVerificationScreenState
                         },
                         icon: Icon(
                           Icons.arrow_back,
-                          color: isDark
-                              ? Colors.white
-                              : Colors.black,
+                          color: color.onBackground,
                         ),
                         label: Text(
                           "Back",
                           style: TextStyle(
-                            color: isDark
-                                ? Colors.white
-                                : Colors.black,
+                            color: color.onBackground,
                           ),
                         ),
                       ),

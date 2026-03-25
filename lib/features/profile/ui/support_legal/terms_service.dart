@@ -7,61 +7,27 @@ class TermsOfServiceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
 
-            /// ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 10,
-                bottom: 10,
-              ),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.black : Colors.white,
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: isDark ? Colors.white : Colors.black,
-                      size: 20,
-                    ),
-                  ),
+      /// ✅ Use AppBar instead of custom header
+      appBar: AppBar(
+        title: const Text("Terms of Service"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
 
-                  Expanded(
-                    child: Text(
-                      "Terms of Service",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            /// ================= SCROLLABLE CONTENT =================
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
-                ),
-                child: SelectableText(
-                  '''
+      /// ================= CONTENT =================
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 20,
+        ),
+        child: SelectableText(
+          '''
 Effective Date: [Insert Date]
 
 App Name: Wallet Care
@@ -120,15 +86,10 @@ Applicable under your local laws.
 14. Contact
 support@walletcare.com
 ''',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.6,
-                    fontSize: 14,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          style: theme.textTheme.bodyMedium?.copyWith(
+            height: 1.6,
+            fontSize: 14,
+          ),
         ),
       ),
     );

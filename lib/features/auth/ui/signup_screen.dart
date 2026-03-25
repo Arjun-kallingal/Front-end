@@ -34,54 +34,55 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _submit() async {
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  if (!agreeTerms) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('You must agree to the Terms & Privacy Policy'),
-      ),
-    );
-    return;
-  }
-
-  if (isLoading) return; // ✅ prevent double click
-
-  setState(() => isLoading = true);
-
-  try {
-    final data = await AuthService.signup(
-      nameController.text.trim(),
-      emailController.text.trim(),
-      passwordController.text.trim(),
-    );
-
-    if (!mounted) return;
-
-    /// ✅ ONLY navigate on success
-    if (data["success"] == true) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VerificationScreen(
-            email: emailController.text.trim(),
-          ),
+    if (!agreeTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must agree to the Terms & Privacy Policy'),
         ),
       );
-    } else {
-      /// ❌ show backend error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data["message"])),
-      );
+      return;
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Something went wrong")),
-    );
-  } finally {
-    if (mounted) setState(() => isLoading = false);
+
+    if (isLoading) return; // ✅ prevent double click
+
+    setState(() => isLoading = true);
+
+    try {
+      final data = await AuthService.signup(
+        nameController.text.trim(),
+        emailController.text.trim(),
+        passwordController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      /// ✅ ONLY navigate on success
+      if (data["success"] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerificationScreen(
+              email: emailController.text.trim(),
+            ),
+          ),
+        );
+      } else {
+        /// ❌ show backend error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"])),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Something went wrong")),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -101,7 +102,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 12),
                     const Icon(Icons.shield_outlined, size: 56),
                     const SizedBox(height: 16),
-
                     Text(
                       'Create Account',
                       textAlign: TextAlign.center,
@@ -109,15 +109,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
-
                     Text(
                       'Start your financial journey',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium,
                     ),
-
                     const SizedBox(height: 28),
-
                     Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -126,7 +123,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         padding: const EdgeInsets.all(20),
                         child: Column(
                           children: [
-
                             CustomTextField(
                               hintText: 'Full Name',
                               controller: nameController,
@@ -138,7 +134,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             const SizedBox(height: 14),
-
                             CustomTextField(
                               hintText: 'Email Address',
                               controller: emailController,
@@ -153,7 +148,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             const SizedBox(height: 14),
-
                             CustomTextField(
                               hintText: 'Password',
                               controller: passwordController,
@@ -181,7 +175,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             const SizedBox(height: 14),
-
                             CustomTextField(
                               hintText: 'Confirm Password',
                               controller: confirmPasswordController,
@@ -209,9 +202,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 return null;
                               },
                             ),
-
                             const SizedBox(height: 16),
-
                             Row(
                               children: [
                                 Checkbox(
@@ -230,22 +221,20 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 20),
-
                             isLoading
                                 ? const CircularProgressIndicator()
-                               :CustomButton(
-  text: isLoading ? 'Creating...' : 'Create Account',
-  onPressed: isLoading ? null : _submit,
-)
+                                : CustomButton(
+                                    text: isLoading
+                                        ? 'Creating...'
+                                        : 'Create Account',
+                                    onPressed: isLoading ? null : _submit,
+                                  )
                           ],
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 22),
-
                     Column(
                       children: [
                         Text(
@@ -260,9 +249,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

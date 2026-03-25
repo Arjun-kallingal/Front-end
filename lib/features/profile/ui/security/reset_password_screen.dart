@@ -52,28 +52,21 @@ class _ResetPasswordScreenState
 
     setState(() => isLoading = false);
 
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
     if (response.statusCode == 200) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          backgroundColor:
-              isDark ? Colors.black : Colors.white,
+          backgroundColor: color.surface,
           title: Text(
             "Success",
-            style: TextStyle(
-              color:
-                  isDark ? Colors.white : Colors.black,
-            ),
+            style: TextStyle(color: color.onSurface),
           ),
           content: Text(
             "Password updated successfully",
-            style: TextStyle(
-              color:
-                  isDark ? Colors.white : Colors.black,
-            ),
+            style: TextStyle(color: color.onSurface),
           ),
           actions: [
             TextButton(
@@ -88,11 +81,7 @@ class _ResetPasswordScreenState
               },
               child: Text(
                 "OK",
-                style: TextStyle(
-                  color: isDark
-                      ? Colors.white
-                      : Colors.black,
-                ),
+                style: TextStyle(color: color.primary),
               ),
             )
           ],
@@ -102,32 +91,21 @@ class _ResetPasswordScreenState
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          backgroundColor:
-              isDark ? Colors.black : Colors.white,
+          backgroundColor: color.surface,
           title: Text(
             "Error",
-            style: TextStyle(
-              color:
-                  isDark ? Colors.white : Colors.black,
-            ),
+            style: TextStyle(color: color.onSurface),
           ),
           content: Text(
             data["message"],
-            style: TextStyle(
-              color:
-                  isDark ? Colors.white : Colors.black,
-            ),
+            style: TextStyle(color: color.onSurface),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
                 "OK",
-                style: TextStyle(
-                  color: isDark
-                      ? Colors.white
-                      : Colors.black,
-                ),
+                style: TextStyle(color: color.primary),
               ),
             )
           ],
@@ -140,7 +118,6 @@ class _ResetPasswordScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: color.background,
@@ -153,16 +130,14 @@ class _ResetPasswordScreenState
               width: double.infinity,
               padding:
                   const EdgeInsets.symmetric(vertical: 12),
-              color: isDark ? Colors.black : Colors.white,
+              color: color.background,
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
+                      color: color.onBackground,
                     ),
                   ),
                   Text(
@@ -170,9 +145,7 @@ class _ResetPasswordScreenState
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
+                      color: color.onBackground,
                     ),
                   ),
                 ],
@@ -213,7 +186,6 @@ class _ResetPasswordScreenState
                             }
                             return null;
                           },
-                          isDark: isDark,
                         ),
 
                         const SizedBox(height: 20),
@@ -237,7 +209,6 @@ class _ResetPasswordScreenState
                             }
                             return null;
                           },
-                          isDark: isDark,
                         ),
 
                         const SizedBox(height: 30),
@@ -249,25 +220,12 @@ class _ResetPasswordScreenState
                           child: ElevatedButton(
                             onPressed:
                                 isLoading ? null : resetPassword,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark
-                                  ? Colors.white
-                                  : Colors.black,
-                            ),
                             child: isLoading
                                 ? CircularProgressIndicator(
-                                    color: isDark
-                                        ? Colors.black
-                                        : Colors.white,
+                                    color:
+                                        theme.colorScheme.onPrimary,
                                   )
-                                : Text(
-                                    "Reset Password",
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.black
-                                          : Colors.white,
-                                    ),
-                                  ),
+                                : const Text("Reset Password"),
                           ),
                         ),
                       ],
@@ -288,30 +246,21 @@ class _ResetPasswordScreenState
     required bool obscure,
     required VoidCallback toggle,
     required String? Function(String?) validator,
-    required bool isDark,
   }) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
     return TextFormField(
       controller: controller,
       obscureText: obscure,
       validator: validator,
-      style: TextStyle(
-        color: isDark ? Colors.white : Colors.black,
-      ),
+      style: TextStyle(color: color.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
-          color: isDark ? Colors.white : Colors.black,
-        ),
-        filled: true,
-        fillColor:
-            isDark ? Colors.black : Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
         suffixIcon: IconButton(
           icon: Icon(
             obscure ? Icons.visibility_off : Icons.visibility,
-            color: isDark ? Colors.white : Colors.black,
+            color: color.onSurface,
           ),
           onPressed: toggle,
         ),

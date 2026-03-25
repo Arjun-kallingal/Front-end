@@ -51,20 +51,29 @@ class AuthService {
   }
 
   // resend otp
-
-
 static Future<bool> resendOtp(String email) async {
+  try {
+    final response = await http.post(
+      Uri.parse("$baseUrl/otp/resend"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "email": email,
+        "purpose": "reset_password"
+      }),
+    );
 
-  final response = await http.post(
-    Uri.parse("$baseUrl/otp/resend"),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({
-      "email": email,
-      "purpose": "reset_password"
-    }),
-  );
+    print("Resend OTP response: ${response.statusCode} ${response.body}");
 
-  return response.statusCode == 200;
+    if (response.statusCode == 200) {
+      // Backend returns a message, assume success if 200
+      return true;
+    }
+
+    return false;
+  } catch (e) {
+    print("Resend OTP ERROR: $e");
+    return false;
+  }
 }
 
   /// RESET PASSWORD

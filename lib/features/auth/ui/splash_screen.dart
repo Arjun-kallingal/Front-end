@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+
 import 'package:front_end/core/services/auth_storage.dart';
-import 'package:front_end/navigation/navigation_service.dart';
-import 'login_screen.dart';
+import 'package:front_end/core/services/api_config.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,22 +21,59 @@ class _SplashScreenState extends State<SplashScreen> {
     _startApp();
   }
 
+  /// 🔐 CHECK TOKEN VALIDITY (OPTIONAL BUT IMPORTANT)
+  Future<bool> isTokenValid(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/user/profile'),
+        headers: {
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<void> _startApp() async {
     try {
-      /// Splash delay
       await Future.delayed(const Duration(seconds: 2));
 
-      /// Get token
       final token = await AuthStorage.getToken();
+      final name = await AuthStorage.getName();
+      final email = await AuthStorage.getEmail();
 
       if (!mounted) return;
 
-      /// Navigate based on token
-      if (token != null && token.isNotEmpty) {
-        Navigator.pushReplacementNamed(context, '/main');
-      } else {
+      /// ❌ NO TOKEN → LOGIN
+      if (token == null || token.isEmpty) {
         Navigator.pushReplacementNamed(context, '/login');
+        return;
       }
+
+      /// 🔐 CHECK TOKEN VALIDITY
+      final isValid = await isTokenValid(token);
+
+      if (!mounted) return;
+
+      if (!isValid) {
+        /// TOKEN EXPIRED → LOGOUT
+        await AuthStorage.logout();
+        Navigator.pushReplacementNamed(context, '/login');
+        return;
+      }
+
+      /// ✅ RESTORE USER DATA
+      context.read<UserProfileProvider>().setUser(
+        userName: name ?? "",
+        userEmail: email ?? "",
+      );
+
+      /// ✅ GO TO MAIN
+      Navigator.pushReplacementNamed(context, '/main');
+
     } catch (e) {
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
@@ -58,10 +98,10 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: const [
 
             /// APP NAME
-            const Text(
+            Text(
               "SproutPay",
               style: TextStyle(
                 fontFamily: 'Inter',
@@ -72,10 +112,10 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            const SizedBox(height: 30),
+            SizedBox(height: 30),
 
             /// LOADER
-            const CircularProgressIndicator(color: Colors.white),
+            CircularProgressIndicator(color: Colors.white),
           ],
         ),
       ),

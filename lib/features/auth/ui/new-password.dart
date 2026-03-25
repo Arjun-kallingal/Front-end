@@ -54,19 +54,18 @@ class _NewPasswordScreenState
 
     setState(() => isLoading = true);
 
-    final success =
-        await AuthService.resetPassword(widget.resetToken, password);
+   final success = await AuthService.resetPassword(widget.resetToken, password);
 
-    if (!mounted) return;
+if (!mounted) return;
 
-    setState(() => isLoading = false);
+setState(() => isLoading = false);
 
-    if (success) {
-      _showSnack("Password reset successful");
-      Navigator.popUntil(context, (route) => route.isFirst);
-    } else {
-      _showSnack("Reset failed. Try again");
-    }
+if (success == true) {
+  _showSnack("Password reset successful");
+  Navigator.popUntil(context, (route) => route.isFirst);
+} else if (success == false) {
+  _showSnack("New password cannot be the same as old password");
+}
   }
 
   void _showSnack(String msg) {

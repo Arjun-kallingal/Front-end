@@ -23,7 +23,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                 bottom: 30,
               ),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black : Colors.white,
+                color: color.background,
                 borderRadius:
                     const BorderRadius.vertical(bottom: Radius.circular(30)),
               ),
@@ -33,7 +33,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: isDark ? Colors.white : Colors.black,
+                      color: color.onBackground,
                       size: 20,
                     ),
                   ),
@@ -45,7 +45,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
+                        color: color.onBackground,
                       ),
                     ),
                   ),
@@ -69,7 +69,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                       Icon(
                         Icons.account_balance_wallet_outlined,
                         size: 80,
-                        color: isDark ? Colors.white : Colors.black,
+                        color: color.onBackground,
                       ),
 
                       const SizedBox(height: 20),
@@ -79,7 +79,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                         "WalletCare",
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
+                          color: color.onBackground,
                         ),
                       ),
 
@@ -89,7 +89,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                       Text(
                         "Version 1.0.0",
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDark ? Colors.white : Colors.black,
+                          color: color.onBackground,
                         ),
                       ),
 
@@ -102,7 +102,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           height: 1.6,
-                          color: isDark ? Colors.white : Colors.black,
+                          color: color.onBackground,
                         ),
                       ),
 
@@ -113,7 +113,7 @@ class AboutWalletCareScreen extends StatelessWidget {
                         "© 2026 WalletCare. All rights reserved.",
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDark ? Colors.white : Colors.black,
+                          color: color.onBackground,
                         ),
                       ),
 

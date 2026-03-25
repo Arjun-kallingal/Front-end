@@ -23,17 +23,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     emailController.dispose();
     super.dispose();
   }
-
- Future<void> _sendOtp() async {
+Future<void> _sendOtp() async {
   if (!_formKey.currentState!.validate()) return;
+
+  FocusScope.of(context).unfocus();
 
   final email = emailController.text.trim();
 
   setState(() {
     isLoading = true;
   });
+final message = await AuthService.forgotPassword(email);
 
-  final message = await AuthService.forgotPassword(email);
+if (message == null) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Failed to send OTP")),
+  );
+  setState(() => isLoading = false);
+  return;
+}
 
   if (!mounted) return;
 
@@ -41,23 +49,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     isLoading = false;
   });
 
-  /// Always show neutral message (security best practice)
+  /// Optional snackbar
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(
       content: Text("If the email exists, an OTP has been sent"),
     ),
   );
 
-  /// Navigate regardless of response
+  /// Small delay helps stability
+  await Future.delayed(const Duration(milliseconds: 300));
+
+  if (!mounted) return;
+
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (_) => OtpVerificationScreen(
-        email: email,
-      ),
+      builder: (_) => OtpVerificationScreen(email: email),
     ),
   );
+
 }
+
   @override
   Widget build(BuildContext context) {
 
@@ -66,17 +78,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final colors = theme.colorScheme;
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+  resizeToAvoidBottomInset: true,
+  body: SafeArea(
+    child: SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: Form(
+          key: _formKey,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
 
                     const SizedBox(height: 20),
 
