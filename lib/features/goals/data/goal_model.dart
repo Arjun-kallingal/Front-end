@@ -1,7 +1,8 @@
 class GoalModel {
   final String id;
   final String userId;
-  final String accountId;
+ final String? accountName;
+ final String accountId;
   String title;
   String category;
   double targetAmount;
@@ -30,6 +31,7 @@ class GoalModel {
     required this.targetDate,
     required this.status,
     required this.createdAt,
+    this.accountName,
     this.description,
     this.reminderFrequency = 'weekly',
     this.transactionType = 'expense',
@@ -44,6 +46,7 @@ class GoalModel {
       id: json['_id'] ?? '',
       userId: json['userId'] ?? '',
       accountId: json['accountId'] ?? '',
+   accountName: json['accountName'] ?? 'Unknown',
       title: json['title'] ?? '',
       category: json['category'] ?? '',
       targetAmount: (json['targetAmount'] as num? ?? 0).toDouble(),

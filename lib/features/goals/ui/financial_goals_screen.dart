@@ -19,38 +19,59 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
   List<GoalModel> goals = [];
   List<GoalModel> filteredGoals = [];
   bool _isLoading = true;
+    String searchQuery = '';
+  String selectedAccount = 'All';
+  String selectedStatus = 'All'; // All, Active, Completed
 
   @override
   void initState() {
     super.initState();
     _fetchGoals();
   }
-
-  Future<void> _fetchGoals() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _goalService.getGoals();
-      if (mounted) {
-        setState(() {
-          goals = data;
-          filteredGoals = data;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
+Future<void> _fetchGoals() async {
+  setState(() => _isLoading = true);
+  try {
+    final data = await _goalService.getGoals();
+    if (mounted) {
+      setState(() {
+        goals = data;
+        filteredGoals = data;
+        _isLoading = false;
+      });
+      _applyFilters(); 
     }
+  } catch (e) {
+    setState(() => _isLoading = false);
   }
+}
+
+// 👇 CORRECT PLACE (INSIDE CLASS)
+void _applyFilters() {
+  setState(() {
+    filteredGoals = goals.where((g) {
+      final matchesSearch =
+          g.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          g.category.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          (g.accountName ?? '').toLowerCase().contains(searchQuery.toLowerCase());
+
+      final matchesAccount =
+          selectedAccount == 'All' || g.accountName == selectedAccount;
+
+      final matchesStatus = selectedStatus == 'All' ||
+          (selectedStatus == 'Active' && g.progress < 1) ||
+          (selectedStatus == 'Completed' && g.progress >= 1);
+
+      return matchesSearch && matchesAccount && matchesStatus;
+    }).toList();
+  });
+}
+  
+  
 
   void _searchGoals(String value) {
-    setState(() {
-      filteredGoals = goals
-          .where((g) =>
-              g.title.toLowerCase().contains(value.toLowerCase()) ||
-              g.category.toLowerCase().contains(value.toLowerCase()))
-          .toList();
-    });
-  }
+  searchQuery = value;
+  _applyFilters();
+}
 
   Future<void> _deleteGoal(String id) async {
     try {
@@ -152,21 +173,18 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: [
     _buildSubStat("Active Goals", activeCount.toString(), onTap: () {
-      setState(() {
-        filteredGoals = goals.where((g) => g.progress < 1).toList();
-      });
+     selectedStatus = "Active";
+_applyFilters();
     }),
 
     _buildSubStat("Completed", completedCount.toString(), onTap: () {
-      setState(() {
-        filteredGoals = goals.where((g) => g.progress >= 1).toList();
-      });
+      selectedStatus = "Completed";
+_applyFilters();
     }),
 
     _buildSubStat("Total Goals", goals.length.toString(), onTap: () {
-      setState(() {
-        filteredGoals = goals;
-      });
+      selectedStatus = "All";
+_applyFilters();
     }),
   ],
 )
@@ -336,21 +354,44 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   child: const Icon(Icons.flag, color: Colors.blueAccent),
                 ),
                 const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        goal.title,
-                        style: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(goal.category,
-                          style: const TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                ),
+               Expanded(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        goal.title,
+        style: const TextStyle(
+            fontSize: 17, fontWeight: FontWeight.bold),
+      ),
+
+      const SizedBox(height: 6),
+
+      Text(
+        goal.category,
+        style: const TextStyle(color: Colors.grey),
+      ),
+
+      const SizedBox(height: 6),
+
+      // ✅ NOW INSIDE COLUMN (CORRECT)
+      Row(
+        children: [
+          const Icon(Icons.account_balance_wallet,
+              size: 14, color: Colors.blueGrey),
+          const SizedBox(width: 5),
+          Text(
+            goal.accountName ?? "Unknown Account",
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.blueGrey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
                 PopupMenuButton<String>(
   icon: const Icon(Icons.more_vert),
   onSelected: (value) async {

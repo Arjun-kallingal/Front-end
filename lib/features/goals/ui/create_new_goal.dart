@@ -102,31 +102,35 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   }
 
   Future<void> _loadAccounts() async {
-    try {
-      final result = await AccountService.getAccountDashboard(_currentUserId!);
+  if (_currentUserId == null) return;
 
-      if (!mounted) return;
+  try {
+    final result =
+        await AccountService.getAccountDashboard(_currentUserId!);
 
-      setState(() {
-        _accounts = result['accounts'];
+    if (!mounted) return;
 
-        if (selectedAccountId == null && _accounts.isNotEmpty) {
-          selectedAccountId = _accounts.first.id;
-          _selectedAccountName = _accounts.first.name;
-        } else if (selectedAccountId != null && _accounts.isNotEmpty) {
-          final acc = _accounts.firstWhere(
-            (a) => a.id == selectedAccountId,
-            orElse: () => _accounts.first,
-          );
-          _selectedAccountName = acc.name;
-        }
+    final accountsData = result['accounts'];
+    _accounts = accountsData is List<AccountModel> ? accountsData : [];
 
-        _isFetchingAccounts = false;
-      });
-    } catch (e) {
-      if (mounted) setState(() => _isFetchingAccounts = false);
+    if (_accounts.isNotEmpty) {
+      final primary = _accounts.firstWhere(
+        (acc) => acc.isDefault == true,
+        orElse: () => _accounts.firstWhere(
+          (acc) => acc.type == "CASH",
+          orElse: () => _accounts.first,
+        ),
+      );
+
+      selectedAccountId = primary.id;
+      _selectedAccountName = primary.name;
     }
+
+    setState(() => _isFetchingAccounts = false);
+  } catch (e) {
+    if (mounted) setState(() => _isFetchingAccounts = false);
   }
+}
 
   void _saveGoal() async {
     if (!_formKey.currentState!.validate() ||
@@ -239,52 +243,59 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   }
 
   Widget _buildAccountSelectorBox() {
-    return InkWell(
-      onTap: () => setState(() => _showAccountOptions = !_showAccountOptions),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(_selectedAccountName ?? "Select Account"),
-            const Icon(Icons.keyboard_arrow_down),
-          ],
-        ),
+  return InkWell(
+    onTap: () =>
+        setState(() => _showAccountOptions = !_showAccountOptions),
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            _selectedAccountName ?? "Select Account",
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildAccountList() {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      constraints: const BoxConstraints(maxHeight: 200),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: ListView(
-        shrinkWrap: true,
-        children: _accounts.map((acc) {
-          return ListTile(
-            dense: true,
-            title: Text(acc.name,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            onTap: () {
-              setState(() {
-                selectedAccountId = acc.id; // FIXED
-                _selectedAccountName = acc.name;
-                _showAccountOptions = false;
-              });
-            },
-          );
-        }).toList(),
-      ),
-    );
-  }
+  return Container(
+    margin: const EdgeInsets.only(top: 8),
+    constraints: const BoxConstraints(maxHeight: 200),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: ListView(
+      shrinkWrap: true,
+      children: _accounts.map((acc) {
+        return ListTile(
+          dense: true,
+          title: Text(
+            acc.name,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          onTap: () {
+            setState(() {
+              selectedAccountId = acc.id;
+              _selectedAccountName = acc.name;
+              _showAccountOptions = false;
+            });
+          },
+        );
+      }).toList(),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
