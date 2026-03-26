@@ -67,6 +67,28 @@ class GoalService {
       return false;
     }
   }
+  /// UPDATE GOAL
+Future<bool> updateGoal(GoalModel goal) async {
+  try {
+    final response = await http
+        .put(
+          Uri.parse("$baseUrl/goals/${goal.id}"),
+          headers: _getHeaders(),
+          body: jsonEncode(goal.toJson()),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print("Update Failed: ${response.statusCode} - ${response.body}");
+      return false;
+    }
+  } catch (e) {
+    print("Network Error during Update: $e");
+    return false;
+  }
+}
 
   /// DEPOSIT MONEY TO GOAL
   Future<bool> depositToGoal(String goalId, double amount) async {

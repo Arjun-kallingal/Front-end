@@ -7,10 +7,10 @@ import '../models/account_model.dart';
 class AccountService {
   // Web-safe platform checking
   static String get baseUrl {
-     {
+     
 
     return "http://localhost:5000/api/account"; 
-  }
+  
 }
   static Future<Map<String, dynamic>> getAccountDashboard(String userId, {String type = ""}) async {
     Uri uri = Uri.parse('$baseUrl/balances/$userId');

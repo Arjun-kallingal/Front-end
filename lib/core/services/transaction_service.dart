@@ -9,14 +9,15 @@ class TransactionService {
     return "http://localhost:5000/api/transaction";
   }
 
-  /// --- 1. FETCH HISTORY ---
-  static Future<TransactionHistoryResponse> getHistory(
-    String userId, {
-    String? accountId,
-    String? category,
-  }) async {
-    try {
-      final Map<String, String> queryParams = {};
+  /// --- 1. FETCH HISTORY (REFINED) ---
+  /// Now supports accountId and category filtering via query parameters.
+ static Future<TransactionHistoryResponse> getHistory(
+  String userId, {
+  String? accountId,
+  String? category, String? lastId,
+}) async {
+  try {
+    final Map<String, String> queryParams = {};
 
       if (accountId != null && accountId != "All Accounts") {
         queryParams['accountId'] = accountId;
@@ -64,7 +65,7 @@ class TransactionService {
     required String type,
     required String category,
     String? description,
-    String direction = "NORMAL",
+    String direction = "NORMAL", required String idempotencyKey,
   }) async {
     try {
       /// ✅ GET HEADERS WITH TOKEN
