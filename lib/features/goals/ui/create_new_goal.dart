@@ -185,16 +185,24 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     );
 
     try {
-      final success = await _goalService.createGoal(goalToSave);
+  bool success;
 
-      if (mounted) {
-        if (success) {
-          Navigator.pop(context, true);
-        } else {
-          _showSnackBar("Failed to save goal", isError: true);
-        }
-      }
-    } catch (e) {
+  if (widget.existingGoal != null) {
+    // 👉 EDIT mode → update existing goal
+    success = await _goalService.updateGoal(goalToSave);
+  } else {
+    // 👉 CREATE mode → create new goal
+    success = await _goalService.createGoal(goalToSave);
+  }
+
+  if (mounted) {
+    if (success) {
+      Navigator.pop(context, true);
+    } else {
+      _showSnackBar("Failed to save goal", isError: true);
+    }
+  }
+}catch (e) {
       _showSnackBar("Error saving goal: $e", isError: true);
     } finally {
       if (mounted) setState(() => _isSaving = false);
