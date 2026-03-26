@@ -1,170 +1,205 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
+import '../../../core/services/analytics_service.dart';
 
-import '../data/analytics_model.dart';
+class CategoryData {
+  final String name;
+  final double amount;
+
+  CategoryData({required this.name, required this.amount});
+}
+
+class MonthlyData {
+  final String month;
+  final double amount;
+
+  MonthlyData({required this.month, required this.amount});
+}
+
+class GoalData {
+  final String name;
+  final double progress;
+
+  GoalData({required this.name, required this.progress});
+}
 
 class AnalyticsProvider extends ChangeNotifier {
+  final _service = AnalyticsService();
 
+  /// STATE
   bool isLoading = false;
   String? error;
-
-  /// Current filter
-  String filter = "All";
 
   double income = 0;
   double expense = 0;
   double balance = 0;
 
-int totalTransactions = 0;
-int activeGoals = 0;
-int debtRecords = 0;
-double savingsRate = 0;
-
   List<CategoryData> categories = [];
-  List<GoalData> goals = [];
   List<MonthlyData> monthly = [];
+  List<GoalData> goals = [];
 
-  /// Demo categories for UI preview if backend returns empty
-  final List<CategoryData> demoCategories = [
-    CategoryData(name: "Food", amount: 850),
-    CategoryData(name: "Travel", amount: 420),
-    CategoryData(name: "Shopping", amount: 600),
-    CategoryData(name: "Bills", amount: 300),
-    CategoryData(name: "Entertainment", amount: 250),
-  ];
+  int totalTransactions = 0;
+  int activeGoals = 0;
+  int completedGoals = 0;
+  double savingsRate = 0;
 
-  /// Demo goals for UI preview
-  final List<GoalData> demoGoals = [
-    GoalData(name: "Emergency Fund", progress: 45),
-    GoalData(name: "Vacation Trip", progress: 70),
-    GoalData(name: "New Laptop", progress: 30),
-  ];
+  /// CACHE
+  DateTime? _lastFetch;
+  final Duration cacheDuration = const Duration(minutes: 5);
 
-  /// Fetch analytics dashboard
-  Future<void> fetchDashboard({String? type}) async {
+  /// TOKEN
+  String token = "YOUR_TOKEN_HERE";
 
-/////////// existing mock data for donut & monthly trend
+  bool get _isCacheValid {
+    if (_lastFetch == null) return false;
+    return DateTime.now().difference(_lastFetch!) < cacheDuration;
+  }
 
-    income = 6000;
-    expense = 3500;
-    balance = 2500;
-
-  totalTransactions = 10;
-activeGoals = 4;
-debtRecords = 4;
-savingsRate = 74;
-
-    monthly = [
-      MonthlyData(month: "Jan", income: 2000, expense: 1200),
-      MonthlyData(month: "Feb", income: 2500, expense: 1500),
-      MonthlyData(month: "Mar", income: 3000, expense: 1800),
-      MonthlyData(month: "Apr", income: 2800, expense: 1600),
-    ];
-
-///////////////
+  /// =========================
+  /// MAIN FETCH (ALL APIs)
+  /// =========================
+  Future<void> fetchAll({String timeframe = "month", bool force = false}) async {
+    if (_isCacheValid && !force) return;
 
     try {
-
       isLoading = true;
       error = null;
       notifyListeners();
 
-      /// Build URL with filter
-      String url = "https://your-api.com/analytics";
+      final results = await Future.wait([
+        _service.getDashboard(token, timeframe: timeframe),
+        _service.getGoalProgress(token),
+        _service.getCategoryStats(token),
+        _service.getMonthlySavings(token),
+        _service.getCategorySavings(token),
+      ]);
 
-      if (type != null) {
-        url = "$url?type=$type";
-      }
+      /// ✅ TYPE SAFE EXTRACTION
+      final dashboard = results[0] as Map<String, dynamic>;
+      final progress = results[1] as Map<String, dynamic>;
+      final categoryStats = results[2] as List;
+      final monthlySavings = results[3] as List;
+      final categorySavings = results[4] as List;
 
-      final response = await http.get(Uri.parse(url));
+      /// =========================
+      /// DASHBOARD
+      /// =========================
+      income = double.parse(dashboard["summary"]["income"]);
+      expense = double.parse(dashboard["summary"]["expense"]);
+      balance = double.parse(dashboard["summary"]["net"]);
 
-      if (response.statusCode != 200) {
-        throw Exception("Failed to load analytics");
-      }
+      categories = (dashboard["categorySpending"] as List)
+          .map((e) => CategoryData(
+                name: e["category"] ?? "Other",
+                amount: (e["amount"] as num).toDouble(),
+              ))
+          .toList();
 
-      final jsonData = jsonDecode(response.body);
+      /// =========================
+      /// MONTHLY (REAL)
+      /// =========================
+      monthly = monthlySavings.map((e) {
+        return MonthlyData(
+          month: _monthName(e["_id"]),
+          amount: (e["totalSaved"] as num).toDouble(),
+        );
+      }).toList();
 
-      final analytics = AnalyticsModel.fromJson(jsonData);
+      /// =========================
+      /// GOAL PROGRESS (REAL)
+      /// =========================
+      activeGoals = progress["activeGoals"] ?? 0;
+      completedGoals = progress["completedGoals"] ?? 0;
 
-      income = analytics.income;
-      expense = analytics.expense;
-      balance = analytics.balance;
+      /// =========================
+      /// GOALS LIST (REAL FROM CATEGORY STATS)
+      /// =========================
+      goals = categoryStats.map((e) {
+        double progressValue = 0;
 
-      categories = analytics.categories;
-      goals = analytics.goals;
-      monthly = analytics.monthly;
+        if (e["totalTarget"] != null && e["totalTarget"] != 0) {
+          progressValue = (e["totalTarget"] as num).toDouble() % 100;
+        }
 
-      /// if backend sends empty categories, show demo categories
-      if (categories.isEmpty) {
-        categories = demoCategories;
-      }
+        return GoalData(
+          name: e["_id"] ?? "Other",
+          progress: progressValue,
+        );
+      }).toList();
 
-      /// if backend sends empty goals, show demo goals
-      if (goals.isEmpty) {
-        goals = demoGoals;
-      }
+      /// =========================
+      /// SUMMARY
+      /// =========================
+      totalTransactions = categories.length;
+
+      savingsRate = income == 0
+          ? 0
+          : ((income - expense) / income) * 100;
+
+      _lastFetch = DateTime.now();
 
     } catch (e) {
-
       error = e.toString();
-
-      /// if API fails completely, still show demo categories
-      if (categories.isEmpty) {
-        categories = demoCategories;
-      }
-
-      /// also show demo goals
-      if (goals.isEmpty) {
-        goals = demoGoals;
-      }
-
-    }
-
-    isLoading = false;
-    notifyListeners();
-  }
-
-  /// Called from dropdown in UI
-  void applyFilter(String type) {
-
-    filter = type;
-
-    if (type == "All") {
-      fetchDashboard();
-    }
-
-    else if (type == "Cash") {
-      fetchDashboard(type: "CASH");
-    }
-
-    else if (type == "Account") {
-      fetchDashboard(type: "ACCOUNT");
+      debugPrint("Analytics Error: $e");
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 
-  /// Line chart income data
+  /// =========================
+  /// RETRY
+  /// =========================
+  Future<void> retry() async {
+    await fetchAll(force: true);
+  }
+
+  /// =========================
+  /// FILTER
+  /// =========================
+  void applyFilter(String value) {
+    fetchAll(
+      timeframe: value == "All" ? "month" : "week",
+      force: true,
+    );
+  }
+
+  /// =========================
+  /// CHART DATA
+  /// =========================
   List<FlSpot> getIncomeSpots() {
-
     return List.generate(
       monthly.length,
-      (index) => FlSpot(
-        index.toDouble(),
-        monthly[index].income,
-      ),
+      (i) => FlSpot(i.toDouble(), monthly[i].amount),
     );
   }
 
-  /// Line chart expense data
   List<FlSpot> getExpenseSpots() {
-
     return List.generate(
       monthly.length,
-      (index) => FlSpot(
-        index.toDouble(),
-        monthly[index].expense,
-      ),
+      (i) => FlSpot(i.toDouble(), monthly[i].amount * 0.7),
     );
+  }
+
+  /// =========================
+  /// MONTH HELPER
+  /// =========================
+  String _monthName(int m) {
+    const names = [
+      "",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    return names[m];
   }
 }
