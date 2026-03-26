@@ -64,7 +64,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-    final isLight = theme.brightness == Brightness.light;
 
     return Scaffold(
       backgroundColor: color.background,
