@@ -1,14 +1,17 @@
-
 import 'package:flutter/material.dart';
 import 'package:front_end/core/services/mock_auth.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
 import 'balance_card.dart';
 import 'package:intl/intl.dart';
+
 import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
+import '../../analytics/provider/analytics_provider.dart';
+import '../../../core/constants/app_colors.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -92,6 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 10),
 
+                _monthlyTrend(context.read<AnalyticsProvider>()),
+
+                const SizedBox(height: 10),
+
                 /// RECENT HEADER
                 _buildRecentHeader(),
 
@@ -148,6 +155,110 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _monthlyTrend(AnalyticsProvider provider) {
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Monthly Trend",
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 220,
+            child: LineChart(
+              LineChartData(
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border(
+                    left: BorderSide(color: Colors.grey.withOpacity(.5)),
+                    bottom: BorderSide(color: Colors.grey.withOpacity(.5)),
+                  ),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey.withOpacity(.3),
+                      strokeWidth: 1,
+                      dashArray: [6, 4],
+                    );
+                  },
+                ),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value.toInt() >= provider.monthly.length) {
+                          return const SizedBox();
+                        }
+
+                        final month = provider.monthly[value.toInt()].month;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            month,
+                            style: const TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 11,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: provider.getIncomeSpots(),
+                    isCurved: true,
+                    color: AppColors.chartIncome,
+                    barWidth: 3,
+                    dotData: FlDotData(show: true),
+                  ),
+                  LineChartBarData(
+                    spots: provider.getExpenseSpots(),
+                    isCurved: true,
+                    color: AppColors.chartExpense,
+                    barWidth: 3,
+                    dotData: FlDotData(show: true),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// RECENT HEADER
   Widget _buildRecentHeader() {
     return Padding(
@@ -189,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-          ),
+          )
         ],
       ),
     );
@@ -247,20 +358,19 @@ class _HomeScreenState extends State<HomeScreen> {
         final bool isTransferIn = tx.direction == 'ACCOUNT_TRANSFER_IN';
         final bool isReversal = tx.type == 'REVERSAL';
 
-        Color moneyColor =
-            isIncome
-                ? Colors.green
-                : isAllocation
-                    ? const Color(0xFF1976D2)
-                    : isDealloc
-                        ? Colors.purple
-                        : isCompletion
-                            ? Colors.teal
-                            : isTransferIn
-                                ? Colors.green
-                                : isReversal
-                                    ? Colors.orange
-                                    : const Color(0xFFB81414);
+        Color moneyColor = isIncome
+            ? Colors.green
+            : isAllocation
+                ? const Color(0xFF1976D2)
+                : isDealloc
+                    ? Colors.purple
+                    : isCompletion
+                        ? Colors.teal
+                        : isTransferIn
+                            ? Colors.green
+                            : isReversal
+                                ? Colors.orange
+                                : const Color(0xFFB81414);
 
         bool isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
@@ -271,17 +381,14 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor:
-                    _getTransactionColor(tx).withOpacity(0.1),
+                backgroundColor: _getTransactionColor(tx).withOpacity(0.1),
                 child: Icon(
                   _getTransactionIcon(tx),
                   color: _getTransactionColor(tx),
                   size: 20,
                 ),
               ),
-
               const SizedBox(width: 16),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,9 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-
                     const SizedBox(height: 6),
-
                     Row(
                       children: [
                         Text(
@@ -329,7 +434,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -341,9 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: moneyColor,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -434,5 +536,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Icons.trending_down;
+  }
+
+  Widget _card({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 255, 255, 255),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: child,
+    );
   }
 }

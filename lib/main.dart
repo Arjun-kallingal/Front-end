@@ -4,15 +4,14 @@ import 'core/theme/theme_provider.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
 import 'core/services/local_storage_service.dart';
-
 import 'features/auth/ui/login_screen.dart';
 import 'navigation/navigation_service.dart';
-
- import 'features/analytics/provider/analytics_provider.dart';
+import 'features/analytics/provider/analytics_provider.dart';
 import 'core/providers/user_profile_provider.dart';
 import 'core/providers/transaction_provider.dart';
 import 'core/providers/account_provider.dart';
 import 'features/goals/provider/goal_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,11 +26,12 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserProfileProvider()),
 
         /// ✅ TRANSACTION PROVIDER ADDED
-     ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => GoalProvider()),
-                ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
-
+        ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
       ],
       child: WalletCareApp(isLoggedIn: isLoggedIn),
     ),
@@ -39,7 +39,6 @@ void main() async {
 }
 
 class WalletCareApp extends StatelessWidget {
-
   final bool isLoggedIn;
 
   const WalletCareApp({
@@ -49,7 +48,6 @@ class WalletCareApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final themeProvider = context.watch<ThemeProvider>();
 
     return MaterialApp(
@@ -63,13 +61,10 @@ class WalletCareApp extends StatelessWidget {
 
       themeAnimationDuration: const Duration(milliseconds: 300),
 
- 
- 
-     /// INITIAL ROUTE BASED ON LOGIN
+      /// INITIAL ROUTE BASED ON LOGIN
       initialRoute: isLoggedIn ? '/main' : '/login',
 
       routes: {
-
         /// Login
         '/login': (_) => const LoginScreen(),
 
@@ -81,10 +76,10 @@ class WalletCareApp extends StatelessWidget {
             ),
 
         '/forgot-password': (_) => const Scaffold(
-          body: Center(
-            child: Text('Forgot Password'),
-        ),
-        ),
+              body: Center(
+                child: Text('Forgot Password'),
+              ),
+            ),
       },
 
       /// GLOBAL TEXT SCALE FIX
