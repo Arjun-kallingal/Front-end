@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
+import 'package:front_end/core/services/api_config.dart'; // ✅
 
 class GoalProvider extends ChangeNotifier {
+  // ✅ Use ApiConfig.baseUrl instead of hardcoded localhost
   final GoalService _goalService =
-      GoalService(baseUrl: "http://localhost:5000/api");
+      GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
 
   List<GoalModel> _goals = [];
   List<GoalModel> _filteredGoals = [];
@@ -34,7 +36,6 @@ class GoalProvider extends ChangeNotifier {
             g.title.toLowerCase().contains(value.toLowerCase()) ||
             g.category.toLowerCase().contains(value.toLowerCase()))
         .toList();
-
     notifyListeners();
   }
 

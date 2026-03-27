@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/models/account_model.dart';
 import '../../core/services/account_service.dart';
 import '../../core/services/transfer_service.dart';
-import '../../core/services/mock_auth.dart';
 import 'package:uuid/uuid.dart';
 
 class TransferScreen extends StatefulWidget {
@@ -18,9 +17,9 @@ class _TransferScreenState extends State<TransferScreen> {
   AccountModel? fromAccount;
   AccountModel? toAccount;
 
-  final amountController = TextEditingController();
+  final amountController      = TextEditingController();
   final descriptionController = TextEditingController();
-final idempotencyKey = const Uuid().v4();
+  final idempotencyKey        = const Uuid().v4();
 
   bool loading = false;
 
@@ -30,76 +29,75 @@ final idempotencyKey = const Uuid().v4();
     loadAccounts();
   }
 
-  Future<void> loadAccounts() async {
-  try {
-    final result = await AccountService.getAccountDashboard(MockAuthService.token);
-
-    setState(() {
-      accounts = result['accounts'] as List<AccountModel>;
-    });
-  } catch (e) {
-    print("Failed to load accounts: $e");
+  @override
+  void dispose() {
+    amountController.dispose();
+    descriptionController.dispose();
+    super.dispose();
   }
-}
+
+  Future<void> loadAccounts() async {
+    try {
+      // ✅ No userId/token — backend reads from JWT
+      final result = await AccountService.getAccountDashboard();
+
+      setState(() {
+        accounts = result['accounts'] as List<AccountModel>;
+      });
+    } catch (e) {
+      debugPrint("Failed to load accounts: $e");
+    }
+  }
 
   Future<void> submitTransfer() async {
     final amount = double.tryParse(amountController.text.trim());
 
     if (fromAccount == null || toAccount == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Select accounts")),
-      );
+      _showSnackBar("Select accounts");
       return;
     }
 
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter valid amount")),
-      );
+      _showSnackBar("Enter valid amount");
       return;
     }
 
     if (fromAccount!.id == toAccount!.id) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Accounts cannot be same")),
-      );
+      _showSnackBar("Accounts cannot be same");
       return;
     }
 
+    setState(() => loading = true);
+
     try {
-      setState(() {
-        loading = true;
-      });
-
-      
-await TransferService.accountTransfer(
-  token: MockAuthService.token,
-  fromAccountId: fromAccount!.id,
-  toAccountId: toAccount!.id,
-  amount: amount,
-  category: "TRANSFER",
-  description: descriptionController.text,
-  idempotencyKey: idempotencyKey,
-);
-
-      setState(() {
-        loading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Transfer Successful")),
+      // ✅ No token param — ApiClient handles Bearer token internally
+      await TransferService.accountTransfer(
+        fromAccountId:  fromAccount!.id,
+        toAccountId:    toAccount!.id,
+        amount:         amount,
+        category:       "TRANSFER",
+        description:    descriptionController.text,
+        idempotencyKey: idempotencyKey,
       );
 
+      if (!mounted) return;
+      _showSnackBar("Transfer Successful", isError: false);
       Navigator.pop(context);
-    } catch (e) {
-      setState(() {
-        loading = false;
-      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Transfer Failed: $e")),
-      );
+    } catch (e) {
+      if (mounted) _showSnackBar("Transfer Failed: $e");
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
+  }
+
+  void _showSnackBar(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:         Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   @override
@@ -112,7 +110,7 @@ await TransferService.accountTransfer(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /// FROM ACCOUNT
+            // ── FROM ACCOUNT ──────────────────────────────────────────────
             DropdownButtonFormField<AccountModel>(
               value: fromAccount,
               hint: const Text("From Account"),
@@ -122,16 +120,12 @@ await TransferService.accountTransfer(
                   child: Text(acc.name),
                 );
               }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  fromAccount = value;
-                });
-              },
+              onChanged: (value) => setState(() => fromAccount = value),
             ),
 
             const SizedBox(height: 16),
 
-            /// TO ACCOUNT
+            // ── TO ACCOUNT ────────────────────────────────────────────────
             DropdownButtonFormField<AccountModel>(
               value: toAccount,
               hint: const Text("To Account"),
@@ -141,16 +135,12 @@ await TransferService.accountTransfer(
                   child: Text(acc.name),
                 );
               }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  toAccount = value;
-                });
-              },
+              onChanged: (value) => setState(() => toAccount = value),
             ),
 
             const SizedBox(height: 16),
 
-            /// AMOUNT
+            // ── AMOUNT ────────────────────────────────────────────────────
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
@@ -162,7 +152,7 @@ await TransferService.accountTransfer(
 
             const SizedBox(height: 16),
 
-            /// DESCRIPTION
+            // ── DESCRIPTION ───────────────────────────────────────────────
             TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
@@ -173,7 +163,7 @@ await TransferService.accountTransfer(
 
             const SizedBox(height: 30),
 
-            /// TRANSFER BUTTON
+            // ── TRANSFER BUTTON ───────────────────────────────────────────
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -182,7 +172,7 @@ await TransferService.accountTransfer(
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text("Transfer"),
               ),
-            )
+            ),
           ],
         ),
       ),

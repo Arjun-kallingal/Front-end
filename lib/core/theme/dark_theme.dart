@@ -6,52 +6,83 @@ class DarkTheme {
     return ThemeData(
       brightness: Brightness.dark,
       fontFamily: 'Inter',
+
       scaffoldBackgroundColor: AppColors.bgPrimary,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.primary,
-        secondary: AppColors.accentOrange,
-        background: AppColors.bgPrimary,
-        surface: AppColors.bgSecondary,
-        error: AppColors.error,
-      ),
+colorScheme: const ColorScheme.dark(
+  primary: Colors.white,   // 🔥 FIXED
+  secondary: AppColors.accentOrange,
+  background: AppColors.bgPrimary,
+  surface: AppColors.bgSecondary,
+  error: Colors.white,     // 🔥 NO RED
+),
+
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.bgPrimary,
         elevation: 0,
       ),
+
+      /// ✅ TEXT FIELD THEME (NO RED ANYWHERE)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.bgSecondary,
+
         hintStyle: const TextStyle(color: AppColors.textHint),
+
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+
+        /// NORMAL BORDER
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: Colors.white),
         ),
+
+        /// ENABLED
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: Colors.white),
         ),
+
+        /// FOCUSED
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: Colors.white, width: 1.5),
         ),
+
+        /// 🔥 ERROR (NO RED)
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: const BorderSide(color: Colors.white),
         ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
+
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.white, width: 1.5),
         ),
+
+        /// OPTIONAL: remove red error text style
+        errorStyle: const TextStyle(color: Colors.white),
       ),
+
+      /// ✅ CURSOR + TEXT SELECTION (NO RED)
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: Colors.white,
+        selectionColor: Colors.white24,
+        selectionHandleColor: Colors.white,
+      ),
+
+     elevatedButtonTheme: ElevatedButtonThemeData(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white,   // ✅ FIX
+    foregroundColor: Colors.black,
+    minimumSize: const Size.fromHeight(52),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    elevation: 0,
+  ),
+),
+
       dividerColor: AppColors.divider,
     );
   }

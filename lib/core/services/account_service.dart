@@ -2,39 +2,35 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../models/account_model.dart';
-// import '../models/global_summary.dart'; // Uncomment if you have this file
+import '../services/api_client.dart';    // ✅ JWT headers
+import '../services/api_config.dart';    // ✅ centralized base URL
 
 class AccountService {
-  // Web-safe platform checking
-  static String get baseUrl {
-     
 
-    return "http://localhost:5000/api/account"; 
-  
-}
-  static Future<Map<String, dynamic>> getAccountDashboard(String userId, {String type = ""}) async {
-    Uri uri = Uri.parse('$baseUrl/balances/$userId');
-    
+  static String get baseUrl => "${ApiConfig.baseUrl}/api/account";
+
+  // ================= GET ACCOUNTS =================
+
+  static Future<Map<String, dynamic>> getAccountDashboard({String type = ""}) async {
+    // ✅ No userId in URL — backend reads user from JWT
+    Uri uri = Uri.parse('$baseUrl/balances');
+
     if (type.isNotEmpty && type.toUpperCase() != "ALL") {
       uri = uri.replace(queryParameters: {'type': type.toUpperCase()});
     }
 
     try {
-      final response = await http.get(uri);
+      final headers = await ApiClient.getHeaders();  // ✅ Bearer token
+      final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         List<AccountModel> accounts = (data['accounts'] as List)
             .map((acc) => AccountModel.fromJson(acc))
             .toList();
 
-        // GlobalSummary summary = GlobalSummary.fromJson(data['globalSummary'] ?? {});
-
-        return {
-          'accounts': accounts,
-          // 'summary': summary, 
-        };
+        return {'accounts': accounts};
       } else {
         throw Exception("Server Error: ${response.statusCode}");
       }
@@ -43,16 +39,19 @@ class AccountService {
     }
   }
 
+  // ================= CREATE ACCOUNT =================
+
   static Future<void> createAccount({
-    required String userId,
     required String name,
     required String type,
   }) async {
+    // ✅ No userId in body — backend extracts from JWT
+    final headers = await ApiClient.getHeaders();
+
     final response = await http.post(
       Uri.parse('$baseUrl/create'),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({
-        'userId': userId,
         'name': name,
         'type': type.toUpperCase(),
       }),
@@ -63,11 +62,15 @@ class AccountService {
     }
   }
 
+  // ================= SET PRIMARY =================
+
   static Future<bool> setPrimaryAccount(String accountId) async {
     try {
+      final headers = await ApiClient.getHeaders();  // ✅ Bearer token
+
       final response = await http.put(
         Uri.parse('$baseUrl/$accountId/primary'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
       );
       return response.statusCode == 200;
     } catch (e) {

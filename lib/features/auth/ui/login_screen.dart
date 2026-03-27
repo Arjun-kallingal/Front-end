@@ -5,8 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
 import 'signup_screen.dart';
-import 'forgot_password.dart';
-import 'api_config.dart';
+import 'forgot_password_gmail.dart';
+import '../../../core/services/api_config.dart';
+import 'package:front_end/core/services/auth_storage.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,19 +24,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  bool rememberMe = false;
   bool obscurePassword = true;
-  bool rememberError = false;
 
-  ///  LOGIN API FUNCTION
+  /// LOGIN API FUNCTION
   Future<void> loginUser() async {
     try {
-
- //final url = Uri.parse('http://192.168.29.128:5000/api/auth/login');
-      
-//final url = Uri.parse('http://127.0.0.1:5000/api/auth/login');
-
-final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
+      final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
       final response = await http.post(
         url,
@@ -48,37 +44,51 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        ///  SUCCESS
+      if (response.statusCode == 200 && data["accessToken"] != null) {
+    //    final token = data["accessToken"];
+        final user = data["user"];
+
+        final name = user["name"];
+        final email = user["email"];
+await AuthStorage.saveUser(
+  token: data["accessToken"],
+  refreshToken: data["refreshToken"] ?? "", // SAFE
+  name: name,
+  email: email,
+);
+
+        context.read<UserProfileProvider>().setUser(
+              userName: name,
+              userEmail: email,
+            );
+
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(data["message"] ?? "Login successful"),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.black,
           ),
         );
 
         Navigator.pushReplacementNamed(context, '/main');
       } else {
-        ///  ERROR FROM SERVER
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(data["message"] ?? "Login failed"),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.black,
           ),
         );
       }
     } catch (e) {
-      ///  CONNECTION ERROR
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Unable to connect to server"),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.black,
         ),
       );
     }
@@ -87,10 +97,11 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final isLight = theme.brightness == Brightness.light;
     final textTheme = theme.textTheme;
 
     return Scaffold(
+      backgroundColor: isLight ? Colors.white : Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -108,19 +119,23 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                       Icon(
                         Icons.shield_outlined,
                         size: 64,
-                        color: colors.primary,
+                        color: isLight ? Colors.black : Colors.white,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         'Wallet Care',
                         style: textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: isLight ? Colors.black : Colors.white,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Secure Financial Management',
-                        style: textTheme.bodyMedium,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color:
+                              isLight ? Colors.black54 : Colors.white70,
+                        ),
                       ),
                     ],
                   ),
@@ -142,18 +157,26 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 14),
 
-                /// PASSWORD
+                /// PASSWORD LABEL
                 Text(
                   'Password',
-                  style: textTheme.labelLarge,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: isLight ? Colors.black : Colors.white,
+                  ),
                 ),
+
                 const SizedBox(height: 8),
 
+                /// PASSWORD FIELD
                 TextFormField(
                   controller: passwordController,
                   obscureText: obscurePassword,
+                  style: TextStyle(
+                    color: isLight ? Colors.black : Colors.white,
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
@@ -165,12 +188,25 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                   },
                   decoration: InputDecoration(
                     hintText: 'Enter your password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    hintStyle: TextStyle(
+                      color: isLight
+                          ? Colors.black54
+                          : Colors.white54,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: isLight
+                          ? Colors.black54
+                          : Colors.white54,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         obscurePassword
                             ? Icons.visibility_off
                             : Icons.visibility,
+                        color: isLight
+                            ? Colors.black54
+                            : Colors.white54,
                       ),
                       onPressed: () {
                         setState(() {
@@ -178,72 +214,52 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                         });
                       },
                     ),
+                    filled: true,
+                    fillColor:
+                        isLight ? Colors.grey[100] : Colors.grey[900],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
 
                 const SizedBox(height: 12),
 
-                /// REMEMBER + FORGOT
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                /// FORGOT PASSWORD
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              rememberMe = value ?? false;
-                              rememberError = false;
-                            });
-                          },
-                        ),
-                        Text(
-                          'Remember me',
-                          style: textTheme.bodyMedium,
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const ForgotPasswordScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Forgot password?'),
-                        ),
-                      ],
-                    ),
-                    if (rememberError)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 12),
-                        child: Text(
-                          'Please select Remember me',
-                          style:
-                              TextStyle(color: Colors.red, fontSize: 12),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Forgot password?',
+                        style: TextStyle(
+                          color:
+                              isLight ? Colors.black : Colors.white,
                         ),
                       ),
+                    ),
                   ],
                 ),
 
-                /// SIGN IN
+                /// SIGN IN BUTTON
                 CustomButton(
                   text: 'Sign In',
                   onPressed: () {
                     final isValid =
                         _formKey.currentState!.validate();
 
-                    if (!rememberMe) {
-                      setState(() {
-                        rememberError = true;
-                      });
-                    }
-
-                    if (isValid && rememberMe) {
-                      loginUser(); 
+                    if (isValid) {
+                      loginUser();
                     }
                   },
                 ),
@@ -253,7 +269,10 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                 Center(
                   child: Text(
                     'NEW TO WALLET CARE?',
-                    style: textTheme.labelMedium,
+                    style: textTheme.labelMedium?.copyWith(
+                      color:
+                          isLight ? Colors.black54 : Colors.white70,
+                    ),
                   ),
                 ),
 
@@ -261,6 +280,13 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
                 /// CREATE ACCOUNT
                 OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: isLight
+                          ? Colors.black
+                          : Colors.white,
+                    ),
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -269,7 +295,13 @@ final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
                       ),
                     );
                   },
-                  child: const Text('Create Account'),
+                  child: Text(
+                    'Create Account',
+                    style: TextStyle(
+                      color:
+                          isLight ? Colors.black : Colors.white,
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -29,11 +29,13 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
   }
 
   Future<void> _exportData() async {
+    final theme = Theme.of(context);
+
     if (selectedRange == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select a date range"),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text("Please select a date range"),
+          backgroundColor: theme.colorScheme.primary,
         ),
       );
       return;
@@ -50,7 +52,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Data exported successfully as $selectedFormat"),
-        backgroundColor: Colors.green,
+        backgroundColor: theme.colorScheme.primary,
       ),
     );
   }
@@ -63,177 +65,135 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
 
     return Scaffold(
       backgroundColor: color.background,
-      body: SafeArea(
+
+      /// ✅ AppBar (theme controlled)
+      appBar: AppBar(
+        title: const Text("Export Data"),
+      ),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            /// HEADER
+            /// DATE RANGE CARD
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 10,
-                bottom: 10,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: color.surface,
+                borderRadius: BorderRadius.circular(16),
               ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
-                
-              ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
+                  Text(
+                    "Select Date Range",
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
-                    "Export Data",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  const SizedBox(height: 16),
+
+                  GestureDetector(
+                    onTap: _pickDateRange,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: color.background,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            selectedRange == null
+                                ? "Choose date range"
+                                : "${selectedRange!.start.toString().split(' ')[0]}  →  ${selectedRange!.end.toString().split(' ')[0]}",
+                          ),
+                          const Icon(Icons.calendar_today),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
 
-            /// SCROLLABLE CONTENT
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            const SizedBox(height: 24),
 
-                    /// DATE RANGE CARD
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: color.surface,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Select Date Range",
-                            style: textTheme.titleMedium!
-                                .copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 16),
-
-                          GestureDetector(
-                            onTap: _pickDateRange,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 16),
-                              decoration: BoxDecoration(
-                                color: color.background,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    selectedRange == null
-                                        ? "Choose date range"
-                                        : "${selectedRange!.start.toString().split(' ')[0]}  →  ${selectedRange!.end.toString().split(' ')[0]}",
-                                  ),
-                                  const Icon(Icons.calendar_today),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+            /// FORMAT CARD
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: color.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Export Format",
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 16),
 
-                    const SizedBox(height: 24),
-
-                    /// FORMAT CARD
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: color.surface,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Export Format",
-                            style: textTheme.titleMedium!
-                                .copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 16),
-
-                          Container(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: color.background,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: DropdownButton<String>(
-                              value: selectedFormat,
-                              isExpanded: true,
-                              underline: const SizedBox(),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: "CSV",
-                                  child: Text("CSV"),
-                                ),
-                                DropdownMenuItem(
-                                  value: "PDF",
-                                  child: Text("PDF"),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedFormat = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: color.background,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-
-                    const SizedBox(height: 40),
-
-                    /// EXPORT BUTTON
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : _exportData,
-                        style: ElevatedButton.styleFrom(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 18),
+                    child: DropdownButton<String>(
+                      value: selectedFormat,
+                      isExpanded: true,
+                      dropdownColor: color.surface,
+                      underline: const SizedBox(),
+                      items: const [
+                        DropdownMenuItem(
+                          value: "CSV",
+                          child: Text("CSV"),
                         ),
-                        child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : const Text("Export Data"),
-                      ),
+                        DropdownMenuItem(
+                          value: "PDF",
+                          child: Text("PDF"),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedFormat = value!;
+                        });
+                      },
                     ),
-
-                    const SizedBox(height: 40),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+
+            const SizedBox(height: 40),
+
+            /// EXPORT BUTTON (theme controlled)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : _exportData,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                ),
+                child: isLoading
+                    ? CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: color.onPrimary,
+                      )
+                    : const Text("Export Data"),
+              ),
+            ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),

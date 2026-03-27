@@ -4,7 +4,6 @@ import 'package:front_end/core/models/transaction_model.dart';
 import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
-import 'package:front_end/core/services/mock_auth.dart';
 import 'filter_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
@@ -44,7 +43,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     selectedAccountName = widget.initialAccountName ?? "All Accounts";
     _fetchData();
 
-    // Trigger next page when user is 200px from the bottom
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 200) {
@@ -68,24 +66,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       _transactions = [];
     });
 
-    final userId = MockAuthService.currentUserId;
-    if (userId.isEmpty) {
-      if (mounted) _showSnackBar("User not logged in!", isError: true);
-      setState(() => _isLoading = false);
-      return;
-    }
-
     try {
+      // ✅ No userId — backend reads from JWT
       final Map<String, dynamic> accountData =
-          await AccountService.getAccountDashboard(userId);
+          await AccountService.getAccountDashboard();
 
       final List<AccountModel> fetchedAccounts =
-          (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
-              [];
+          (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ?? [];
 
       String? resolvedAccountId;
-      if (selectedAccountName != "All Accounts" &&
-          fetchedAccounts.isNotEmpty) {
+      if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
         try {
           resolvedAccountId = fetchedAccounts
               .firstWhere((a) => a.name == selectedAccountName)
@@ -96,8 +86,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         }
       }
 
+      // ✅ No userId — backend reads from JWT
       final historyData = await TransactionService.getHistory(
-        userId,
         accountId: resolvedAccountId,
       );
 
@@ -126,8 +116,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     setState(() => _isFetchingMore = true);
 
     try {
-      final userId = MockAuthService.currentUserId;
-
       String? resolvedAccountId;
       if (selectedAccountName != "All Accounts" && _accounts.isNotEmpty) {
         try {
@@ -137,8 +125,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         } catch (_) {}
       }
 
+      // ✅ No userId — backend reads from JWT
       final historyData = await TransactionService.getHistory(
-        userId,
         accountId: resolvedAccountId,
         lastId:    _nextCursor,
       );
@@ -196,7 +184,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   // ── Transaction leading icon ──────────────────────────────────────────────
 
   Widget _getTransactionLeading(TransactionModel tx) {
-    // Goal allocation — money moved into goal
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") {
       return CircleAvatar(
         radius: 22,
@@ -204,18 +191,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.savings, color: Colors.blue, size: 20),
       );
     }
-
-    // Goal deallocation — money returned from goal to available
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") {
       return CircleAvatar(
         radius: 22,
         backgroundColor: Colors.purple.withOpacity(0.1),
-        child: const Icon(Icons.savings_outlined,
-            color: Colors.purple, size: 20),
+        child: const Icon(Icons.savings_outlined, color: Colors.purple, size: 20),
       );
     }
-
-    // Goal completion — goal fully funded
     if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") {
       return CircleAvatar(
         radius: 22,
@@ -223,18 +205,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.task_alt, color: Colors.teal, size: 20),
       );
     }
-
-    // Transfer in — money received from another account
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") {
       return CircleAvatar(
         radius: 22,
         backgroundColor: Colors.green.withOpacity(0.1),
-        child: const Icon(Icons.call_received,
-            color: Colors.green, size: 20),
+        child: const Icon(Icons.call_received, color: Colors.green, size: 20),
       );
     }
-
-    // Transfer out — money sent to another account
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") {
       return CircleAvatar(
         radius: 22,
@@ -242,7 +219,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.call_made, color: Colors.grey, size: 20),
       );
     }
-
     if (tx.type == "INCOME") {
       return CircleAvatar(
         radius: 22,
@@ -250,7 +226,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.trending_up, color: Colors.green, size: 20),
       );
     }
-
     if (tx.type == "REVERSAL") {
       return CircleAvatar(
         radius: 22,
@@ -258,8 +233,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.undo, color: Colors.orange, size: 20),
       );
     }
-
-    // EXPENSE — default
     return CircleAvatar(
       radius: 22,
       backgroundColor: primaryRed.withOpacity(0.1),
@@ -278,31 +251,25 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         () => setState(() => selectedType = "All Type"),
       ));
     }
-
     if (selectedCategory != "All") {
       chips.add(_buildChip(
         selectedCategory,
         () => setState(() => selectedCategory = "All"),
       ));
     }
-
     if (selectedAccountName != "All Accounts") {
       chips.add(_buildChip(selectedAccountName, () {
         setState(() => selectedAccountName = "All Accounts");
         _fetchData();
       }));
     }
-
     if (startDate != null && endDate != null) {
       final dateRange =
           "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
-      chips.add(_buildChip(
-        dateRange,
-        () => setState(() {
-          startDate = null;
-          endDate   = null;
-        }),
-      ));
+      chips.add(_buildChip(dateRange, () => setState(() {
+        startDate = null;
+        endDate   = null;
+      })));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -336,20 +303,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   Widget _buildTransactionList() {
     final list = _transactions.where((tx) {
-      // Search
       final mSearch =
           tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
           tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
 
-      // Category
       final mCategory = selectedCategory == "All" ||
           tx.category.toLowerCase() == selectedCategory.toLowerCase();
 
-      // Account
       final mAccount = selectedAccountName == "All Accounts" ||
           tx.accountName == selectedAccountName;
 
-      // Type
       bool mType;
       switch (selectedType) {
         case "Income":
@@ -370,18 +333,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           mType = true;
       }
 
-      // Date
       bool mDate = true;
       if (startDate != null && endDate != null) {
-        final txDate =
-            DateTime(tx.date.year, tx.date.month, tx.date.day);
-        final start =
-            DateTime(startDate!.year, startDate!.month, startDate!.day);
-        final end =
-            DateTime(endDate!.year, endDate!.month, endDate!.day);
-        mDate =
-            txDate.isAfter(start.subtract(const Duration(days: 1))) &&
-            txDate.isBefore(end.add(const Duration(days: 1)));
+        final txDate  = DateTime(tx.date.year, tx.date.month, tx.date.day);
+        final start   = DateTime(startDate!.year, startDate!.month, startDate!.day);
+        final end     = DateTime(endDate!.year, endDate!.month, endDate!.day);
+        mDate = txDate.isAfter(start.subtract(const Duration(days: 1))) &&
+                txDate.isBefore(end.add(const Duration(days: 1)));
       }
 
       return mSearch && mCategory && mAccount && mType && mDate;
@@ -392,8 +350,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-          const Icon(Icons.receipt_long_outlined,
-              size: 64, color: Colors.grey),
+          const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
           const Center(
             child: Text(
@@ -413,11 +370,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: list.length + 1, // +1 for bottom loader
-      separatorBuilder: (_, __) =>
-          Divider(color: Colors.grey.shade200, height: 1),
+      itemCount: list.length + 1,
+      separatorBuilder: (_, __) => Divider(color: Colors.grey.shade200, height: 1),
       itemBuilder: (context, i) {
-        // Bottom item — spinner or end message
         if (i == list.length) {
           if (_isFetchingMore) {
             return const Padding(
@@ -436,10 +391,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               child: Center(
                 child: Text(
                   "You have reached the end",
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                 ),
               ),
             );
@@ -490,20 +442,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       children: [
                         Text(
                           DateFormat('dd MMM yyyy').format(tx.date),
-                          style:
-                              TextStyle(color: textMuted, fontSize: 12),
+                          style: TextStyle(color: textMuted, fontSize: 12),
                         ),
                         if (tx.subtitle.isNotEmpty) ...[
                           const SizedBox(width: 8),
-                          Text("•",
-                              style: TextStyle(
-                                  color: Colors.grey.shade400)),
+                          Text("•", style: TextStyle(color: Colors.grey.shade400)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               tx.subtitle,
-                              style: TextStyle(
-                                  color: textMuted, fontSize: 12),
+                              style: TextStyle(color: textMuted, fontSize: 12),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -528,12 +476,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        isCash
-                            ? Icons.wallet
-                            : Icons.account_balance,
-                        size: 12,
-                      ),
+                      Icon(isCash ? Icons.wallet : Icons.account_balance, size: 12),
                       const SizedBox(width: 4),
                       Text(
                         tx.accountName,
@@ -572,8 +515,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back_ios_new,
-                            size: 18),
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -599,18 +541,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: TextField(
-                            onChanged: (v) =>
-                                setState(() => searchQuery = v),
+                            onChanged: (v) => setState(() => searchQuery = v),
                             decoration: InputDecoration(
-                              hintText: "Search transactions...",
-                              hintStyle: TextStyle(
-                                  color: Colors.grey.shade500),
-                              prefixIcon: Icon(Icons.search,
-                                  color: Colors.grey.shade600),
-                              border: InputBorder.none,
+                              hintText:   "Search transactions...",
+                              hintStyle:  TextStyle(color: Colors.grey.shade500),
+                              prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                              border:     InputBorder.none,
                               contentPadding:
-                                  const EdgeInsets.symmetric(
-                                      vertical: 12),
+                                  const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ),
@@ -620,13 +558,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         onTap: _openFilters,
                         child: Container(
                           height: 48,
-                          width: 48,
+                          width:  48,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color:        Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.tune,
-                              color: Colors.black87),
+                          child: const Icon(Icons.tune, color: Colors.black87),
                         ),
                       ),
                     ],
@@ -638,12 +575,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             Expanded(
               child: _isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(
-                          color: Colors.black87))
+                      child: CircularProgressIndicator(color: Colors.black87))
                   : RefreshIndicator(
-                      color: Colors.black87,
+                      color:     Colors.black87,
                       onRefresh: _fetchData,
-                      child: _buildTransactionList(),
+                      child:     _buildTransactionList(),
                     ),
             ),
           ],

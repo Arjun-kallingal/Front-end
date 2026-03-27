@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
+import 'package:front_end/core/services/api_config.dart'; // ✅ add this
 
 class GoalDetailsScreen extends StatefulWidget {
   final GoalModel goal;
@@ -19,8 +20,11 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
   bool _isDepositing = false;
   bool _isWithdrawing = false;
 
+  // ✅ Replace hardcoded localhost with ApiConfig.baseUrl
   late final GoalService _goalService =
-      GoalService(baseUrl: "http://localhost:5000/api");
+      GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
+
+  // ... rest of file is completely unchanged
 
   late double _currentAmount;
 

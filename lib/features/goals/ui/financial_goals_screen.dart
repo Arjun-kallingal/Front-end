@@ -4,6 +4,7 @@ import '../services/goal_service.dart';
 import 'create_new_goal.dart';
 import 'goal_details_screen.dart';
 import 'package:front_end/navigation/navigation_service.dart';
+import 'package:front_end/core/services/api_config.dart'; // ✅ add this
 
 class FinancialGoalsScreen extends StatefulWidget {
   const FinancialGoalsScreen({super.key});
@@ -13,8 +14,11 @@ class FinancialGoalsScreen extends StatefulWidget {
 }
 
 class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
+  // ✅ Replace hardcoded localhost with ApiConfig.baseUrl
   late final GoalService _goalService =
-      GoalService(baseUrl: "http://localhost:5000/api");
+      GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
+
+  // ... rest of file is unchanged
 
   List<GoalModel> goals = [];
   List<GoalModel> filteredGoals = [];

@@ -1,13 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
+import '../services/auth_service.dart';
 import 'package:front_end/features/auth/ui/verification.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
-import 'api_config.dart';
-import 'package:front_end/core/providers/user_profile_provider.dart';
-import 'package:provider/provider.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -50,61 +45,41 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
+    if (isLoading) return; // ✅ prevent double click
+
     setState(() => isLoading = true);
 
     try {
-      // final response = await http.post(
-      //   Uri.parse("http://localhost:5000/api/auth/register"),
-      final response = await http.post(
-  Uri.parse("${ApiConfig.baseUrl}/api/auth/register"),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "name": nameController.text.trim(),
-          "email": emailController.text.trim(),
-          "password": passwordController.text.trim(),
-        }),
+      final data = await AuthService.signup(
+        nameController.text.trim(),
+        emailController.text.trim(),
+        passwordController.text.trim(),
       );
 
-      final data = jsonDecode(response.body);
+      if (!mounted) return;
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-
-  final name = nameController.text.trim();
-  final email = emailController.text.trim();
-
-  // save user in provider
-  if (!mounted) return;
-
-  context.read<UserProfileProvider>().setUser(
-        userName: name,
-        userEmail: email,
-      );
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => VerificationScreen(
-        email: email,
-      ),
-    ),
-  );
-} else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data["message"] ?? "Registration failed"),
+      /// ✅ ONLY navigate on success
+      if (data["success"] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerificationScreen(
+              email: emailController.text.trim(),
+            ),
           ),
+        );
+      } else {
+        /// ❌ show backend error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"])),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("Something went wrong")),
       );
     } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -127,7 +102,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 12),
                     const Icon(Icons.shield_outlined, size: 56),
                     const SizedBox(height: 16),
-
                     Text(
                       'Create Account',
                       textAlign: TextAlign.center,
@@ -135,15 +109,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
-
                     Text(
                       'Start your financial journey',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium,
                     ),
-
                     const SizedBox(height: 28),
-
                     Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -152,7 +123,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         padding: const EdgeInsets.all(20),
                         child: Column(
                           children: [
-
                             CustomTextField(
                               hintText: 'Full Name',
                               controller: nameController,
@@ -164,7 +134,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             const SizedBox(height: 14),
-
                             CustomTextField(
                               hintText: 'Email Address',
                               controller: emailController,
@@ -179,7 +148,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             const SizedBox(height: 14),
-
                             CustomTextField(
                               hintText: 'Password',
                               controller: passwordController,
@@ -207,7 +175,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             const SizedBox(height: 14),
-
                             CustomTextField(
                               hintText: 'Confirm Password',
                               controller: confirmPasswordController,
@@ -235,9 +202,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 return null;
                               },
                             ),
-
                             const SizedBox(height: 16),
-
                             Row(
                               children: [
                                 Checkbox(
@@ -256,22 +221,20 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 20),
-
                             isLoading
                                 ? const CircularProgressIndicator()
                                 : CustomButton(
-                                    text: 'Create Account',
-                                    onPressed: _submit,
-                                  ),
+                                    text: isLoading
+                                        ? 'Creating...'
+                                        : 'Create Account',
+                                    onPressed: isLoading ? null : _submit,
+                                  )
                           ],
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 22),
-
                     Column(
                       children: [
                         Text(
@@ -286,9 +249,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
