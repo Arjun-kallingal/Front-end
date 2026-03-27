@@ -12,7 +12,33 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   int? expandedIndex;
   final GlobalKey faqKey = GlobalKey();
 
-  /// ================= SAFE EMAIL LAUNCHER =================
+  final TextEditingController _searchController = TextEditingController();
+
+  /// FAQ DATA
+  final List<Map<String, String>> _faqList = [
+    {
+      "q": "How do I reset my password?",
+      "a": "Go to Settings > Account > Reset Password."
+    },
+    {
+      "q": "How do I edit my profile?",
+      "a": "Navigate to profile page and tap Edit."
+    },
+    {
+      "q": "Is my data secure?",
+      "a": "Yes, we use industry-standard encryption."
+    },
+  ];
+
+  List<Map<String, String>> _filteredFaqs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredFaqs = _faqList;
+  }
+
+  /// EMAIL
   Future<void> _launchEmail() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
@@ -23,229 +49,181 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     );
 
     try {
-      await launchUrl(
-        emailUri,
-        mode: LaunchMode.platformDefault,
-        webOnlyWindowName: '_self',
-      );
-    } catch (e) {
+      await launchUrl(emailUri);
+    } catch (_) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Unable to open email app"),
-        ),
+        const SnackBar(content: Text("Unable to open email app")),
       );
     }
   }
 
-  /// ================= NAVIGATION HANDLER =================
-  void _handleNavigation(String type) {
-    if (type == "email") {
-      _launchEmail();
-    } else if (type == "chat") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Live Chat Coming Soon 💬")),
-      );
-    } else if (type == "faq") {
-      if (faqKey.currentContext != null) {
-        Scrollable.ensureVisible(
-          faqKey.currentContext!,
-          duration: const Duration(milliseconds: 500),
-        );
-      }
-    }
+  /// SEARCH
+  void _searchFaq(String query) {
+    final results = _faqList.where((faq) {
+      final q = faq["q"]!.toLowerCase();
+      final a = faq["a"]!.toLowerCase();
+      return q.contains(query.toLowerCase()) ||
+          a.contains(query.toLowerCase());
+    }).toList();
+
+    setState(() {
+      _filteredFaqs = results;
+      expandedIndex = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
     return Scaffold(
       backgroundColor: color.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            /// ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
-                
+      appBar: AppBar(
+        title: const Text("Help & Support"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: color.surface,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              /// CONTACT SUPPORT
+              _supportTile(
+                context: context,
+                icon: Icons.email_outlined,
+                title: "Contact Support",
+                subtitle: "Reach out to our support team",
+                onTap: _launchEmail,
               ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    "Help & Support",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            /// ================= BODY =================
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: color.surface,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              const SizedBox(height: 25),
 
-                      /// SUPPORT OPTIONS
-                      _supportTile(
-                        context,
-                        icon: Icons.email_outlined,
-                        title: "Contact Support",
-                        subtitle: "Reach out to our support team",
-                        onTap: () => _handleNavigation("email"),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _supportTile(
-                        context,
-                        icon: Icons.chat_outlined,
-                        title: "Live Chat",
-                        subtitle: "Chat instantly with an agent",
-                        onTap: () => _handleNavigation("chat"),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _supportTile(
-                        context,
-                        icon: Icons.question_answer_outlined,
-                        title: "FAQs",
-                        subtitle: "Find answers quickly",
-                        onTap: () => _handleNavigation("faq"),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      /// FAQ TITLE
-                      Text(
-                        "Frequently Asked Questions",
-                        key: faqKey,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _animatedFaq(
-                        0,
-                        "How do I reset my password?",
-                        "Go to Settings > Account > Reset Password.",
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _animatedFaq(
-                        1,
-                        "How do I edit my profile?",
-                        "Navigate to profile page and tap Edit.",
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _animatedFaq(
-                        2,
-                        "Is my data secure?",
-                        "Yes, we use secure encryption to protect your data.",
-                      ),
-                    ],
-                  ),
+              /// FAQ TITLE
+              Text(
+                "FAQs",
+                key: faqKey,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 12),
+
+              /// SEARCH FIELD (THEME CONTROLLED)
+              TextField(
+                controller: _searchController,
+                onChanged: _searchFaq,
+                decoration: const InputDecoration(
+                  hintText: "Search FAQs...",
+                  prefixIcon: Icon(Icons.search),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              /// FAQ LIST
+              if (_filteredFaqs.isEmpty)
+                Center(
+                  child: Text(
+                    "No results found",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                )
+              else
+                ...List.generate(
+                  _filteredFaqs.length,
+                  (index) {
+                    final faq = _filteredFaqs[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _faqItem(
+                        context,
+                        index,
+                        faq["q"]!,
+                        faq["a"]!,
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// ================= SUPPORT TILE =================
-  Widget _supportTile(
-    BuildContext context, {
+  /// SUPPORT TILE
+  Widget _supportTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.background,
           borderRadius: BorderRadius.circular(12),
+          color: theme.colorScheme.surface.withOpacity(0.6),
         ),
         child: Row(
           children: [
-            Icon(icon, color: color.primary),
+            Icon(icon),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                        fontSize: 13, color: Colors.grey),
+                    style: theme.textTheme.bodySmall,
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios,
-                size: 16, color: color.primary),
           ],
         ),
       ),
     );
   }
 
-  /// ================= ANIMATED FAQ =================
-  Widget _animatedFaq(int index, String question, String answer) {
-    final color = Theme.of(context).colorScheme;
+  /// FAQ ITEM
+  Widget _faqItem(
+    BuildContext context,
+    int index,
+    String question,
+    String answer,
+  ) {
+    final theme = Theme.of(context);
     final bool isExpanded = expandedIndex == index;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+    return Container(
       decoration: BoxDecoration(
-        color: color.background,
         borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface.withOpacity(0.6),
       ),
       child: ExpansionTile(
         key: PageStorageKey(index),
@@ -255,25 +233,18 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             expandedIndex = value ? index : null;
           });
         },
-        iconColor: color.primary,
-        collapsedIconColor: color.primary,
-        tilePadding:
-            const EdgeInsets.symmetric(horizontal: 16),
-        childrenPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Text(
           question,
-          style:
-              const TextStyle(fontWeight: FontWeight.w600),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         children: [
-          AnimatedOpacity(
-            opacity: isExpanded ? 1 : 0,
-            duration: const Duration(milliseconds: 300),
+          Padding(
+            padding: const EdgeInsets.all(12),
             child: Text(
               answer,
-              style:
-                  const TextStyle(color: Colors.grey),
+              style: theme.textTheme.bodyMedium,
             ),
           ),
         ],

@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-// --- SERVICE & MODEL IMPORTS ---
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
 import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/account_service.dart';
-import 'package:front_end/core/services/mock_auth.dart';
+import 'package:front_end/core/services/api_config.dart'; // ✅ replaces hardcoded URL
 
 class CreateNewGoalScreen extends StatefulWidget {
   final GoalModel? existingGoal;
@@ -29,11 +28,11 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   late TextEditingController titleController;
   late TextEditingController targetController;
 
+  // ✅ Use ApiConfig.baseUrl instead of hardcoded localhost
   late final GoalService _goalService = GoalService(
-    baseUrl: "http://localhost:5000/api",
+    baseUrl: "${ApiConfig.baseUrl}/api",
   );
 
-  String? _currentUserId;
   bool _isFetchingAccounts = true;
   bool _isSaving = false;
   List<AccountModel> _accounts = [];
@@ -47,44 +46,19 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   IconData selectedIcon = Icons.trending_up_rounded;
 
   final List<Map<String, dynamic>> categories = [
-    {
-      "name": "Savings",
-      "icon": Icons.trending_up_rounded,
-      "color": Colors.green.shade800
-    },
-    {
-      "name": "Emergency",
-      "icon": Icons.error_outline_rounded,
-      "color": Colors.red.shade800
-    },
-    {
-      "name": "Bills",
-      "icon": Icons.receipt_long_rounded,
-      "color": Colors.orange.shade800
-    },
-    {
-      "name": "Business",
-      "icon": Icons.work_outline_rounded,
-      "color": Colors.blue.shade800
-    },
-    {
-      "name": "Travel",
-      "icon": Icons.flight_takeoff_rounded,
-      "color": Colors.purple.shade800
-    },
-    {
-      "name": "Other",
-      "icon": Icons.category_rounded,
-      "color": Colors.grey.shade800
-    },
+    {"name": "Savings",   "icon": Icons.trending_up_rounded,    "color": Colors.green.shade800},
+    {"name": "Emergency", "icon": Icons.error_outline_rounded,   "color": Colors.red.shade800},
+    {"name": "Bills",     "icon": Icons.receipt_long_rounded,    "color": Colors.orange.shade800},
+    {"name": "Business",  "icon": Icons.work_outline_rounded,    "color": Colors.blue.shade800},
+    {"name": "Travel",    "icon": Icons.flight_takeoff_rounded,  "color": Colors.purple.shade800},
+    {"name": "Other",     "icon": Icons.category_rounded,        "color": Colors.grey.shade800},
   ];
 
   @override
   void initState() {
     super.initState();
 
-    titleController =
-        TextEditingController(text: widget.existingGoal?.title ?? "");
+    titleController = TextEditingController(text: widget.existingGoal?.title ?? "");
 
     targetController = TextEditingController(
       text: (widget.existingGoal?.targetAmount ?? 0) > 0
@@ -102,11 +76,11 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
         (cat) => cat["name"] == selectedCategory,
         orElse: () => categories.first,
       );
-
       selectedIcon = matchedCategory["icon"];
     }
 
-    _initializeUser();
+    // ✅ No user ID needed — just load accounts directly
+    _loadAccounts();
   }
 
   @override
@@ -116,38 +90,31 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     super.dispose();
   }
 
-  Future<void> _initializeUser() async {
-    final userid = MockAuthService.currentUserId;
-
-    if (userid.isNotEmpty && mounted) {
-      setState(() => _currentUserId = userid);
-      _loadAccounts();
-    }
-  }
-
   Future<void> _loadAccounts() async {
     try {
-      final result = await AccountService.getAccountDashboard(_currentUserId!);
+      // ✅ No userId param — backend reads user from JWT
+      final result = await AccountService.getAccountDashboard();
 
       if (!mounted) return;
 
-      setState(() {
-        _accounts = result['accounts'];
+      final accountsData = result['accounts'];
+      _accounts = accountsData is List<AccountModel> ? accountsData : [];
 
-        if (selectedAccountId == null && _accounts.isNotEmpty) {
-          selectedAccountId = _accounts.first.id;
-          _selectedAccountName = _accounts.first.name;
-        } else if (selectedAccountId != null && _accounts.isNotEmpty) {
-          final acc = _accounts.firstWhere(
-            (a) => a.id == selectedAccountId,
+      if (_accounts.isNotEmpty) {
+        final primary = _accounts.firstWhere(
+          (acc) => acc.isDefault == true,
+          orElse: () => _accounts.firstWhere(
+            (acc) => acc.type == "CASH",
             orElse: () => _accounts.first,
-          );
-          _selectedAccountName = acc.name;
-        }
+          ),
+        );
 
-        _isFetchingAccounts = false;
-      });
+        selectedAccountId = primary.id;
+        _selectedAccountName = primary.name;
+      }
     } catch (e) {
+      debugPrint("Error loading accounts: $e");
+    } finally {
       if (mounted) setState(() => _isFetchingAccounts = false);
     }
   }
@@ -157,9 +124,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
         selectedDate == null ||
         selectedAccountId == null) {
       _showSnackBar(
-        selectedDate == null
-            ? "Please select a deadline"
-            : "Please fill all fields",
+        selectedDate == null ? "Please select a deadline" : "Please fill all fields",
         isError: true,
       );
       return;
@@ -167,9 +132,9 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
 
     setState(() => _isSaving = true);
 
+    // ✅ No userId in GoalModel — backend extracts it from JWT
     final goalToSave = GoalModel(
       id: widget.existingGoal?.id ?? '',
-      userId: _currentUserId!,
       accountId: selectedAccountId!,
       title: titleController.text.trim(),
       category: selectedCategory,
@@ -181,7 +146,13 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     );
 
     try {
-      final success = await _goalService.createGoal(goalToSave);
+      bool success;
+
+      if (widget.existingGoal != null) {
+        success = await _goalService.updateGoal(goalToSave);
+      } else {
+        success = await _goalService.createGoal(goalToSave);
+      }
 
       if (mounted) {
         if (success) {
@@ -243,8 +214,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: _isSaving ? null : _saveGoal,
           child: _isSaving
@@ -267,13 +237,17 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12)),
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(_selectedAccountName ?? "Select Account"),
-            const Icon(Icons.keyboard_arrow_down),
+            Text(
+              _selectedAccountName ?? "Select Account",
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
           ],
         ),
       ),
@@ -298,7 +272,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             onTap: () {
               setState(() {
-                selectedAccountId = acc.id; // FIXED
+                selectedAccountId = acc.id;
                 _selectedAccountName = acc.name;
                 _showAccountOptions = false;
               });
@@ -338,9 +312,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                             _buildLabel("Target Amount"),
                             TextFormField(
                               controller: targetController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(
                                     RegExp(r'^\d+\.?\d{0,2}'))
@@ -366,13 +338,11 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                     color: Colors.grey.shade50,
                                     borderRadius: BorderRadius.circular(12)),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(selectedDate == null
                                         ? "Select Deadline"
-                                        : DateFormat('dd MMM, yyyy')
-                                            .format(selectedDate!)),
+                                        : DateFormat('dd MMM, yyyy').format(selectedDate!)),
                                     const Icon(Icons.calendar_month),
                                   ],
                                 ),
@@ -397,12 +367,11 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                               ),
                               itemBuilder: (context, index) {
                                 final category = categories[index];
-                                final isSelected =
-                                    selectedCategory == category["name"];
+                                final isSelected = selectedCategory == category["name"];
 
                                 return GestureDetector(
-                                  onTap: () => setState(() =>
-                                      selectedCategory = category["name"]),
+                                  onTap: () => setState(
+                                      () => selectedCategory = category["name"]),
                                   child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(16),
@@ -414,8 +383,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                                       ),
                                     ),
                                     child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(category["icon"]),
                                         const SizedBox(height: 6),

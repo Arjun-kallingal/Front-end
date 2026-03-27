@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/transaction_service.dart';
-import 'package:front_end/core/services/mock_auth.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/account_provider.dart';
 
@@ -21,7 +20,6 @@ class AddTransactionScreen extends StatefulWidget {
 }
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
-  String? _currentUserId;
   String amount = "";
   DateTime selectedDate = DateTime.now();
   bool _isLoading = false;
@@ -69,7 +67,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void initState() {
     super.initState();
     _isExpense = widget.initialIsExpense;
-    _initializeUser();
+    _loadWallets();  // ✅ No user init needed — JWT handles identity
   }
 
   @override
@@ -78,23 +76,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     super.dispose();
   }
 
-  // ── Init ──────────────────────────────────────────────────────────────────
-
-  Future<void> _initializeUser() async {
-    final userid = MockAuthService.currentUserId;
-    if (userid.isNotEmpty && mounted) {
-      setState(() => _currentUserId = userid);
-      _loadWallets();
-    } else {
-      _showSnackBar("Session expired. Please log in again.");
-    }
-  }
+  // ── Load Wallets ──────────────────────────────────────────────────────────
 
   Future<void> _loadWallets() async {
-    if (_currentUserId == null) return;
     try {
-      final result =
-          await AccountService.getAccountDashboard(_currentUserId!);
+      // ✅ No userId passed — backend reads from JWT
+      final result = await AccountService.getAccountDashboard();
 
       if (!mounted) return;
 
@@ -122,40 +109,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ── Save ──────────────────────────────────────────────────────────────────
 
   Future<void> _handleSave() async {
-    if (_currentUserId == null) {
-      _showSnackBar("User session expired");
-      return;
-    }
-
     if (_selectedAccountId == null ||
         amount.isEmpty ||
         double.tryParse(amount) == null ||
         double.parse(amount) <= 0 ||
         _selectedCategory == null) {
-      _showSnackBar("Please fill all required fields properly",
-          isError: true);
+      _showSnackBar("Please fill all required fields properly", isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
+      // ✅ No userId — backend extracts from JWT
       final result = await TransactionService.processTransaction(
-        userId:         _currentUserId!,
         accountId:      _selectedAccountId!,
         amount:         amount,
         type:           _isExpense ? "EXPENSE" : "INCOME",
         direction:      "STANDARD",
         category:       _selectedCategory!,
         description:    descriptionController.text,
-        // Timestamp-based key — unique per tap, prevents duplicate submissions
         idempotencyKey: DateTime.now().millisecondsSinceEpoch.toString(),
       );
 
       if (!mounted) return;
 
       if (result['success'] == true) {
-        context.read<AccountProvider>().loadAccounts(_currentUserId!);
+        context.read<AccountProvider>().loadAccounts(); // ✅ no userId
         _showSnackBar(
           "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
           isError: false,
@@ -163,7 +143,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         setState(() => amount = "");
         Navigator.pop(context, true);
       } else {
-        // Backend sends { success: false, error: '...' }
         _showSnackBar(result['error'] ?? "Failed to save");
       }
     } catch (e) {
@@ -215,8 +194,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildLabel("Amount"),
-                          _buildDefaultField(
-                              hint: "0.00", isAmount: true),
+                          _buildDefaultField(hint: "0.00", isAmount: true),
                           const SizedBox(height: 16),
                           _buildLabel("Description (Optional)"),
                           _buildDefaultField(
@@ -291,7 +269,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           margin: const EdgeInsets.all(4),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.transparent,
+            color:        active ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: active
                 ? Border.all(color: borderColor, width: 2.5)
@@ -300,7 +278,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: Text(
             label,
             style: TextStyle(
-              color: active ? borderColor : Colors.grey,
+              color:      active ? borderColor : Colors.grey,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -373,8 +351,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildAccountSelectorBox() {
     return InkWell(
-      onTap: () =>
-          setState(() => _showAccountOptions = !_showAccountOptions),
+      onTap: () => setState(() => _showAccountOptions = !_showAccountOptions),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -432,8 +409,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: GridView.builder(
         scrollDirection: Axis.horizontal,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount:  2,
-          mainAxisSpacing: 10,
+          crossAxisCount:   2,
+          mainAxisSpacing:  10,
           crossAxisSpacing: 10,
           childAspectRatio: 0.9,
         ),
@@ -443,8 +420,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           final isSel = _selectedCategory == item['name'];
 
           return GestureDetector(
-            onTap: () =>
-                setState(() => _selectedCategory = item['name']),
+            onTap: () => setState(() => _selectedCategory = item['name']),
             child: Container(
               decoration: BoxDecoration(
                 color:        Colors.white,
@@ -457,8 +433,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(item['icon'],
-                      color: item['color'], size: 28),
+                  Icon(item['icon'], color: item['color'], size: 28),
                   const SizedBox(height: 4),
                   Text(
                     item['name'],

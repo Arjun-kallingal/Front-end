@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:front_end/core/widgets/custom_button.dart';
-import 'check_email_screen.dart';
 
+import 'forgot-password-otp-verification.dart';
+import '../services/authentication_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -11,49 +12,88 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
+
+  bool isLoading = false;
 
   @override
   void dispose() {
     emailController.dispose();
     super.dispose();
   }
+Future<void> _sendOtp() async {
+  if (!_formKey.currentState!.validate()) return;
 
-  void _sendResetLink() {
-    if (!_formKey.currentState!.validate()) return;
+  FocusScope.of(context).unfocus();
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CheckEmailScreen(
-          email: emailController.text,
-        ),
-      ),
-    );
-  }
+  final email = emailController.text.trim();
+
+  setState(() {
+    isLoading = true;
+  });
+final message = await AuthService.forgotPassword(email);
+
+if (message == null) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Failed to send OTP")),
+  );
+  setState(() => isLoading = false);
+  return;
+}
+
+  if (!mounted) return;
+
+  setState(() {
+    isLoading = false;
+  });
+
+  /// Optional snackbar
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("If the email exists, an OTP has been sent"),
+    ),
+  );
+
+  /// Small delay helps stability
+  await Future.delayed(const Duration(milliseconds: 300));
+
+  if (!mounted) return;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => OtpVerificationScreen(email: email),
+    ),
+  );
+
+}
 
   @override
   Widget build(BuildContext context) {
+
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colors = theme.colorScheme;
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+  resizeToAvoidBottomInset: true,
+  body: SafeArea(
+    child: SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: Form(
+          key: _formKey,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+
                     const SizedBox(height: 20),
 
-                    /// ICON
                     Icon(
                       Icons.shield_outlined,
                       size: 56,
@@ -62,7 +102,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                     const SizedBox(height: 16),
 
-                    /// TITLE
                     Text(
                       'Forgot Password?',
                       textAlign: TextAlign.center,
@@ -73,16 +112,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                     const SizedBox(height: 6),
 
-                    /// SUBTITLE
                     Text(
-                      'No worries, we’ll send you reset instructions',
+                      'No worries, we’ll send you a 6-digit OTP',
                       textAlign: TextAlign.center,
                       style: textTheme.bodyMedium,
                     ),
 
                     const SizedBox(height: 30),
 
-                    /// CARD
                     Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
@@ -93,42 +130,54 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+
                             Text(
                               'Email Address',
                               style: textTheme.labelLarge,
                             ),
+
                             const SizedBox(height: 8),
 
-                            /// EMAIL FIELD
                             TextFormField(
                               controller: emailController,
                               keyboardType: TextInputType.emailAddress,
-                              validator: (v) =>
-                                  v != null && v.contains('@')
-                                      ? null
-                                      : 'Enter valid email',
+                              validator: (value) {
+
+                                if (value == null || value.isEmpty) {
+                                  return "Enter your email";
+                                }
+
+                                if (!value.contains("@")) {
+                                  return "Enter a valid email";
+                                }
+
+                                return null;
+                              },
                               decoration: const InputDecoration(
-                                hintText: 'alex@example.com',
+                                hintText: "Enter your email",
                                 prefixIcon: Icon(Icons.email_outlined),
                               ),
                             ),
 
                             const SizedBox(height: 20),
 
-                            /// SEND RESET LINK
-                            CustomButton(
-                              text: 'Send OTP',
-                              onPressed: _sendResetLink,
-                            ),
+                            isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : CustomButton(
+                                    text: 'Send OTP',
+                                    onPressed: _sendOtp,
+                                  ),
 
                             const SizedBox(height: 16),
 
-                            /// BACK TO LOGIN
                             OutlinedButton.icon(
                               onPressed: () => Navigator.pop(context),
                               icon: const Icon(Icons.arrow_back),
                               label: const Text('Back to Sign In'),
                             ),
+
                           ],
                         ),
                       ),
@@ -136,18 +185,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                     const SizedBox(height: 18),
 
-                    /// FOOTER INFO
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+
                         const Icon(Icons.lock_outline, size: 14),
+
                         const SizedBox(width: 6),
+
                         Text(
-                          'Password reset link will be valid for 15 minutes',
+                          'OTP will be valid for 15 minutes',
                           style: textTheme.bodySmall,
                         ),
+
                       ],
                     ),
+
                   ],
                 ),
               ),

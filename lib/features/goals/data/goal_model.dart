@@ -1,6 +1,7 @@
 class GoalModel {
   final String id;
-  final String userId;
+  // ✅ userId removed — backend gets it from JWT
+  final String? accountName;
   final String accountId;
   String title;
   String category;
@@ -21,7 +22,7 @@ class GoalModel {
 
   GoalModel({
     required this.id,
-    required this.userId,
+    // ✅ userId removed
     required this.accountId,
     required this.title,
     required this.category,
@@ -30,6 +31,7 @@ class GoalModel {
     required this.targetDate,
     required this.status,
     required this.createdAt,
+    this.accountName,
     this.description,
     this.reminderFrequency = 'weekly',
     this.transactionType = 'expense',
@@ -42,8 +44,9 @@ class GoalModel {
   factory GoalModel.fromJson(Map<String, dynamic> json) {
     return GoalModel(
       id: json['_id'] ?? '',
-      userId: json['userId'] ?? '',
+      // ✅ userId removed — not needed client-side
       accountId: json['accountId'] ?? '',
+      accountName: json['accountName'] ?? 'Unknown',
       title: json['title'] ?? '',
       category: json['category'] ?? '',
       targetAmount: (json['targetAmount'] as num? ?? 0).toDouble(),
@@ -54,8 +57,6 @@ class GoalModel {
       description: json['description'],
       reminderFrequency: json['reminderFrequency'] ?? 'weekly',
       transactionType: json['transactionType'] ?? 'expense',
-
-      // ✅ Safe null-aware casting for calculated fields
       daysLeft: json['daysLeft'] != null
           ? (json['daysLeft'] as num).toInt()
           : null,
@@ -72,7 +73,7 @@ class GoalModel {
   Map<String, dynamic> toJson({bool isCreate = false}) {
     return {
       if (!isCreate && id.isNotEmpty) "_id": id,
-      "userId": userId,
+      // ✅ userId removed — never sent in body, backend reads from JWT
       "accountId": accountId,
       "title": title,
       "category": category,

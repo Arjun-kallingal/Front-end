@@ -5,68 +5,29 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
     return Scaffold(
       backgroundColor: color.background,
-      body: SafeArea(
-        child: Column(
-          children: [
 
-            /// ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(
-                top: 10,
-                bottom: 10,
-              ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.fromARGB(255, 98, 14, 14),
-                    Color.fromARGB(255, 184, 20, 20),
-                  ],
-                ),
-              
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
+      /// ✅ Use AppBar (clean + consistent)
+      appBar: AppBar(
+        title: const Text("Privacy Policy"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
 
-                  /// prevents overflow on small screens
-                  const Expanded(
-                    child: Text(
-                      "Privacy Policy",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            /// ================= SCROLLABLE CONTENT =================
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
-                ),
-                child: SelectableText(
-                  '''
+      /// ================= CONTENT =================
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 20,
+        ),
+        child: SelectableText(
+          '''
 Privacy Policy for WalletCare
 
 Last updated: February 26, 2026
@@ -164,14 +125,10 @@ Email: support@walletcare.app
 
 By using WalletCare, you agree to this policy.
 ''',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.6,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          style: theme.textTheme.bodyMedium?.copyWith(
+            height: 1.6,
+            fontSize: 14,
+          ),
         ),
       ),
     );

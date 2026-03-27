@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/models/account_model.dart';
 import '../../../core/services/account_service.dart';
-import '../../../core/services/mock_auth.dart';
+import '../../../core/services/auth_storage.dart';          // ✅ JWT
 import '../../../core/providers/account_provider.dart';
 
 import 'package:front_end/navigation/navigation_service.dart';
@@ -23,15 +23,12 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
     super.initState();
 
     Future.microtask(() {
-      final userId = MockAuthService.currentUserId;
-      context.read<AccountProvider>().loadAccounts(userId);
+      context.read<AccountProvider>().loadAccounts();       // ✅ no userId
     });
   }
 
   Future<void> _handleSetPrimary(String accountId) async {
-    final userId = MockAuthService.currentUserId;
-
-    await context.read<AccountProvider>().setPrimary(accountId, userId);
+    await context.read<AccountProvider>().setPrimary(accountId); // ✅ no userId
   }
 
   // ================= POPUP =================
@@ -137,13 +134,12 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
 
                   Navigator.pop(ctx);
 
-                  await AccountService.createAccount(
-                    userId: MockAuthService.currentUserId,
+                  await AccountService.createAccount(  // ✅ no userId param
                     name: name,
                     type: selectedType,
                   );
 
-                  provider.loadAccounts(MockAuthService.currentUserId);
+                  provider.loadAccounts();              // ✅ no userId
                 },
                 child: const Text("Create"),
               )

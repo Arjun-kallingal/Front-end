@@ -1,10 +1,14 @@
-import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 import 'package:front_end/core/widgets/custom_button.dart';
+import 'package:front_end/core/services/auth_storage.dart';
+import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:front_end/navigation/navigation_service.dart';
+
+import '../services/auth_service.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -30,35 +34,53 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   void dispose() {
-    for (final c in _controllers) {
+    for (var c in _controllers) {
       c.dispose();
     }
-    for (final f in _focusNodes) {
+    for (var f in _focusNodes) {
       f.dispose();
     }
     super.dispose();
   }
 
-  void _onChanged(String value, int index) {
+  /// HANDLE OTP INPUT + PASTE
+  void _handleInput(String value, int index) {
     if (_errorMessage != null) {
       setState(() => _errorMessage = null);
     }
 
-    if (value.length == 1 && index < 5) {
+    // PASTE SUPPORT
+    if (value.length > 1) {
+      final digits = value.replaceAll(RegExp(r'\D'), '').split('');
+
+      for (int i = 0; i < digits.length && i < 6; i++) {
+        _controllers[i].text = digits[i];
+      }
+
+      _focusNodes.last.requestFocus();
+      return;
+    }
+
+    // MOVE FORWARD
+    if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
 
+    // MOVE BACKWARD
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
   }
 
+  /// VERIFY OTP
   Future<void> _verifyCode() async {
+    if (_isLoading) return;
+
     final code = _controllers.map((e) => e.text).join();
 
-    if (code.length < 6) {
+    if (code.length != 6) {
       setState(() {
-        _errorMessage = "Enter complete verification code";
+        _errorMessage = "Please enter the 6 digit code";
       });
       return;
     }
@@ -69,108 +91,113 @@ class _VerificationScreenState extends State<VerificationScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': widget.email,
-          'otp': code,
-        }),
+      final data = await AuthService.verifyOtp(
+        widget.email,
+        code,
       );
-
-      final data = jsonDecode(response.body);
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
+      /// ✅ FIXED SUCCESS CHECK
+      if (data["accessToken"] != null) {
+      //  final token = data["accessToken"];
+        final user = data["user"] ?? {};
+
+       await AuthStorage.saveUser(
+  token: data["accessToken"],
+ refreshToken: data["refreshToken"] ?? "",
+  name: user["name"] ?? "",
+  email: user["email"] ?? "",
+);
+        context.read<UserProfileProvider>().setUser(
+              userName: user["name"] ?? "",
+              userEmail: user["email"] ?? "",
+            );
+
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => const MainNavigation(),
+            builder: (_) => const MainNavigation(),
           ),
           (route) => false,
         );
       } else {
         setState(() {
-          _errorMessage = data['message'] ?? "Invalid OTP";
+          _errorMessage =
+              data["message"] ?? "OTP verification failed";
         });
       }
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = "Server error. Please try again.";
+        _errorMessage = "Unable to verify OTP. Try again.";
       });
 
-      debugPrint("OTP Verify Error: $e");
+      debugPrint("VERIFY OTP ERROR: $e");
     }
 
     if (mounted) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-  // UPDATED RESEND OTP METHOD
+  /// RESEND OTP
   Future<void> _resendOtp() async {
+    if (_isLoading) return;
+
     setState(() {
-      _errorMessage = null;
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/resend-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': widget.email,
-        }),
-      );
-
-      final data = jsonDecode(response.body);
+      final data = await AuthService.resendOtp(widget.email);
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        // Clear old OTP inputs
-        for (final controller in _controllers) {
-          controller.clear();
+      if (data["success"] == true) {
+        for (var c in _controllers) {
+          c.clear();
         }
 
         _focusNodes.first.requestFocus();
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              data['message'] ?? 'New OTP sent successfully',
-            ),
-            backgroundColor: Colors.green,
+            content: Text(data["message"] ?? "OTP resent"),
           ),
         );
       } else {
         setState(() {
-          _errorMessage = data['message'] ?? "Failed to resend OTP";
+          _errorMessage =
+              data["message"] ?? "Failed to resend OTP";
         });
       }
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage = "Server error. Please try again.";
+        _errorMessage = "Unable to resend OTP";
       });
 
-      debugPrint("Resend OTP Error: $e");
+      debugPrint("RESEND OTP ERROR: $e");
     }
 
     if (mounted) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
     final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Scaffold(
       body: SafeArea(
@@ -185,7 +212,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 20),
 
                   Icon(
-                    Icons.shield_outlined,
+                    Icons.verified_user_outlined,
                     size: 56,
                     color: colors.primary,
                   ),
@@ -193,7 +220,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 16),
 
                   Text(
-                    'Verify Your Email',
+                    "Verify Your Email",
                     textAlign: TextAlign.center,
                     style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -202,8 +229,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                   const SizedBox(height: 8),
 
-                  Text(
-                    "We've sent a 6-digit code to",
+                  const Text(
+                    "Enter the 6 digit OTP sent to",
                     textAlign: TextAlign.center,
                   ),
 
@@ -219,61 +246,81 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                   const SizedBox(height: 30),
 
-                  /// OTP INPUTS
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(
-                      6,
-                      (index) => SizedBox(
-                        width: 56,
-                        child: TextField(
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface,
-                          ),
-                          cursorColor: colors.primary,
-                          decoration: InputDecoration(
-                            counterText: '',
-                            filled: true,
-                            fillColor: colors.surface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: colors.primary,
-                                width: 2,
+                  /// OTP INPUT
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final boxWidth =
+                          max(50.0, (constraints.maxWidth - 40) / 6);
+
+                      return Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                        children: List.generate(
+                          6,
+                          (index) => SizedBox(
+                            width: boxWidth,
+                            child: TextField(
+                              controller: _controllers[index],
+                              focusNode: _focusNodes[index],
+                              keyboardType:
+                                  TextInputType.number,
+                              textAlign: TextAlign.center,
+                              maxLength: 1,
+                              autofillHints: const [
+                                AutofillHints.oneTimeCode
+                              ],
+                              textInputAction: index == 5
+                                  ? TextInputAction.done
+                                  : TextInputAction.next,
+                              inputFormatters: [
+                                FilteringTextInputFormatter
+                                    .digitsOnly
+                              ],
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: colors.onSurface,
                               ),
+                              decoration: InputDecoration(
+                                counterText: "",
+                                filled: true,
+                                fillColor: colors.surface,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(12),
+                                ),
+                              ),
+                              onChanged: (v) {
+                                _handleInput(v, index);
+
+                                final code = _controllers
+                                    .map((e) => e.text)
+                                    .join();
+
+                                /// ✅ PREVENT DOUBLE CALL
+                                if (code.length == 6 && !_isLoading) {
+                                  _verifyCode();
+                                }
+                              },
                             ),
                           ),
-                          onChanged: (v) => _onChanged(v, index),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 16),
 
                   if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        _errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
 
@@ -282,19 +329,30 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Didn't receive the code? "),
+                      const Text("Didn't receive the code?"),
                       TextButton(
-                        onPressed: _isLoading ? null : _resendOtp,
-                        child: const Text('Resend'),
+                        onPressed:
+                            _isLoading ? null : _resendOtp,
+                        child: const Text("Resend"),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  if (_isLoading)
+                    const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+
+                  const SizedBox(height: 16),
 
                   CustomButton(
-                    text: _isLoading ? 'Please wait...' : 'Verify & Continue',
-                    onPressed: _isLoading ? null : _verifyCode,
+                    text: _isLoading
+                        ? "Verifying..."
+                        : "Verify & Continue",
+                    onPressed:
+                        _isLoading ? null : _verifyCode,
                   ),
 
                   const SizedBox(height: 12),
@@ -302,13 +360,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   OutlinedButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back'),
+                    label: const Text("Back"),
                   ),
 
                   const SizedBox(height: 24),
 
                   Text(
-                    'Code expires in 1 minute',
+                    "OTP expires in 1 minute",
                     textAlign: TextAlign.center,
                     style: textTheme.bodySmall,
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
+import 'package:front_end/core/services/api_config.dart'; // ✅ add this
 
 class GoalDetailsScreen extends StatefulWidget {
   final GoalModel goal;
@@ -14,12 +15,16 @@ class GoalDetailsScreen extends StatefulWidget {
 
 class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
   bool _isDepositing = false;
   bool _isWithdrawing = false;
 
+  // ✅ Replace hardcoded localhost with ApiConfig.baseUrl
   late final GoalService _goalService =
-      GoalService(baseUrl: "http://localhost:5000/api");
+      GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
+
+  // ... rest of file is completely unchanged
 
   late double _currentAmount;
 
@@ -36,7 +41,9 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
   @override
   void dispose() {
     _amountController.dispose();
+    _descriptionController.dispose();
     super.dispose();
+
   }
 
   Future<void> _loadHistory() async {
@@ -255,7 +262,32 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+
+          TextField(
+  controller: _descriptionController,
+  maxLines: 1,
+  style: const TextStyle(fontSize: 14), // smaller text
+  decoration: InputDecoration(
+    hintText: "Enter description (optional)",
+    prefixIcon: const Icon(Icons.notes, size: 18), // smaller icon
+    isDense: true, // ✅ reduces height
+    contentPadding: const EdgeInsets.symmetric(
+      vertical: 10, // 🔥 reduce this to control height
+      horizontal: 12,
+    ),
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14), // optional: slightly smaller
+      borderSide: BorderSide.none,
+    ),
+  ),
+),
+
+const SizedBox(height: 20),
+          
           Row(
             children: [
               Expanded(
