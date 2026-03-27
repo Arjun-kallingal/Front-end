@@ -18,7 +18,6 @@ class AccountsOverviewScreen extends StatefulWidget {
 }
 
 class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -30,7 +29,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
   }
 
   Future<void> _handleSetPrimary(String accountId) async {
-
     final userId = MockAuthService.currentUserId;
 
     await context.read<AccountProvider>().setPrimary(accountId, userId);
@@ -38,9 +36,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
 
   // ================= POPUP =================
 
-
   void _showCreateAccountDialog() {
-
     final provider = context.read<AccountProvider>();
 
     final controller = TextEditingController();
@@ -50,39 +46,32 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
-
           return AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Text(
               "Create New Account",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-
                 TextField(
                   controller: controller,
                   autofocus: true,
                   decoration: const InputDecoration(
-                      labelText: "Account Name",
-                      border: OutlineInputBorder()),
+                      labelText: "Account Name", border: OutlineInputBorder()),
                 ),
-
                 const SizedBox(height: 20),
-
                 Row(
                   children: [
-
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setDialogState(() => selectedType = "CASH"),
+                        onTap: () =>
+                            setDialogState(() => selectedType = "CASH"),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: selectedType == "CASH"
                                 ? Colors.black
@@ -102,16 +91,14 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 10),
-
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setDialogState(() => selectedType = "BANK"),
+                        onTap: () =>
+                            setDialogState(() => selectedType = "BANK"),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: selectedType == "BANK"
                                 ? Colors.blueAccent
@@ -135,21 +122,16 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
                 ),
               ],
             ),
-
             actions: [
-
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text("Cancel"),
               ),
-
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white),
-
                 onPressed: () async {
-
                   final name = controller.text.trim();
                   if (name.isEmpty) return;
 
@@ -163,7 +145,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
 
                   provider.loadAccounts(MockAuthService.currentUserId);
                 },
-
                 child: const Text("Create"),
               )
             ],
@@ -177,7 +158,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     final provider = context.watch<AccountProvider>();
 
     final cashAccounts = provider.cashAccounts;
@@ -186,7 +166,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
-
       appBar: AppBar(
         centerTitle: false,
         titleSpacing: 0,
@@ -202,10 +181,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -216,7 +193,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
         backgroundColor: Colors.blueAccent,
         child: const Icon(Icons.swap_horiz, color: Colors.white),
       ),
-
       body: provider.isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Colors.black87))
@@ -225,28 +201,18 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   if (defaultAccount != null)
                     _buildPrimaryHeroCard(defaultAccount),
-
                   const SizedBox(height: 20),
-
                   _buildNetWorthSection(),
-
                   const SizedBox(height: 25),
-
                   _buildCreateAccountSection(),
-
                   const SizedBox(height: 30),
-
                   _buildSectionHeader("CASH ACCOUNTS"),
                   ...cashAccounts.map((acc) => _buildDataCard(acc)),
-
                   const SizedBox(height: 25),
-
                   _buildSectionHeader("BANK ACCOUNTS"),
                   ...bankAccounts.map((acc) => _buildDataCard(acc)),
-
                   const SizedBox(height: 80),
                 ],
               ),
@@ -255,7 +221,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
   }
 
   Widget _buildNetWorthSection() {
-
     final provider = context.watch<AccountProvider>();
 
     return Container(
@@ -265,34 +230,23 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           const Text("NET WORTH",
               style: TextStyle(
                   color: Colors.grey,
                   fontSize: 10,
                   fontWeight: FontWeight.bold)),
-
           const SizedBox(height: 4),
-
           Text("₹ ${provider.totalAll.toStringAsFixed(2)}",
               style:
                   const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-
           const Divider(height: 30),
-
           Row(
             children: [
-
               _buildSimpleStat(
                   "Cash", provider.totalCash, Icons.wallet, Colors.green),
-
               const SizedBox(width: 30),
-
-              _buildSimpleStat(
-                  "Bank",
-                  provider.totalBank,
-                  Icons.account_balance,
-                  Colors.blueAccent),
+              _buildSimpleStat("Bank", provider.totalBank,
+                  Icons.account_balance, Colors.blueAccent),
             ],
           )
         ],
@@ -302,19 +256,16 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
 
   Widget _buildSimpleStat(
       String label, double amount, IconData icon, Color color) {
-
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Row(children: [
             Icon(icon, size: 12, color: color),
             const SizedBox(width: 4),
             Text(label,
                 style: const TextStyle(color: Colors.grey, fontSize: 10))
           ]),
-
           Text("₹ ${amount.toStringAsFixed(0)}",
               style:
                   const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
@@ -324,7 +275,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
   }
 
   Widget _buildPrimaryHeroCard(AccountModel acc) {
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -334,39 +284,28 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               Text("${acc.type} | ${acc.name.toUpperCase()}",
                   style: const TextStyle(color: Colors.white70, fontSize: 10)),
-
-              const Icon(Icons.verified,
-                  color: Colors.blueAccent, size: 20),
+              const Icon(Icons.verified, color: Colors.blueAccent, size: 20),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Text("₹ ${acc.availableBalance}",
               style: const TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.bold,
                   color: Colors.white)),
-
           const Text("Available Balance",
               style: TextStyle(color: Colors.white54, fontSize: 12)),
-
           const Divider(height: 40, color: Colors.white10),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               _buildCardStat(
                   "Reserved", acc.reservedBalance, Colors.orangeAccent),
-
               _buildCardStat(
                   "Total Worth", acc.totalBalance, Colors.greenAccent),
             ],
@@ -377,25 +316,19 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
   }
 
   Widget _buildCardStat(String label, String value, Color color) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         Text(label,
             style: const TextStyle(color: Colors.white38, fontSize: 10)),
-
         Text("₹ $value",
             style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 14)),
+                color: color, fontWeight: FontWeight.bold, fontSize: 14)),
       ],
     );
   }
 
   Widget _buildSectionHeader(String title) {
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(title,
@@ -407,7 +340,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
   }
 
   Widget _buildCreateAccountSection() {
-
     return GestureDetector(
       onTap: _showCreateAccountDialog,
       child: Container(
@@ -422,12 +354,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
-            Icon(Icons.add_circle,
-                color: Colors.blueAccent, size: 24),
-
+            Icon(Icons.add_circle, color: Colors.blueAccent, size: 24),
             SizedBox(width: 10),
-
             Text("Create New Account",
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -440,7 +368,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
   }
 
   Widget _buildDataCard(AccountModel acc) {
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
@@ -450,64 +377,47 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
       ),
       child: Column(
         children: [
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               Row(
                 children: [
-
                   Icon(
-                    acc.type == "CASH"
-                        ? Icons.wallet
-                        : Icons.account_balance,
+                    acc.type == "CASH" ? Icons.wallet : Icons.account_balance,
                     color: Colors.black87,
                     size: 18,
                   ),
-
                   const SizedBox(width: 12),
-
                   Text(acc.name,
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15)),
+                          fontWeight: FontWeight.bold, fontSize: 15)),
                 ],
               ),
-
               acc.isDefault
-                  ? const Icon(Icons.verified,
-                      color: Colors.blueAccent)
+                  ? const Icon(Icons.verified, color: Colors.blueAccent)
                   : PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert),
-
                       onSelected: (val) {
-
                         if (val == 'primary') {
                           _handleSetPrimary(acc.id);
                         }
 
                         if (val == 'history') {
-
-                          NavigationService.selectedAccountName = acc.name;
-
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const TransactionListScreen(),
+                              builder: (context) => TransactionListScreen(
+                                initialAccountName: acc.name,
+                              ),
                             ),
                           );
                         }
                       },
-
                       itemBuilder: (ctx) => const [
-
                         PopupMenuItem(
                           value: 'primary',
                           child: Text("Set as Primary"),
                         ),
-
                         PopupMenuItem(
                           value: 'history',
                           child: Text("View History"),
@@ -516,21 +426,13 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
                     ),
             ],
           ),
-
           const SizedBox(height: 16),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
-              _buildMiniData(
-                  "Available", acc.availableBalance, Colors.black87),
-
-              _buildMiniData(
-                  "Reserved", acc.reservedBalance, Colors.orange),
-
-              _buildMiniData(
-                  "Total", acc.totalBalance, Colors.black87),
+              _buildMiniData("Available", acc.availableBalance, Colors.black87),
+              _buildMiniData("Reserved", acc.reservedBalance, Colors.orange),
+              _buildMiniData("Total", acc.totalBalance, Colors.black87),
             ],
           ),
         ],
@@ -539,22 +441,15 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
   }
 
   Widget _buildMiniData(String label, String value, Color color) {
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         Text(label,
             style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 10,
-                fontWeight: FontWeight.bold)),
-
+                color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
         Text("₹ $value",
             style: TextStyle(
-                color: color,
-                fontSize: 13,
-                fontWeight: FontWeight.bold)),
+                color: color, fontSize: 13, fontWeight: FontWeight.bold)),
       ],
     );
   }
