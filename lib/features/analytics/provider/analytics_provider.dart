@@ -1,170 +1,111 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 
+// Adjust these imports to match your project's exact folder structure
 import '../data/analytics_model.dart';
+import '../service/service.dart';
 
 class AnalyticsProvider extends ChangeNotifier {
-
+  // --- UI State ---
   bool isLoading = false;
   String? error;
-
-  /// Current filter
   String filter = "All";
 
-  double income = 0;
-  double expense = 0;
-  double balance = 0;
+  // --- Summary Data ---
+  double income = 0.0;
+  double expense = 0.0;
+  double balance = 0.0;
 
-int totalTransactions = 0;
-int activeGoals = 0;
-int debtRecords = 0;
-double savingsRate = 0;
+  // --- Statistics ---
+  int totalTransactions = 0; // Note: Your backend doesn't send this yet, defaults to 0
+  int activeGoals = 0;
+  int completedGoals = 0;
+  double savingsRate = 0.0;
 
+  // --- Lists for UI & Charts ---
   List<CategoryData> categories = [];
   List<GoalData> goals = [];
   List<MonthlyData> monthly = [];
 
-  /// Demo categories for UI preview if backend returns empty
-  final List<CategoryData> demoCategories = [
-    CategoryData(name: "Food", amount: 850),
-    CategoryData(name: "Travel", amount: 420),
-    CategoryData(name: "Shopping", amount: 600),
-    CategoryData(name: "Bills", amount: 300),
-    CategoryData(name: "Entertainment", amount: 250),
-  ];
-
-  /// Demo goals for UI preview
-  final List<GoalData> demoGoals = [
-    GoalData(name: "Emergency Fund", progress: 45),
-    GoalData(name: "Vacation Trip", progress: 70),
-    GoalData(name: "New Laptop", progress: 30),
-  ];
-
-  /// Fetch analytics dashboard
-  Future<void> fetchDashboard({String? type}) async {
-
-/////////// existing mock data for donut & monthly trend
-
-    income = 6000;
-    expense = 3500;
-    balance = 2500;
-
-  totalTransactions = 10;
-activeGoals = 4;
-debtRecords = 4;
-savingsRate = 74;
-
-    monthly = [
-      MonthlyData(month: "Jan", income: 2000, expense: 1200),
-      MonthlyData(month: "Feb", income: 2500, expense: 1500),
-      MonthlyData(month: "Mar", income: 3000, expense: 1800),
-      MonthlyData(month: "Apr", income: 2800, expense: 1600),
-    ];
-
-///////////////
-
+  /// Fetches all dashboard data and statistics simultaneously
+  Future<void> fetchDashboard({String accountId = "all", String timeframe = "month"}) async {
     try {
-
       isLoading = true;
       error = null;
       notifyListeners();
 
-      /// Build URL with filter
-      String url = "https://your-api.com/analytics";
+      // 1. Fetch both sets of data concurrently using the Service
+      final results = await Future.wait([
+        AnalyticsService.getDashboardData(accountId: accountId, timeframe: timeframe),
+        AnalyticsService.getGoalProgressStats(),
+      ]);
 
-      if (type != null) {
-        url = "$url?type=$type";
-      }
-
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode != 200) {
-        throw Exception("Failed to load analytics");
-      }
-
-      final jsonData = jsonDecode(response.body);
-
-      final analytics = AnalyticsModel.fromJson(jsonData);
-
+      // 2. Unpack the Dashboard Data
+      final analytics = results[0] as AnalyticsModel;
       income = analytics.income;
       expense = analytics.expense;
       balance = analytics.balance;
-
       categories = analytics.categories;
       goals = analytics.goals;
       monthly = analytics.monthly;
+      
+      // Calculate Savings Rate dynamically
+      // Formula: ((Income - Expense) / Income) * 100
+      savingsRate = income > 0 ? ((income - expense) / income * 100) : 0.0;
+      if (savingsRate < 0) savingsRate = 0.0; // Prevent negative visual percentage
 
-      /// if backend sends empty categories, show demo categories
-      if (categories.isEmpty) {
-        categories = demoCategories;
-      }
-
-      /// if backend sends empty goals, show demo goals
-      if (goals.isEmpty) {
-        goals = demoGoals;
-      }
+      // 3. Unpack the Goal Stats Data
+      final goalStats = results[1] as Map<String, dynamic>;
+      activeGoals = goalStats['activeGoals'] ?? 0;
+      completedGoals = goalStats['completedGoals'] ?? 0;
 
     } catch (e) {
-
-      error = e.toString();
-
-      /// if API fails completely, still show demo categories
-      if (categories.isEmpty) {
-        categories = demoCategories;
-      }
-
-      /// also show demo goals
-      if (goals.isEmpty) {
-        goals = demoGoals;
-      }
-
+      error = e.toString().replaceAll("Exception: ", ""); // Clean up the error message
+      print("AnalyticsProvider Error: $error"); 
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
-
-    isLoading = false;
-    notifyListeners();
   }
 
-  /// Called from dropdown in UI
-  void applyFilter(String type) {
-
+  /// Handles dropdown filter changes from the UI
+  void applyFilter(String type, {String? specificAccountId}) {
     filter = type;
-
+    
+    // Once you have real Account IDs, you can pass them here.
+    // For now, it maps the UI selection to the backend logic.
     if (type == "All") {
-      fetchDashboard();
-    }
-
-    else if (type == "Cash") {
-      fetchDashboard(type: "CASH");
-    }
-
-    else if (type == "Account") {
-      fetchDashboard(type: "ACCOUNT");
+      fetchDashboard(accountId: "all");
+    } else if (type == "Cash") {
+      // Replace "specificAccountId" with your actual Cash Account ID later
+      fetchDashboard(accountId: specificAccountId ?? "all");
+    } else if (type == "Account") {
+      // Replace "specificAccountId" with your actual Bank Account ID later
+      fetchDashboard(accountId: specificAccountId ?? "all");
+    } else {
+      fetchDashboard(accountId: "all");
     }
   }
 
-  /// Line chart income data
+  /// Generates the (X, Y) coordinates for the Income Line Chart
   List<FlSpot> getIncomeSpots() {
-
+    if (monthly.isEmpty) {
+      return [const FlSpot(0, 0)]; // Prevent fl_chart crash if no data exists
+    }
     return List.generate(
       monthly.length,
-      (index) => FlSpot(
-        index.toDouble(),
-        monthly[index].income,
-      ),
+      (index) => FlSpot(index.toDouble(), monthly[index].income),
     );
   }
 
-  /// Line chart expense data
+  /// Generates the (X, Y) coordinates for the Expense Line Chart
   List<FlSpot> getExpenseSpots() {
-
+    if (monthly.isEmpty) {
+      return [const FlSpot(0, 0)]; // Prevent fl_chart crash if no data exists
+    }
     return List.generate(
       monthly.length,
-      (index) => FlSpot(
-        index.toDouble(),
-        monthly[index].expense,
-      ),
+      (index) => FlSpot(index.toDouble(), monthly[index].expense),
     );
   }
 }
