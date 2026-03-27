@@ -73,6 +73,48 @@ void _applyFilters() {
   _applyFilters();
 }
 
+/// 👇 ADD HERE (around this area)
+void _openFilterOptions() {
+  showModalBottomSheet(
+    context: context,
+    builder: (_) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text("Filter by Account"),
+
+          ListTile(
+            title: const Text("All"),
+            onTap: () {
+              selectedAccount = "All";
+              _applyFilters();
+              Navigator.pop(context);
+            },
+          ),
+
+          ListTile(
+            title: const Text("SBI"),
+            onTap: () {
+              selectedAccount = "SBI";
+              _applyFilters();
+              Navigator.pop(context);
+            },
+          ),
+
+          ListTile(
+            title: const Text("Cash"),
+            onTap: () {
+              selectedAccount = "Cash";
+              _applyFilters();
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
   Future<void> _deleteGoal(String id) async {
     try {
       await _goalService.deleteGoal(id);
@@ -252,26 +294,48 @@ _applyFilters();
   }
 
   Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: TextField(
-          onChanged: _searchGoals,
-          decoration: const InputDecoration(
-            icon: Icon(Icons.search),
-            hintText: "Search goals...",
-            border: InputBorder.none,
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Row(
+      children: [
+        /// 🔍 SEARCH FIELD
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: TextField(
+              onChanged: _searchGoals,
+              decoration: const InputDecoration(
+                icon: Icon(Icons.search),
+                hintText: "Search goals...",
+                border: InputBorder.none,
+              ),
+            ),
           ),
         ),
-      ),
-    );
-  }
 
+        const SizedBox(width: 10),
+
+        /// ⚙️ FILTER BUTTON
+        InkWell(
+          onTap: _openFilterOptions,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.tune),
+          ),
+        ),
+      ],
+    ),
+  );
+}
   List<Widget> _buildGoalWidgets() {
   List<Widget> widgets = [];
 
