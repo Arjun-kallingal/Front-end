@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/models/account_model.dart';
-import '../../core/services/account_service.dart';
-import '../../core/services/transfer_service.dart';
-import 'package:uuid/uuid.dart';
+import '../../core/providers/transfer_provider.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -12,137 +11,80 @@ class TransferScreen extends StatefulWidget {
 }
 
 class _TransferScreenState extends State<TransferScreen> {
-  List<AccountModel> accounts = [];
-
-  AccountModel? fromAccount;
-  AccountModel? toAccount;
-
-  final amountController      = TextEditingController();
-  final descriptionController = TextEditingController();
-  final idempotencyKey        = const Uuid().v4();
-
-  bool loading = false;
 
   @override
   void initState() {
     super.initState();
-    loadAccounts();
+    Future.microtask(() =>
+        context.read<TransferProvider>().loadAccounts());
   }
 
-  @override
-  void dispose() {
-    amountController.dispose();
-    descriptionController.dispose();
-    super.dispose();
-  }
-
-  Future<void> loadAccounts() async {
-    try {
-      // ✅ No userId/token — backend reads from JWT
-      final result = await AccountService.getAccountDashboard();
-
-      setState(() {
-        accounts = result['accounts'] as List<AccountModel>;
-      });
-    } catch (e) {
-      debugPrint("Failed to load accounts: $e");
-    }
-  }
-
-  Future<void> submitTransfer() async {
-    final amount = double.tryParse(amountController.text.trim());
-
-    if (fromAccount == null || toAccount == null) {
-      _showSnackBar("Select accounts");
-      return;
-    }
-
-    if (amount == null || amount <= 0) {
-      _showSnackBar("Enter valid amount");
-      return;
-    }
-
-    if (fromAccount!.id == toAccount!.id) {
-      _showSnackBar("Accounts cannot be same");
-      return;
-    }
-
-    setState(() => loading = true);
-
-    try {
-      // ✅ No token param — ApiClient handles Bearer token internally
-      await TransferService.accountTransfer(
-        fromAccountId:  fromAccount!.id,
-        toAccountId:    toAccount!.id,
-        amount:         amount,
-        category:       "TRANSFER",
-        description:    descriptionController.text,
-        idempotencyKey: idempotencyKey,
-      );
-
-      if (!mounted) return;
-      _showSnackBar("Transfer Successful", isError: false);
-      Navigator.pop(context);
-
-    } catch (e) {
-      if (mounted) _showSnackBar("Transfer Failed: $e");
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  void _showSnackBar(String message, {bool isError = true}) {
+  void showSnackBar(String msg, {bool error = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content:         Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        content: Text(msg),
+        backgroundColor: error ? Colors.red : Colors.green,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final provider = context.watch<TransferProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Transfer Money"),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
+
         child: Column(
           children: [
-            // ── FROM ACCOUNT ──────────────────────────────────────────────
+
+            /// FROM ACCOUNT
             DropdownButtonFormField<AccountModel>(
-              value: fromAccount,
+              value: provider.fromAccount,
               hint: const Text("From Account"),
-              items: accounts.map((acc) {
+              items: provider.accounts.map((acc) {
                 return DropdownMenuItem(
                   value: acc,
                   child: Text(acc.name),
                 );
               }).toList(),
-              onChanged: (value) => setState(() => fromAccount = value),
+              onChanged: (value) {
+                if (value != null) {
+                  provider.setFromAccount(value);
+                }
+              },
             ),
 
             const SizedBox(height: 16),
 
-            // ── TO ACCOUNT ────────────────────────────────────────────────
+            /// TO ACCOUNT
             DropdownButtonFormField<AccountModel>(
-              value: toAccount,
+              value: provider.toAccount,
               hint: const Text("To Account"),
-              items: accounts.map((acc) {
+              items: provider.accounts.map((acc) {
                 return DropdownMenuItem(
                   value: acc,
                   child: Text(acc.name),
                 );
               }).toList(),
-              onChanged: (value) => setState(() => toAccount = value),
+              onChanged: (value) {
+                if (value != null) {
+                  provider.setToAccount(value);
+                }
+              },
             ),
 
             const SizedBox(height: 16),
 
-            // ── AMOUNT ────────────────────────────────────────────────────
+            /// AMOUNT
             TextField(
-              controller: amountController,
+              controller: provider.amountController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: "Amount",
@@ -152,9 +94,9 @@ class _TransferScreenState extends State<TransferScreen> {
 
             const SizedBox(height: 16),
 
-            // ── DESCRIPTION ───────────────────────────────────────────────
+            /// DESCRIPTION
             TextField(
-              controller: descriptionController,
+              controller: provider.descriptionController,
               decoration: const InputDecoration(
                 labelText: "Description",
                 border: OutlineInputBorder(),
@@ -163,13 +105,40 @@ class _TransferScreenState extends State<TransferScreen> {
 
             const SizedBox(height: 30),
 
-            // ── TRANSFER BUTTON ───────────────────────────────────────────
+            /// TRANSFER BUTTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: loading ? null : submitTransfer,
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
+
+                onPressed: provider.loading
+                    ? null
+                    : () async {
+
+                        final error =
+                            await provider.submitTransfer(context);
+
+                        if (error != null) {
+                          showSnackBar(error);
+                        } else {
+
+                          showSnackBar(
+                            "Transfer Successful",
+                            error: false,
+                          );
+
+                          Navigator.pop(context);
+                        }
+                      },
+
+                child: provider.loading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text("Transfer"),
               ),
             ),

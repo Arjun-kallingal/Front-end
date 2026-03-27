@@ -67,7 +67,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void initState() {
     super.initState();
     _isExpense = widget.initialIsExpense;
-    _loadWallets();  // ✅ No user init needed — JWT handles identity
+    _loadWallets();
   }
 
   @override
@@ -76,18 +76,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     super.dispose();
   }
 
-  // ── Load Wallets ──────────────────────────────────────────────────────────
-
   Future<void> _loadWallets() async {
     try {
-      // ✅ No userId passed — backend reads from JWT
       final result = await AccountService.getAccountDashboard();
-
       if (!mounted) return;
-
       final accountsData = result['accounts'];
       _accounts = accountsData is List<AccountModel> ? accountsData : [];
-
       if (_accounts.isNotEmpty) {
         final primary = _accounts.firstWhere(
           (acc) => acc.isDefault == true,
@@ -99,14 +93,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         _selectedAccountId   = primary.id;
         _selectedAccountName = primary.name;
       }
-
       setState(() => _isFetchingAccounts = false);
     } catch (e) {
       if (mounted) setState(() => _isFetchingAccounts = false);
     }
   }
-
-  // ── Save ──────────────────────────────────────────────────────────────────
 
   Future<void> _handleSave() async {
     if (_selectedAccountId == null ||
@@ -121,7 +112,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // ✅ No userId — backend extracts from JWT
       final result = await TransactionService.processTransaction(
         accountId:      _selectedAccountId!,
         amount:         amount,
@@ -135,7 +125,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        context.read<AccountProvider>().loadAccounts(); // ✅ no userId
+        context.read<AccountProvider>().loadAccounts();
         _showSnackBar(
           "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
           isError: false,
@@ -152,13 +142,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
   void _showSnackBar(String message, {bool isError = true}) {
+    final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        backgroundColor: isError
+            ? theme.colorScheme.error
+            : theme.colorScheme.secondary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -173,12 +164,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -222,20 +212,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // ── Widgets ───────────────────────────────────────────────────────────────
-
   Widget _buildHeader() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+            icon: Icon(Icons.arrow_back_ios_new, size: 18, color: theme.colorScheme.primary),
           ),
-          const Text(
+          Text(
             "Add Transaction",
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: theme.colorScheme.primary),
           ),
         ],
       ),
@@ -243,12 +232,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildTopToggle() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         height: 42,
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -262,6 +252,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _toggleBtn(String label, bool active, Color borderColor) {
+    final theme = Theme.of(context);
     return Expanded(
       child: GestureDetector(
         onTap: () => _toggleType(label == "Expense"),
@@ -269,7 +260,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           margin: const EdgeInsets.all(4),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color:        active ? Colors.white : Colors.transparent,
+            color:        active ? theme.colorScheme.background : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: active
                 ? Border.all(color: borderColor, width: 2.5)
@@ -278,7 +269,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: Text(
             label,
             style: TextStyle(
-              color:      active ? borderColor : Colors.grey,
+              color:      active ? borderColor : theme.colorScheme.onSurface.withOpacity(0.4),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -292,6 +283,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     required String hint,
     bool isAmount = false,
   }) {
+    final theme = Theme.of(context);
     return TextField(
       controller: controller,
       keyboardType: isAmount
@@ -303,12 +295,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       style: TextStyle(
         fontSize:   isAmount ? 22 : 16,
         fontWeight: isAmount ? FontWeight.bold : FontWeight.normal,
+        color:      theme.colorScheme.primary,
       ),
       decoration: InputDecoration(
         prefixText: isAmount ? "₹ " : null,
         hintText:   hint,
         filled:     true,
-        fillColor:  Colors.grey.shade50,
+        fillColor:  theme.colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -319,6 +312,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _datePicker() {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () async {
         final d = await showDatePicker(
@@ -332,7 +326,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color:        Colors.grey.shade50,
+          color:        theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -340,9 +334,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           children: [
             Text(
               DateFormat('dd MMM, yyyy').format(selectedDate),
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
             ),
-            const Icon(Icons.calendar_month, size: 20, color: Colors.grey),
+            Icon(Icons.calendar_month, size: 20, color: theme.colorScheme.onSurface.withOpacity(0.4)),
           ],
         ),
       ),
@@ -350,12 +344,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildAccountSelectorBox() {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () => setState(() => _showAccountOptions = !_showAccountOptions),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color:        Colors.grey.shade50,
+          color:        theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -363,9 +358,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           children: [
             Text(
               _selectedAccountName ?? "Select Account",
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
             ),
-            const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+            Icon(Icons.keyboard_arrow_down, color: theme.colorScheme.onSurface.withOpacity(0.4)),
           ],
         ),
       ),
@@ -373,13 +368,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildAccountList() {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(top: 8),
       constraints: const BoxConstraints(maxHeight: 200),
       decoration: BoxDecoration(
-        color:        Colors.white,
+        color:        theme.colorScheme.background,
         borderRadius: BorderRadius.circular(12),
-        border:       Border.all(color: Colors.grey.shade200),
+        border:       Border.all(color: theme.dividerColor),
       ),
       child: ListView(
         shrinkWrap: true,
@@ -388,7 +384,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             dense: true,
             title: Text(
               acc.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
             ),
             onTap: () => setState(() {
               _selectedAccountId   = acc.id;
@@ -402,6 +398,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildTwoLineCategories() {
+    final theme = Theme.of(context);
     final cats = _isExpense ? _expenseCategories : _incomeCategories;
 
     return SizedBox(
@@ -423,10 +420,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             onTap: () => setState(() => _selectedCategory = item['name']),
             child: Container(
               decoration: BoxDecoration(
-                color:        Colors.white,
+                color:        theme.colorScheme.background,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSel ? Colors.black87 : Colors.grey.shade200,
+                  color: isSel ? theme.colorScheme.primary : theme.dividerColor,
                   width: 2,
                 ),
               ),
@@ -440,7 +437,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     style: TextStyle(
                       fontSize:   10,
                       fontWeight: FontWeight.bold,
-                      color: isSel ? Colors.black87 : Colors.black54,
+                      color: isSel ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.4),
                     ),
                   ),
                 ],
@@ -453,36 +450,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildStickySaveButton() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color:  Colors.white,
-        border: Border.all(color: Colors.grey.shade100),
+        color:  theme.colorScheme.background,
+        border: Border.all(color: theme.dividerColor),
       ),
       child: SizedBox(
         width:  double.infinity,
         height: 54,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black87,
+            backgroundColor: theme.colorScheme.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
           ),
           onPressed: _isLoading ? null : _handleSave,
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   height: 20,
                   width:  20,
                   child: CircularProgressIndicator(
-                    color:       Colors.white,
+                    color:       theme.colorScheme.onPrimary,
                     strokeWidth: 2,
                   ),
                 )
               : Text(
                   "Save ${_isExpense ? 'Expense' : 'Income'}",
-                  style: const TextStyle(
-                    color:      Colors.white,
+                  style: TextStyle(
+                    color:      theme.colorScheme.onPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize:   16,
                   ),
@@ -493,12 +491,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildLabel(String text) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
-        style: const TextStyle(
-          color:      Colors.grey,
+        style: TextStyle(
+          color:      theme.colorScheme.onSurface.withOpacity(0.4),
           fontSize:   12,
           fontWeight: FontWeight.bold,
         ),
