@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
-import 'core/services/local_storage_service.dart';
+// import 'core/services/local_storage_service.dart';
 
 import 'features/auth/ui/login_screen.dart';
 import 'features/auth/ui/splash_screen.dart';
+import '../../core/providers/transfer_provider.dart';
 
 import 'navigation/navigation_service.dart';
 
@@ -34,6 +35,10 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => GoalProvider()),
         ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
+
+    ChangeNotifierProvider(
+      create: (_) => TransferProvider(),
+    ),
       ],
       child: const WalletCareApp(),
     ),
