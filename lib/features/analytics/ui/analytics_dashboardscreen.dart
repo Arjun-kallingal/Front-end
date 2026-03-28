@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:front_end/navigation/navigation_service.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../provider/analytics_provider.dart';
 
 class AnalyticsDashboardScreen extends StatefulWidget {
@@ -15,6 +15,7 @@ class AnalyticsDashboardScreen extends StatefulWidget {
 
 class _AnalyticsDashboardScreenState
     extends State<AnalyticsDashboardScreen> {
+
   String selectedFilter = "All";
 
   @override
@@ -30,82 +31,64 @@ class _AnalyticsDashboardScreenState
   Widget build(BuildContext context) {
     final provider = context.watch<AnalyticsProvider>();
 
-    /// ✅ ERROR UI
     if (provider.error != null) {
       return Scaffold(
-        backgroundColor: AppColors.bgPrimary,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "Something went wrong",
-                style: TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: provider.retry,
-                child: const Text("Retry"),
-              ),
-            ],
+          child: ElevatedButton(
+            onPressed: provider.retry,
+            child: const Text("Retry"),
           ),
         ),
       );
     }
 
-    /// ✅ LOADING
     if (provider.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    /// ✅ MAIN UI
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor: Colors.white,
 
       appBar: AppBar(
-        backgroundColor: AppColors.bgPrimary,
+        backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            NavigationService.bottomIndex.value = 0;
+          },
         ),
         title: const Text(
           "Analytics & Reports",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black),
         ),
       ),
 
       body: Column(
         children: [
 
-          /// HEADER CARD
+          /// HEADER
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(20),
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(28),
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
                 children: [
 
-                  /// FILTER
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      _dropdownFilter(provider),
-                    ],
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _dropdownFilter(provider),
                   ),
 
                   const SizedBox(height: 10),
 
-                  /// SUMMARY
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -119,34 +102,25 @@ class _AnalyticsDashboardScreenState
             ),
           ),
 
-          /// BODY
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
 
-                  const SizedBox(height: 20),
-
                   _incomeExpenseChart(provider),
-
                   const SizedBox(height: 20),
 
                   _monthlyTrend(provider),
-
                   const SizedBox(height: 20),
 
                   _categoryChart(provider),
-
                   const SizedBox(height: 20),
 
                   _goalProgress(provider),
-
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 20),
 
                   _summaryStatistics(provider),
-
-                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -156,53 +130,46 @@ class _AnalyticsDashboardScreenState
     );
   }
 
-  /// FILTER
+  /// DROPDOWN
   Widget _dropdownFilter(AnalyticsProvider provider) {
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: selectedFilter,
-        dropdownColor: AppColors.cardBg,
-        icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-        style: const TextStyle(color: Colors.white),
-        items: const [
-          DropdownMenuItem(value: "All", child: Text("All")),
-          DropdownMenuItem(value: "Cash", child: Text("Cash")),
-          DropdownMenuItem(value: "Account", child: Text("Account")),
-        ],
-        onChanged: (value) {
-          if (value == null) return;
+    return DropdownButton<String>(
+      value: selectedFilter,
+      items: const [
+        DropdownMenuItem(value: "All", child: Text("All")),
+        DropdownMenuItem(value: "Cash", child: Text("Cash")),
+        DropdownMenuItem(value: "Account", child: Text("Account")),
+      ],
+      onChanged: (value) {
+        if (value == null) return;
 
-          setState(() => selectedFilter = value);
+        setState(() => selectedFilter = value);
 
-          provider.fetchAll(
-            timeframe: value == "All" ? "month" : "week",
-            force: true,
-          );
-        },
-      ),
+        provider.fetchAll(
+          timeframe: value == "All" ? "month" : "week",
+          force: true,
+        );
+      },
     );
   }
 
-  /// SUMMARY ITEM
+  /// SUMMARY
   Widget _summaryItem(String title, double value) {
-    Color color = Colors.white;
+    Color color = Colors.black;
 
-    if (title == "Income" || title == "Net") {
-      color = AppColors.chartIncome;
-    } else if (title == "Expense") {
-      color = AppColors.chartExpense;
-    }
+    if (title == "Income") color = Colors.green;
+    if (title == "Expense") color = Colors.red;
+    if (title == "Net") color = Colors.blue;
 
     return Column(
       children: [
-        Text(title, style: const TextStyle(color: Colors.white70)),
-        const SizedBox(height: 6),
+        Text(title, style: const TextStyle(color: Colors.black54)),
+        const SizedBox(height: 5),
         Text(
           "₹${value.toStringAsFixed(0)}",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: color,
-            fontSize: 18,
+            fontSize: 16,
           ),
         ),
       ],
@@ -214,8 +181,7 @@ class _AnalyticsDashboardScreenState
     return _card(
       child: Column(
         children: [
-          const Text("Income vs Expense",
-              style: TextStyle(color: Colors.white)),
+          const Text("Income vs Expense"),
 
           const SizedBox(height: 20),
 
@@ -223,15 +189,15 @@ class _AnalyticsDashboardScreenState
             height: 200,
             child: PieChart(
               PieChartData(
-                centerSpaceRadius: 50,
+                centerSpaceRadius: 40,
                 sections: [
                   PieChartSectionData(
                     value: provider.income,
-                    color: AppColors.chartIncome,
+                    color: Colors.green,
                   ),
                   PieChartSectionData(
                     value: provider.expense,
-                    color: AppColors.chartExpense,
+                    color: Colors.red,
                   ),
                 ],
               ),
@@ -252,13 +218,11 @@ class _AnalyticsDashboardScreenState
             lineBarsData: [
               LineChartBarData(
                 spots: provider.getIncomeSpots(),
-                isCurved: true,
-                color: AppColors.chartIncome,
+                color: Colors.green,
               ),
               LineChartBarData(
                 spots: provider.getExpenseSpots(),
-                isCurved: true,
-                color: AppColors.chartExpense,
+                color: Colors.red,
               ),
             ],
           ),
@@ -281,7 +245,7 @@ class _AnalyticsDashboardScreenState
                 barRods: [
                   BarChartRodData(
                     toY: provider.categories[i].amount,
-                    color: AppColors.chartExpense,
+                    color: Colors.red,
                   ),
                 ],
               ),
@@ -298,8 +262,9 @@ class _AnalyticsDashboardScreenState
       child: Column(
         children: provider.goals.map((g) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(g.name, style: const TextStyle(color: Colors.white)),
+              Text(g.name),
               LinearProgressIndicator(value: g.progress / 100),
               const SizedBox(height: 10),
             ],
@@ -314,29 +279,23 @@ class _AnalyticsDashboardScreenState
     return _card(
       child: Column(
         children: [
-          _summaryStat("Transactions",
-              provider.totalTransactions.toString()),
-          _summaryStat("Savings Rate",
-              "${provider.savingsRate.toStringAsFixed(1)}%"),
-          _summaryStat("Active Goals",
-              provider.activeGoals.toString()),
-          _summaryStat("Completed Goals",
-              provider.completedGoals.toString()), // ✅ FIXED
+          _stat("Transactions", provider.totalTransactions.toString()),
+          _stat("Savings Rate", "${provider.savingsRate.toStringAsFixed(1)}%"),
+          _stat("Active Goals", provider.activeGoals.toString()),
+          _stat("Completed Goals", provider.completedGoals.toString()),
         ],
       ),
     );
   }
 
-  Widget _summaryStat(String title, String value) {
+  Widget _stat(String title, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white70)),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold)),
+          Text(title),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -347,7 +306,7 @@ class _AnalyticsDashboardScreenState
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
       ),
       child: child,

@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:front_end/core/services/mock_auth.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
@@ -194,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// TRANSACTION LIST (PROVIDER VERSION)
+  /// TRANSACTION LIST
   Widget _buildTransactionList() {
     final provider = context.watch<TransactionProvider>();
 
@@ -239,22 +240,39 @@ class _HomeScreenState extends State<HomeScreen> {
       itemBuilder: (context, index) {
         final tx = transactions[index];
 
-        bool isIncome = tx.type == "income";
-        bool isReserved = tx.direction == "GOAL_ALLOCATION";
+        final bool isIncome = tx.type == 'INCOME';
+        final bool isAllocation = tx.direction == 'GOAL_ALLOCATION';
+        final bool isDealloc = tx.direction == 'GOAL_DEALLOCATION';
+        final bool isCompletion = tx.direction == 'GOAL_COMPLETION';
+        final bool isTransferIn = tx.direction == 'ACCOUNT_TRANSFER_IN';
+        final bool isReversal = tx.type == 'REVERSAL';
 
         Color moneyColor =
-            isIncome ? Colors.green : (isReserved ? Colors.blue : Colors.red);
+            isIncome
+                ? Colors.green
+                : isAllocation
+                    ? const Color(0xFF1976D2)
+                    : isDealloc
+                        ? Colors.purple
+                        : isCompletion
+                            ? Colors.teal
+                            : isTransferIn
+                                ? Colors.green
+                                : isReversal
+                                    ? Colors.orange
+                                    : const Color(0xFFB81414);
 
-        bool isCash = tx.accountName.toLowerCase().contains('cash');
+        bool isCash = tx.accountName.toLowerCase().contains('cash') ||
+            tx.accountName.toLowerCase().contains('wallet');
 
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
-              /// ICON
               CircleAvatar(
                 radius: 22,
-                backgroundColor: _getTransactionColor(tx).withOpacity(0.1),
+                backgroundColor:
+                    _getTransactionColor(tx).withOpacity(0.1),
                 child: Icon(
                   _getTransactionIcon(tx),
                   color: _getTransactionColor(tx),
@@ -264,12 +282,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(width: 16),
 
-              /// TITLE + DATE + DESCRIPTION
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// TITLE
                     Text(
                       tx.title,
                       style: const TextStyle(
@@ -282,7 +298,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 6),
 
-                    /// DATE + DESCRIPTION
                     Row(
                       children: [
                         Text(
@@ -315,12 +330,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              /// AMOUNT + ACCOUNT
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    "₹${tx.amount.abs().toStringAsFixed(0)}",
+                    "₹${tx.amount.abs().toStringAsFixed(2)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -330,7 +344,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 6),
 
-                  /// ACCOUNT TYPE
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -360,16 +373,66 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Color _getTransactionColor(TransactionModel tx) {
-    if (tx.direction == "GOAL_ALLOCATION") return Colors.blue;
-    if (tx.type == "income") return Colors.green;
-    if (tx.type == "transfer") return Colors.grey;
-    return Colors.red;
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") {
+      return const Color(0xFF1976D2);
+    }
+
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") {
+      return Colors.purple;
+    }
+
+    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") {
+      return Colors.teal;
+    }
+
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") {
+      return Colors.green;
+    }
+
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") {
+      return Colors.grey;
+    }
+
+    if (tx.type == "INCOME") {
+      return Colors.green;
+    }
+
+    if (tx.type == "REVERSAL") {
+      return Colors.orange;
+    }
+
+    return const Color(0xFFB81414);
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.direction == "GOAL_ALLOCATION") return Icons.ads_click;
-    if (tx.type == "income") return Icons.trending_up;
-    if (tx.type == "transfer") return Icons.sync_alt;
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") {
+      return Icons.savings;
+    }
+
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") {
+      return Icons.savings_outlined;
+    }
+
+    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") {
+      return Icons.task_alt;
+    }
+
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") {
+      return Icons.call_received;
+    }
+
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") {
+      return Icons.call_made;
+    }
+
+    if (tx.type == "INCOME") {
+      return Icons.trending_up;
+    }
+
+    if (tx.type == "REVERSAL") {
+      return Icons.undo;
+    }
+
     return Icons.trending_down;
   }
 }

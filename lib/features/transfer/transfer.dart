@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../core/models/account_model.dart';
+import '../../core/services/account_service.dart';
+import '../../core/services/transfer_service.dart';
+import '../../core/services/mock_auth.dart';
+import 'package:uuid/uuid.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -9,183 +13,176 @@ class TransferScreen extends StatefulWidget {
 }
 
 class _TransferScreenState extends State<TransferScreen> {
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
+  List<AccountModel> accounts = [];
 
-  String fromAccount = "Cash";
-  String toAccount = "Bank";
+  AccountModel? fromAccount;
+  AccountModel? toAccount;
 
-  DateTime selectedDate = DateTime.now();
+  final amountController = TextEditingController();
+  final descriptionController = TextEditingController();
+final idempotencyKey = const Uuid().v4();
 
-  final List<String> accounts = ["Cash", "Bank", "Savings", "Credit Card"];
+  bool loading = false;
 
-  /// PICK DATE
-  Future<void> _selectDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    loadAccounts();
   }
 
-  /// SAVE TRANSFER
-  void _saveTransfer() {
-    String amount = amountController.text;
-    String description = descriptionController.text;
+  Future<void> loadAccounts() async {
+  try {
+    final result = await AccountService.getAccountDashboard(MockAuthService.token);
 
-    if (amount.isEmpty) {
+    setState(() {
+      accounts = result['accounts'] as List<AccountModel>;
+    });
+  } catch (e) {
+    print("Failed to load accounts: $e");
+  }
+}
+
+  Future<void> submitTransfer() async {
+    final amount = double.tryParse(amountController.text.trim());
+
+    if (fromAccount == null || toAccount == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter amount")),
+        const SnackBar(content: Text("Select accounts")),
       );
       return;
     }
 
-    /// Here you will call API later
-    print("Amount: $amount");
-    print("From: $fromAccount");
-    print("To: $toAccount");
-    print("Description: $description");
-    print("Date: $selectedDate");
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter valid amount")),
+      );
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Transfer saved successfully")),
-    );
-  }
+    if (fromAccount!.id == toAccount!.id) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Accounts cannot be same")),
+      );
+      return;
+    }
 
-  InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      filled: true,
-      fillColor: Colors.grey.shade100,
-    );
+    try {
+      setState(() {
+        loading = true;
+      });
+
+      
+await TransferService.accountTransfer(
+  token: MockAuthService.token,
+  fromAccountId: fromAccount!.id,
+  toAccountId: toAccount!.id,
+  amount: amount,
+  category: "TRANSFER",
+  description: descriptionController.text,
+  idempotencyKey: idempotencyKey,
+);
+
+      setState(() {
+        loading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Transfer Successful")),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      setState(() {
+        loading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Transfer Failed: $e")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Transfer"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-        ),
+        title: const Text("Transfer Money"),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           children: [
+            /// FROM ACCOUNT
+            DropdownButtonFormField<AccountModel>(
+              value: fromAccount,
+              hint: const Text("From Account"),
+              items: accounts.map((acc) {
+                return DropdownMenuItem(
+                  value: acc,
+                  child: Text(acc.name),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  fromAccount = value;
+                });
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            /// TO ACCOUNT
+            DropdownButtonFormField<AccountModel>(
+              value: toAccount,
+              hint: const Text("To Account"),
+              items: accounts.map((acc) {
+                return DropdownMenuItem(
+                  value: acc,
+                  child: Text(acc.name),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  toAccount = value;
+                });
+              },
+            ),
+
+            const SizedBox(height: 16),
+
             /// AMOUNT
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: _inputDecoration("Amount"),
+              decoration: const InputDecoration(
+                labelText: "Amount",
+                border: OutlineInputBorder(),
+              ),
             ),
 
-            const SizedBox(height: 20),
-
-            /// FROM ACCOUNT
-            DropdownButtonFormField(
-              value: fromAccount,
-              decoration: _inputDecoration("From Account"),
-              items: accounts.map((acc) {
-                return DropdownMenuItem(
-                  value: acc,
-                  child: Text(acc),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  fromAccount = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            /// TO ACCOUNT
-            DropdownButtonFormField(
-              value: toAccount,
-              decoration: _inputDecoration("To Account"),
-              items: accounts.map((acc) {
-                return DropdownMenuItem(
-                  value: acc,
-                  child: Text(acc),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  toAccount = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             /// DESCRIPTION
             TextField(
               controller: descriptionController,
-              decoration: _inputDecoration("Description"),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// DATE
-            GestureDetector(
-              onTap: _selectDate,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade400),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      DateFormat('dd MMM yyyy').format(selectedDate),
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const Icon(Icons.calendar_today, size: 18),
-                  ],
-                ),
+              decoration: const InputDecoration(
+                labelText: "Description",
+                border: OutlineInputBorder(),
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
-            /// SAVE BUTTON
+            /// TRANSFER BUTTON
             SizedBox(
-              height: 50,
+              width: double.infinity,
               child: ElevatedButton(
-                onPressed: _saveTransfer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black87,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  "Save",
-                  style: TextStyle(fontSize: 16),
-                ),
+                onPressed: loading ? null : submitTransfer,
+                child: loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Transfer"),
               ),
-            ),
+            )
           ],
         ),
       ),

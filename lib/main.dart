@@ -27,7 +27,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => UserProfileProvider()),
 
         /// ✅ TRANSACTION PROVIDER ADDED
-        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+     ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => GoalProvider()),
                 ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
@@ -63,7 +63,9 @@ class WalletCareApp extends StatelessWidget {
 
       themeAnimationDuration: const Duration(milliseconds: 300),
 
-      /// INITIAL ROUTE BASED ON LOGIN
+ 
+ 
+     /// INITIAL ROUTE BASED ON LOGIN
       initialRoute: isLoggedIn ? '/main' : '/login',
 
       routes: {
@@ -71,7 +73,7 @@ class WalletCareApp extends StatelessWidget {
         /// Login
         '/login': (_) => const LoginScreen(),
 
-        /// Main Navigation (Bottom Navigation)
+        /// Main Navigation (Bottom Navigation)*=-
         '/main': (_) => const MainNavigation(),
 
         '/signup': (_) => const Scaffold(
@@ -81,7 +83,7 @@ class WalletCareApp extends StatelessWidget {
         '/forgot-password': (_) => const Scaffold(
           body: Center(
             child: Text('Forgot Password'),
-          ),
+        ),
         ),
       },
 

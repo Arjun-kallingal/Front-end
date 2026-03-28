@@ -79,7 +79,6 @@ class CategoryData {
 }
 
 class GoalData {
-
   final String name;
   final double progress;
 
