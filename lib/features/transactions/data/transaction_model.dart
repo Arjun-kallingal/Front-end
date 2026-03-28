@@ -5,7 +5,10 @@ class TransactionModel {
   final double amount;
   final DateTime date;
   final String type;
-  final String accountType;
+  final String category;
+  final String direction;
+  final String accountName;
+  final String? idempotencyKey;
 
   TransactionModel({
     required this.id,
@@ -14,34 +17,49 @@ class TransactionModel {
     required this.amount,
     required this.date,
     required this.type,
-    required this.accountType,
+    required this.category,
+    required this.direction,
+    required this.accountName,
+    this.idempotencyKey,
   });
 
-  // This factory method is what the Service is looking for
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
-      // Your backend maps _id to id
-      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      id: json['_id']?.toString() ?? '',
       
-      // Backend 'category' -> Frontend 'title'
+      // Map backend 'category' to 'title'
       title: json['category'] ?? 'General',
       
-      // Backend 'description' -> Frontend 'subtitle'
+      // Map backend 'description' to 'subtitle'
       subtitle: json['description'] ?? '',
       
-      // Convert Decimal128 String from Node.js to Double
-      amount: double.tryParse(json['amount'].toString()) ?? 0.0,
+      // Parse Decimal128 securely
+      amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
       
-      // Parse ISO Date string
-      date: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
-          : DateTime.now(),
-          
-      // Convert 'INCOME'/'EXPENSE' to lowercase for UI logic
-      type: (json['transactionType'] ?? 'expense').toString().toLowerCase(),
+      // ✅ Prioritize transactedAt and apply .toLocal() for timezone accuracy
+      date: () {
+        if (json['transactedAt'] != null) {
+          return DateTime.parse(json['transactedAt']).toLocal();
+        }
+        if (json['createdAt'] != null) {
+          return DateTime.parse(json['createdAt']).toLocal();
+        }
+        return DateTime.now();
+      }(),
       
-      // Used for Bank/Cash filtering
-      accountType: (json['accountType'] ?? 'cash').toString().toLowerCase(),
+      // ✅ Enforce UPPERCASE to match the UI's switch statements
+      type: (json['transactionType'] ?? 'EXPENSE').toString().toUpperCase(),
+      
+      // Keep raw category for filtering
+      category: json['category'] ?? 'General',
+      
+      // ✅ Capture direction for Goal & Transfer logic
+      direction: (json['direction'] ?? 'STANDARD').toString().toUpperCase(),
+      
+      // Capture the account name (your getHistory endpoint populates this)
+      accountName: (json['accountName'] ?? 'Unknown Account').toString(),
+      
+      idempotencyKey: json['idempotencyKey']?.toString(),
     );
   }
 }

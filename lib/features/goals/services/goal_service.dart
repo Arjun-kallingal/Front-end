@@ -11,11 +11,15 @@ class GoalService {
   // ✅ Removed _getHeaders() — ApiClient.getHeaders() handles JWT automatically
 
   /// GET ALL GOALS
-  Future<List<GoalModel>> getGoals() async {
+  Future<List<GoalModel>> getGoals(
+      {int page = 1, int limit = 20, String? status}) async {
     try {
       final headers = await ApiClient.getHeaders(); // ✅
+      String query = "?page=$page&limit=$limit";
+      if (status != null) query += "&status=$status";
+
       final response = await http
-          .get(Uri.parse("$baseUrl/goals"), headers: headers)
+          .get(Uri.parse("$baseUrl/goals$query"), headers: headers)
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -72,14 +76,18 @@ class GoalService {
   }
 
   /// DEPOSIT MONEY TO GOAL
-  Future<bool> depositToGoal(String goalId, double amount) async {
+  Future<bool> depositToGoal(String goalId, double amount,
+      {String? transactedAt}) async {
     try {
       final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/deposit"),
             headers: headers,
-            body: jsonEncode({"amount": amount}),
+            body: jsonEncode({
+              "amount": amount,
+              if (transactedAt != null) "transactedAt": transactedAt,
+            }),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -90,14 +98,18 @@ class GoalService {
   }
 
   /// WITHDRAW MONEY FROM GOAL
-  Future<bool> withdrawFromGoal(String goalId, double amount) async {
+  Future<bool> withdrawFromGoal(String goalId, double amount,
+      {String? transactedAt}) async {
     try {
       final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/withdraw"),
             headers: headers,
-            body: jsonEncode({"amount": amount}),
+            body: jsonEncode({
+              "amount": amount,
+              if (transactedAt != null) "transactedAt": transactedAt,
+            }),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -107,20 +119,19 @@ class GoalService {
     }
   }
 
-  /// GET GOAL TRANSACTION HISTORY
-  Future<List<dynamic>> getGoalHistory(String accountId) async {
+  /// GET INDIVIDUAL GOAL TRANSACTION HISTORY
+  Future<List<dynamic>> getGoalHistory(String goalId) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
-      final response = await http
-          .get(
-            Uri.parse("$baseUrl/goals/account/$accountId/history"),
-            headers: headers,
-          )
-          .timeout(const Duration(seconds: 10));
+      final headers = await ApiClient.getHeaders();
+      final response = await http.get(
+        Uri.parse("$baseUrl/goals/$goalId/history"),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> body = jsonDecode(response.body);
-        return body['data'] ?? [];
+        final body = jsonDecode(response.body);
+        // Extract the list from the 'data' key
+        return body['data'] is List ? body['data'] : [];
       }
       return [];
     } catch (e) {
@@ -129,13 +140,16 @@ class GoalService {
   }
 
   /// DELETE GOAL
-  Future<bool> deleteGoal(String goalId) async {
+  Future<bool> deleteGoal(String goalId, {String? transactedAt}) async {
     try {
       final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
           .delete(
             Uri.parse("$baseUrl/goals/$goalId"),
             headers: headers,
+            body: transactedAt != null
+                ? jsonEncode({"transactedAt": transactedAt})
+                : null,
           )
           .timeout(const Duration(seconds: 10));
 

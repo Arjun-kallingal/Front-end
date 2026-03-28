@@ -8,9 +8,7 @@ import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
-import '../../analytics/provider/analytics_provider.dart';
 import '../../../core/constants/app_colors.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final refresh = await Navigator.push(
@@ -53,7 +50,6 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 6,
         child: const Icon(Icons.add, size: 28),
       ),
-
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -67,8 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildHeader(context),
                 const SizedBox(height: 10),
                 const BalanceCard(),
-                const SizedBox(height: 10),
-                _monthlyTrend(context, context.read<AnalyticsProvider>()),
                 const SizedBox(height: 10),
                 _buildRecentHeader(context),
                 _buildTransactionList(context),
@@ -121,113 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(
                 Icons.person_outline,
                 color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── MONTHLY TREND ─────────────────────────────────────────────────────────
-
-  Widget _monthlyTrend(BuildContext context, AnalyticsProvider provider) {
-    final theme = Theme.of(context);
-
-    return _card(
-      context: context,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Monthly Trend",
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 220,
-            child: LineChart(
-              LineChartData(
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    left: BorderSide(
-                      color: theme.dividerColor,
-                    ),
-                    bottom: BorderSide(
-                      color: theme.dividerColor,
-                    ),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: theme.dividerColor,
-                    strokeWidth: 1,
-                    dashArray: [6, 4],
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= provider.monthly.length) {
-                          return const SizedBox();
-                        }
-                        final month =
-                            provider.monthly[value.toInt()].month;
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            month,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(0.55),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) => Text(
-                        value.toInt().toString(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.55),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: provider.getIncomeSpots(),
-                    isCurved: true,
-                    color: AppColors.chartIncome,
-                    barWidth: 3,
-                    dotData: FlDotData(show: true),
-                  ),
-                  LineChartBarData(
-                    spots: provider.getExpenseSpots(),
-                    isCurved: true,
-                    color: AppColors.chartExpense,
-                    barWidth: 3,
-                    dotData: FlDotData(show: true),
-                  ),
-                ],
               ),
             ),
           ),
@@ -340,24 +227,29 @@ class _HomeScreenState extends State<HomeScreen> {
       itemBuilder: (context, index) {
         final tx = transactions[index];
 
-        final bool isIncome     = tx.type == 'INCOME';
+        final bool isIncome = tx.type == 'INCOME';
         final bool isAllocation = tx.direction == 'GOAL_ALLOCATION';
-        final bool isDealloc    = tx.direction == 'GOAL_DEALLOCATION';
+        final bool isDealloc = tx.direction == 'GOAL_DEALLOCATION';
         final bool isCompletion = tx.direction == 'GOAL_COMPLETION';
         final bool isTransferIn = tx.direction == 'ACCOUNT_TRANSFER_IN';
-        final bool isReversal   = tx.type == 'REVERSAL';
+        final bool isReversal = tx.type == 'REVERSAL';
 
         // Use AppColors semantic tokens — no raw hex inline
-        final Color moneyColor = isIncome     ? AppColors.incomeAmount
-                               : isAllocation ? AppColors.savingsPrimary
-                               : isDealloc    ? AppColors.progressGreen
-                               : isCompletion ? AppColors.chartIncome
-                               : isTransferIn ? AppColors.incomeAmount
-                               : isReversal   ? AppColors.warning
-                               : AppColors.expenseAmount;
+        final Color moneyColor = isIncome
+            ? AppColors.incomeAmount
+            : isAllocation
+                ? AppColors.savingsPrimary
+                : isDealloc
+                    ? AppColors.progressGreen
+                    : isCompletion
+                        ? AppColors.chartIncome
+                        : isTransferIn
+                            ? AppColors.incomeAmount
+                            : isReversal
+                                ? AppColors.warning
+                                : AppColors.expenseAmount;
 
-        final bool isCash =
-            tx.accountName.toLowerCase().contains('cash') ||
+        final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
 
         return Padding(
@@ -366,8 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor:
-                    _getTransactionColor(tx).withOpacity(0.1),
+                backgroundColor: _getTransactionColor(tx).withOpacity(0.1),
                 child: Icon(
                   _getTransactionIcon(tx),
                   color: _getTransactionColor(tx),
@@ -393,8 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           DateFormat('dd MMM yyyy').format(tx.date),
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withOpacity(0.5),
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                         if (tx.subtitle.isNotEmpty) ...[
@@ -402,8 +292,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             "•",
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(0.35),
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.35),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -439,9 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isCash
-                            ? Icons.wallet
-                            : Icons.account_balance,
+                        isCash ? Icons.wallet : Icons.account_balance,
                         size: 12,
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),

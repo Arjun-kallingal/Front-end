@@ -14,6 +14,8 @@ class AccountProvider extends ChangeNotifier {
   double totalBank = 0;
   double totalAll = 0;
 
+  get allAccounts => null;
+
   // ✅ No userId — backend identifies user from JWT
   Future<void> loadAccounts() async {
 
