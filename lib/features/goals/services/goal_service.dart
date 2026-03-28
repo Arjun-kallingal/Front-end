@@ -1,56 +1,48 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../data/goal_model.dart';
-import 'package:front_end/core/services/api_client.dart';
+import 'package:front_end/core/services/api_client.dart'; // ✅ JWT headers
 
 class GoalService {
   final String baseUrl;
 
   GoalService({required this.baseUrl});
 
-  /// ===============================
-  /// ✅ GET ALL GOALS
-  /// ===============================
-  Future<List<GoalModel>> getGoals() async {
+  // ✅ Removed _getHeaders() — ApiClient.getHeaders() handles JWT automatically
+
+  /// GET ALL GOALS
+  Future<List<GoalModel>> getGoals(
+      {int page = 1, int limit = 20, String? status}) async {
     try {
-      final headers = await ApiClient.getHeaders();
+      final headers = await ApiClient.getHeaders(); // ✅
+      String query = "?page=$page&limit=$limit";
+      if (status != null) query += "&status=$status";
 
       final response = await http
-          .get(Uri.parse("$baseUrl/goals"), headers: headers)
+          .get(Uri.parse("$baseUrl/goals$query"), headers: headers)
           .timeout(const Duration(seconds: 10));
-
-      print("GET Goals URL: $baseUrl/goals");
-      print("Status: ${response.statusCode}");
-      print("Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final dynamic body = jsonDecode(response.body);
-
         List data = [];
-
         if (body is Map && body.containsKey('data')) {
           data = body['data'];
         } else if (body is List) {
           data = body;
         }
-
         return data.map((json) => GoalModel.fromJson(json)).toList();
       } else {
         throw Exception("Server Error: ${response.statusCode}");
       }
     } catch (e) {
-      print("GET Goals Error: $e");
-      throw Exception("Failed to fetch goals");
+      throw Exception("Failed to fetch goals: $e");
     }
   }
 
-  /// ===============================
-  /// ✅ CREATE GOAL
-  /// ===============================
+  /// CREATE GOAL
   Future<bool> createGoal(GoalModel goal) async {
     try {
-      final headers = await ApiClient.getHeaders();
-
+      final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals"),
@@ -59,24 +51,16 @@ class GoalService {
           )
           .timeout(const Duration(seconds: 10));
 
-      print("CREATE Goal URL: $baseUrl/goals");
-      print("Status: ${response.statusCode}");
-      print("Body: ${response.body}");
-
       return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
-      print("CREATE Goal Error: $e");
       return false;
     }
   }
 
-  /// ===============================
-  /// ✅ UPDATE GOAL
-  /// ===============================
+  /// UPDATE GOAL
   Future<bool> updateGoal(GoalModel goal) async {
     try {
-      final headers = await ApiClient.getHeaders();
-
+      final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
           .put(
             Uri.parse("$baseUrl/goals/${goal.id}"),
@@ -85,137 +69,93 @@ class GoalService {
           )
           .timeout(const Duration(seconds: 10));
 
-      print("UPDATE Goal URL: $baseUrl/goals/${goal.id}");
-      print("Status: ${response.statusCode}");
-
       return response.statusCode == 200;
     } catch (e) {
-      print("UPDATE Goal Error: $e");
       return false;
     }
   }
 
-  /// ===============================
-  /// ✅ DELETE GOAL
-  /// ===============================
-  Future<bool> deleteGoal(String goalId) async {
+  /// DEPOSIT MONEY TO GOAL
+  Future<bool> depositToGoal(String goalId, double amount,
+      {String? transactedAt}) async {
     try {
-      final headers = await ApiClient.getHeaders();
-
-      final response = await http
-          .delete(
-            Uri.parse("$baseUrl/goals/$goalId"),
-            headers: headers,
-          )
-          .timeout(const Duration(seconds: 10));
-
-      print("DELETE Goal URL: $baseUrl/goals/$goalId");
-      print("Status: ${response.statusCode}");
-
-      return response.statusCode == 200 || response.statusCode == 204;
-    } catch (e) {
-      print("DELETE Goal Error: $e");
-      return false;
-    }
-  }
-
-  /// ===============================
-  /// ✅ DEPOSIT TO GOAL
-  /// ===============================
-  Future<bool> depositToGoal(String goalId, double amount) async {
-    try {
-      final headers = await ApiClient.getHeaders();
-
+      final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/deposit"),
             headers: headers,
-            body: jsonEncode({"amount": amount}),
+            body: jsonEncode({
+              "amount": amount,
+              if (transactedAt != null) "transactedAt": transactedAt,
+            }),
           )
           .timeout(const Duration(seconds: 10));
 
-      print("DEPOSIT URL: $baseUrl/goals/$goalId/deposit");
-
       return response.statusCode == 200;
     } catch (e) {
-      print("DEPOSIT Error: $e");
       return false;
     }
   }
 
-  /// ===============================
-  /// ✅ WITHDRAW FROM GOAL
-  /// ===============================
-  Future<bool> withdrawFromGoal(String goalId, double amount) async {
+  /// WITHDRAW MONEY FROM GOAL
+  Future<bool> withdrawFromGoal(String goalId, double amount,
+      {String? transactedAt}) async {
     try {
-      final headers = await ApiClient.getHeaders();
-
+      final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/withdraw"),
             headers: headers,
-            body: jsonEncode({"amount": amount}),
+            body: jsonEncode({
+              "amount": amount,
+              if (transactedAt != null) "transactedAt": transactedAt,
+            }),
           )
           .timeout(const Duration(seconds: 10));
 
-      print("WITHDRAW URL: $baseUrl/goals/$goalId/withdraw");
-
       return response.statusCode == 200;
     } catch (e) {
-      print("WITHDRAW Error: $e");
       return false;
     }
   }
 
-  /// ===============================
-  /// ✅ GET GOAL HISTORY (by goalId)
-  /// ===============================
+  /// GET INDIVIDUAL GOAL TRANSACTION HISTORY
   Future<List<dynamic>> getGoalHistory(String goalId) async {
     try {
       final headers = await ApiClient.getHeaders();
-
-      final response = await http
-          .get(
-            Uri.parse("$baseUrl/goals/$goalId/history"),
-            headers: headers,
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(
+        Uri.parse("$baseUrl/goals/$goalId/history"),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
-        final dynamic body = jsonDecode(response.body);
-        return body['data'] ?? [];
+        final body = jsonDecode(response.body);
+        // Extract the list from the 'data' key
+        return body['data'] is List ? body['data'] : [];
       }
-
       return [];
     } catch (e) {
-      print("History Error: $e");
       return [];
     }
   }
 
-  /// ===============================
-  /// ✅ GET ACCOUNT GOAL HISTORY
-  /// ===============================
-  Future<List<dynamic>> getAccountGoalHistory(String accountId) async {
+  /// DELETE GOAL
+  Future<bool> deleteGoal(String goalId, {String? transactedAt}) async {
     try {
-      final headers = await ApiClient.getHeaders();
-
+      final headers = await ApiClient.getHeaders(); // ✅
       final response = await http
-          .get(
-            Uri.parse("$baseUrl/goals/account/$accountId/history"),
+          .delete(
+            Uri.parse("$baseUrl/goals/$goalId"),
             headers: headers,
+            body: transactedAt != null
+                ? jsonEncode({"transactedAt": transactedAt})
+                : null,
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        final dynamic body = jsonDecode(response.body);
-        return body['data'] ?? [];
-      }
-
-      return [];
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
-      print("Account History Error: $e");
-      return [];
+      return false;
     }
   }
 }

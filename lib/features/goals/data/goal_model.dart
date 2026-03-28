@@ -53,45 +53,47 @@ class GoalModel {
 
   /// ✅ FIXED FROM JSON (IMPORTANT 🔥)
   factory GoalModel.fromJson(Map<String, dynamic> json) {
-    String parsedAccountId = '';
-    String parsedAccountName = 'Unknown';
+    // Safely extract from Mongoose populated object
+    final accountData = json['accountId'];
+    final parsedAccountId = accountData is Map
+        ? (accountData['_id']?.toString() ?? '')
+        : (accountData?.toString() ?? '');
 
-    /// 🔥 HANDLE accountId (String OR Object)
-    final acc = json['accountId'];
-
-    if (acc is String) {
-      parsedAccountId = acc;
-    } else if (acc is Map<String, dynamic>) {
-      parsedAccountId = acc['_id'] ?? acc['id'] ?? '';
-      parsedAccountName = acc['name'] ?? 'Account';
+    // Safely extract Account Name whether it is nested in accountId or at the root
+    String parsedAccountName = 'Main Account'; // Default fallback
+    if (json['accountId'] is Map && json['accountId']['name'] != null) {
+      parsedAccountName = json['accountId']['name'].toString();
+    } else if (json['accountName'] != null &&
+        json['accountName'].toString().isNotEmpty) {
+      parsedAccountName = json['accountName'].toString();
     }
 
     return GoalModel(
-      id: json['_id'] ?? '',
-
+      id: json['_id']?.toString() ?? '',
       accountId: parsedAccountId,
       accountName: parsedAccountName,
-
       title: json['title'] ?? '',
       category: json['category'] ?? '',
 
       targetAmount: (json['targetAmount'] as num? ?? 0).toDouble(),
       currentAmount: (json['currentAmount'] as num? ?? 0).toDouble(),
 
-      targetDate:
-          DateTime.tryParse(json['targetDate'] ?? '') ?? DateTime.now(),
-      createdAt:
-          DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      // ✅ Enforce local timezones
+      targetDate: json['targetDate'] != null
+          ? DateTime.parse(json['targetDate'].toString()).toLocal()
+          : DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString()).toLocal()
+          : DateTime.now(),
 
       status: json['status'] ?? 'active',
-
       description: json['description'],
       reminderFrequency: json['reminderFrequency'] ?? 'weekly',
       transactionType: json['transactionType'] ?? 'expense',
 
-      /// ✅ Backend fields
-      daysLeft: json['daysLeft'] != null
-          ? (json['daysLeft'] as num).toInt()
+      // Allow mapping from either backend naming convention
+      daysLeft: (json['daysLeft'] ?? json['remainingDays']) != null
+          ? ((json['daysLeft'] ?? json['remainingDays']) as num).toInt()
           : null,
 
       requiredDailySaving: json['requiredDailySaving'] != null
@@ -127,14 +129,9 @@ class GoalModel {
     };
   }
 
-  /// ✅ SAFE PROGRESS CALCULATION
-  double get progress {
-    if (progressPercentage != null && progressPercentage! > 0) {
-      return (progressPercentage! / 100).clamp(0.0, 1.0);
-    }
-
-    if (targetAmount == 0) return 0;
-
-    return (currentAmount / targetAmount).clamp(0.0, 1.0);
-  }
+  double get progress => progressPercentage != null && progressPercentage! > 0
+      ? (progressPercentage! / 100).clamp(0.0, 1.0)
+      : (targetAmount == 0
+          ? 0
+          : (currentAmount / targetAmount).clamp(0.0, 1.0));
 }
