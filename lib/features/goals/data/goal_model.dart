@@ -1,20 +1,31 @@
 class GoalModel {
   final String id;
-  // ✅ userId removed — backend gets it from JWT
-  final String? accountName;
+
+  /// Account
   final String accountId;
+  final String? accountName;
+
+  /// Basic Info
   String title;
   String category;
+
+  /// Money
   double targetAmount;
   double currentAmount;
+
+  /// Dates
   DateTime targetDate;
   DateTime createdAt;
+
+  /// Status
   String status;
+
+  /// Optional
   String? description;
   String reminderFrequency;
   String transactionType;
 
-  // Calculated fields from backend
+  /// Backend calculated fields
   final int? daysLeft;
   final double? requiredDailySaving;
   final double? progressPercentage;
@@ -22,16 +33,15 @@ class GoalModel {
 
   GoalModel({
     required this.id,
-    // ✅ userId removed
     required this.accountId,
+    this.accountName,
     required this.title,
     required this.category,
     required this.targetAmount,
     required this.currentAmount,
     required this.targetDate,
-    required this.status,
     required this.createdAt,
-    this.accountName,
+    required this.status,
     this.description,
     this.reminderFrequency = 'weekly',
     this.transactionType = 'expense',
@@ -41,39 +51,66 @@ class GoalModel {
     this.isOverdue = false,
   });
 
+  /// ✅ FIXED FROM JSON (IMPORTANT 🔥)
   factory GoalModel.fromJson(Map<String, dynamic> json) {
+    String parsedAccountId = '';
+    String parsedAccountName = 'Unknown';
+
+    /// 🔥 HANDLE accountId (String OR Object)
+    final acc = json['accountId'];
+
+    if (acc is String) {
+      parsedAccountId = acc;
+    } else if (acc is Map<String, dynamic>) {
+      parsedAccountId = acc['_id'] ?? acc['id'] ?? '';
+      parsedAccountName = acc['name'] ?? 'Account';
+    }
+
     return GoalModel(
       id: json['_id'] ?? '',
-      // ✅ userId removed — not needed client-side
-      accountId: json['accountId'] ?? '',
-      accountName: json['accountName'] ?? 'Unknown',
+
+      accountId: parsedAccountId,
+      accountName: parsedAccountName,
+
       title: json['title'] ?? '',
       category: json['category'] ?? '',
+
       targetAmount: (json['targetAmount'] as num? ?? 0).toDouble(),
       currentAmount: (json['currentAmount'] as num? ?? 0).toDouble(),
-      targetDate: DateTime.tryParse(json['targetDate'] ?? '') ?? DateTime.now(),
+
+      targetDate:
+          DateTime.tryParse(json['targetDate'] ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+
       status: json['status'] ?? 'active',
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+
       description: json['description'],
       reminderFrequency: json['reminderFrequency'] ?? 'weekly',
       transactionType: json['transactionType'] ?? 'expense',
+
+      /// ✅ Backend fields
       daysLeft: json['daysLeft'] != null
           ? (json['daysLeft'] as num).toInt()
           : null,
+
       requiredDailySaving: json['requiredDailySaving'] != null
           ? (json['requiredDailySaving'] as num).toDouble()
           : null,
+
       progressPercentage: json['progressPercentage'] != null
           ? (json['progressPercentage'] as num).toDouble()
           : null,
+
       isOverdue: json['isOverdue'] ?? false,
     );
   }
 
+  /// ✅ TO JSON (for create/update)
   Map<String, dynamic> toJson({bool isCreate = false}) {
     return {
       if (!isCreate && id.isNotEmpty) "_id": id,
-      // ✅ userId removed — never sent in body, backend reads from JWT
+
       "accountId": accountId,
       "title": title,
       "category": category,
@@ -81,16 +118,23 @@ class GoalModel {
       "currentAmount": currentAmount,
       "status": status,
       "targetDate": targetDate.toIso8601String(),
+
       if (description != null && description!.isNotEmpty)
         "description": description,
+
       "reminderFrequency": reminderFrequency,
       "transactionType": transactionType,
     };
   }
 
-  double get progress => progressPercentage != null && progressPercentage! > 0
-      ? (progressPercentage! / 100).clamp(0.0, 1.0)
-      : (targetAmount == 0
-          ? 0
-          : (currentAmount / targetAmount).clamp(0.0, 1.0));
+  /// ✅ SAFE PROGRESS CALCULATION
+  double get progress {
+    if (progressPercentage != null && progressPercentage! > 0) {
+      return (progressPercentage! / 100).clamp(0.0, 1.0);
+    }
+
+    if (targetAmount == 0) return 0;
+
+    return (currentAmount / targetAmount).clamp(0.0, 1.0);
+  }
 }

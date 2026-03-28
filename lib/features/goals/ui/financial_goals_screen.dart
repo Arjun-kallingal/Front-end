@@ -34,15 +34,22 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
   }
 Future<void> _fetchGoals() async {
   setState(() => _isLoading = true);
+
   try {
     final data = await _goalService.getGoals();
+
     if (mounted) {
       setState(() {
         goals = data;
+
+        // ✅ IMPORTANT FIX
+        searchQuery = '';
+        selectedAccount = 'All';
+        selectedStatus = 'All';
+
         filteredGoals = data;
         _isLoading = false;
       });
-      _applyFilters(); 
     }
   } catch (e) {
     setState(() => _isLoading = false);
