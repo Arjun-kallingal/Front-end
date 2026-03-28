@@ -22,8 +22,9 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
   List<GoalModel> goals = [];
   List<GoalModel> filteredGoals = [];
+  Map<String, dynamic> _summary = {};
   bool _isLoading = true;
-    String searchQuery = '';
+  String searchQuery = '';
   String selectedAccount = 'All';
   String selectedStatus = 'All'; // All, Active, Completed
 
@@ -32,50 +33,51 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     super.initState();
     _fetchGoals();
   }
-Future<void> _fetchGoals() async {
-  setState(() => _isLoading = true);
-  try {
-    final data = await _goalService.getGoals();
-    if (mounted) {
-      setState(() {
-        goals = data;
-        filteredGoals = data;
-        _isLoading = false;
-      });
-      _applyFilters(); 
+
+  Future<void> _fetchGoals() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _goalService.getGoals();
+      if (mounted) {
+        setState(() {
+          goals = data;
+          filteredGoals = data;
+          _isLoading = false;
+        });
+        _applyFilters();
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
     }
-  } catch (e) {
-    setState(() => _isLoading = false);
   }
-}
 
 // 👇 CORRECT PLACE (INSIDE CLASS)
-void _applyFilters() {
-  setState(() {
-    filteredGoals = goals.where((g) {
-      final matchesSearch =
-          g.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          g.category.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          (g.accountName ?? '').toLowerCase().contains(searchQuery.toLowerCase());
+  void _applyFilters() {
+    setState(() {
+      filteredGoals = goals.where((g) {
+        final matchesSearch =
+            g.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                g.category.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                (g.accountName ?? '')
+                    .toLowerCase()
+                    .contains(searchQuery.toLowerCase());
 
-      final matchesAccount =
-          selectedAccount == 'All' || g.accountName == selectedAccount;
+        final matchesAccount =
+            selectedAccount == 'All' || g.accountName == selectedAccount;
 
-      final matchesStatus = selectedStatus == 'All' ||
-          (selectedStatus == 'Active' && g.progress < 1) ||
-          (selectedStatus == 'Completed' && g.progress >= 1);
+        final matchesStatus = selectedStatus == 'All' ||
+            (selectedStatus == 'Active' && g.progress < 1) ||
+            (selectedStatus == 'Completed' && g.progress >= 1);
 
-      return matchesSearch && matchesAccount && matchesStatus;
-    }).toList();
-  });
-}
-  
-  
+        return matchesSearch && matchesAccount && matchesStatus;
+      }).toList();
+    });
+  }
 
   void _searchGoals(String value) {
-  searchQuery = value;
-  _applyFilters();
-}
+    searchQuery = value;
+    _applyFilters();
+  }
 
   Future<void> _deleteGoal(String id) async {
     try {
@@ -122,18 +124,33 @@ void _applyFilters() {
 
   Widget _buildLightHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 16, 16, 9),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 20),
-            onPressed: () {
-            NavigationService.bottomIndex.value = 0;
-          },
+          GestureDetector(
+            onTap: () => NavigationService.bottomIndex.value = 0,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.arrow_back_ios, size: 14, color: Colors.blueAccent),
+                SizedBox(width: 4),
+                Text("Dashboard",
+                    style: TextStyle(
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13)),
+              ],
+            ),
           ),
+          const SizedBox(height: 12),
           const Text(
-            "Financial Goals",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            "Goal Portfolio",
+            style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+                letterSpacing: -1),
           ),
         ],
       ),
@@ -168,53 +185,49 @@ void _applyFilters() {
           Text(
             "₹${totalSaved.toStringAsFixed(0)}",
             style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold),
+                color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
           Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    _buildSubStat("Active Goals", activeCount.toString(), onTap: () {
-     selectedStatus = "Active";
-_applyFilters();
-    }),
-
-    _buildSubStat("Completed", completedCount.toString(), onTap: () {
-      selectedStatus = "Completed";
-_applyFilters();
-    }),
-
-    _buildSubStat("Total Goals", goals.length.toString(), onTap: () {
-      selectedStatus = "All";
-_applyFilters();
-    }),
-  ],
-)
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSubStat("Active Goals", activeCount.toString(), onTap: () {
+                selectedStatus = "Active";
+                _applyFilters();
+              }),
+              _buildSubStat("Completed", completedCount.toString(), onTap: () {
+                selectedStatus = "Completed";
+                _applyFilters();
+              }),
+              _buildSubStat("Total Goals", goals.length.toString(), onTap: () {
+                selectedStatus = "All";
+                _applyFilters();
+              }),
+            ],
+          )
         ],
       ),
     );
   }
 
   Widget _buildSubStat(String label, String value, {VoidCallback? onTap}) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(value,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12)),
-      ],
-    ),
-  );
-}
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
+    );
+  }
 
   Widget _buildAddGoalButton() {
     return Padding(
@@ -277,283 +290,274 @@ _applyFilters();
   }
 
   List<Widget> _buildGoalWidgets() {
-  List<Widget> widgets = [];
+    List<Widget> widgets = [];
 
-  // Ongoing goals (<100%)
-  final ongoingGoals =
-      filteredGoals.where((g) => g.progress < 1).toList();
+    // Ongoing goals (<100%)
+    final ongoingGoals = filteredGoals.where((g) => g.progress < 1).toList();
 
-  if (ongoingGoals.isNotEmpty) {
-    widgets.add(
-      const Padding(
-        padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
-        child: Text(
-          "Active Goals",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    if (ongoingGoals.isNotEmpty) {
+      widgets.add(
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: Text(
+            "Active Goals",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
-      ),
-    );
+      );
 
-    widgets.addAll(ongoingGoals.map((goal) => _buildGoalCard(goal)));
-  }
+      widgets.addAll(ongoingGoals.map((goal) => _buildGoalCard(goal)));
+    }
 
-  // Completed goals (100%)
-  final completedGoals =
-      filteredGoals.where((g) => g.progress >= 1).toList();
+    // Completed goals (100%)
+    final completedGoals = filteredGoals.where((g) => g.progress >= 1).toList();
 
-  if (completedGoals.isNotEmpty) {
-    widgets.add(
-      const Padding(
-        padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
-        child: Text(
-          "Completed Goals",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    if (completedGoals.isNotEmpty) {
+      widgets.add(
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
+          child: Text(
+            "Completed Goals",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
-      ),
-    );
+      );
 
-    widgets.addAll(completedGoals.map((goal) => _buildGoalCard(goal)));
+      widgets.addAll(completedGoals.map((goal) => _buildGoalCard(goal)));
+    }
+
+    return widgets;
   }
-
-  return widgets;
-}
 
   Widget _buildGoalCard(GoalModel goal) {
-  final date = goal.createdAt;
-  final day = date.day.toString();
-  final monthYear = "${date.year}.${date.month.toString().padLeft(2, '0')}";
-  final weekday = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.weekday % 7];
+    final bool isCompleted = goal.progress >= 1;
+    final int daysRemaining =
+        goal.daysLeft ?? goal.targetDate.difference(DateTime.now()).inDays;
+    final double progress = goal.progress;
 
-  bool isCompleted = goal.progress >= 1;
+    // Dynamic colors based on goal status
+    final Color primaryColor =
+        isCompleted ? Colors.green : const Color(0xFF0052D4);
+    final Color bgColor = primaryColor.withOpacity(0.08);
 
-  int daysRemaining =
-      goal.daysLeft ?? goal.targetDate.difference(DateTime.now()).inDays;
+    // Safe fallback for account name using the freshly fixed backend payload
+    final String accountName = (goal.accountName == null ||
+            goal.accountName == 'Unknown' ||
+            goal.accountName!.isEmpty)
+        ? "Main Account"
+        : goal.accountName!;
 
-  int completedDays =
-      DateTime.now().difference(goal.createdAt).inDays;
-
-  double progress = goal.progress;
-
-  return Card(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: () async {
-        final refresh = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => GoalDetailsScreen(goal: goal),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        );
-        if (refresh == true) _fetchGoals();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            /// 📅 LEFT DATE
-            Column(
-              children: [
-                Text(
-                  day,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  monthYear,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                ),
-                const SizedBox(height: 2),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    weekday,
-                    style: const TextStyle(fontSize: 10),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(width: 12),
-
-            /// 📊 MIDDLE CONTENT
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  /// CATEGORY
-                  Text(
-                    goal.category,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
-                  ),
-
-                  const SizedBox(height: 2),
-
-                  /// TITLE
-                  Text(
-                    goal.title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  /// ACCOUNT
-                  Row(
-                    children: [
-                      const Icon(Icons.account_balance_wallet,
-                          size: 12, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        goal.accountName ?? "Unknown",
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  /// PROGRESS BAR
-                  LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 6,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation(
-                      isCompleted
-                          ? Colors.green
-                          : const Color(0xFF0052D4),
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  /// STATUS SECTION (MERGED FEATURES)
-                  if (isCompleted)
-                    Text(
-                      "Completed in $completedDays days 🎉",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.green,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    )
-                  else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "$daysRemaining days left",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "₹${(goal.requiredDailySaving ?? 0).toStringAsFixed(2)} per day",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.blueGrey,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () async {
+            final refresh = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => GoalDetailsScreen(goal: goal),
               ),
-            ),
-
-            /// 💰 RIGHT SIDE
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            );
+            if (refresh == true) _fetchGoals();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ─── TOP ROW: Icon, Title, Account, Menu ───
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 48,
+                      width: 48,
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        isCompleted ? Icons.emoji_events : Icons.track_changes,
+                        color: primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            goal.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(Icons.account_balance_wallet,
+                                  size: 14, color: Colors.grey.shade500),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  accountName,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text("•",
+                                  style:
+                                      TextStyle(color: Colors.grey.shade300)),
+                              const SizedBox(width: 6),
+                              Text(
+                                goal.category,
+                                style: TextStyle(
+                                    fontSize: 13, color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.more_horiz, color: Colors.grey.shade400),
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      onSelected: (value) async {
+                        if (value == "delete") _deleteGoal(goal.id);
+                        if (value == "edit") {
+                          final refresh = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CreateNewGoalScreen(existingGoal: goal),
+                            ),
+                          );
+                          if (refresh == true) _fetchGoals();
+                        }
+                      },
+                      itemBuilder: (context) {
+                        if (isCompleted) {
+                          return const [
+                            PopupMenuItem(
+                                value: "delete", child: Text("Delete"))
+                          ];
+                        } else {
+                          return const [
+                            PopupMenuItem(value: "edit", child: Text("Edit")),
+                            PopupMenuItem(
+                                value: "delete",
+                                child: Text("Delete",
+                                    style: TextStyle(color: Colors.red))),
+                          ];
+                        }
+                      },
+                    ),
+                  ],
+                ),
 
-                /// AMOUNT (CURRENT / TARGET)
-                Text(
-                  "₹${goal.currentAmount.toInt()} / ₹${goal.targetAmount.toInt()}",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isCompleted ? Colors.green : Colors.redAccent,
+                const SizedBox(height: 20),
+
+                // ─── MIDDLE: Progress Bar & Math ───
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "₹${goal.currentAmount.toInt()} saved",
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87),
+                    ),
+                    Text(
+                      "Target: ₹${goal.targetAmount.toInt()}",
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: Colors.grey.shade100,
+                    valueColor: AlwaysStoppedAnimation(primaryColor),
                   ),
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 14),
 
-                /// PERCENT / STATUS
-                Text(
-                  isCompleted
-                      ? "Completed"
-                      : "${(progress * 100).toInt()}%",
-                  style: TextStyle(
-                    fontSize: 11,
-                    color:
-                        isCompleted ? Colors.green : Colors.blueGrey,
-                  ),
-                ),
-
-                /// MENU
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, size: 18),
-                  onSelected: (value) async {
-                    if (value == "delete") _deleteGoal(goal.id);
-
-                    if (value == "edit") {
-                      final refresh = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              CreateNewGoalScreen(existingGoal: goal),
+                // ─── BOTTOM ROW: Status Chip & Percentage ───
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? Colors.green.shade50
+                            : Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isCompleted
+                            ? "Goal Reached 🎉"
+                            : "${daysRemaining > 0 ? daysRemaining : 0} days left",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isCompleted
+                              ? Colors.green.shade700
+                              : Colors.orange.shade800,
                         ),
-                      );
-                      if (refresh == true) _fetchGoals();
-                    }
-                  },
-                  itemBuilder: (context) {
-                    if (isCompleted) {
-                      return const [
-                        PopupMenuItem(
-                            value: "delete", child: Text("Delete")),
-                      ];
-                    } else {
-                      return const [
-                        PopupMenuItem(
-                            value: "edit", child: Text("Edit")),
-                        PopupMenuItem(
-                            value: "delete", child: Text("Delete")),
-                      ];
-                    }
-                  },
+                      ),
+                    ),
+                    Text(
+                      "${(progress * 100).clamp(0, 100).toInt()}%",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

@@ -2,11 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import 'package:front_end/core/services/api_client.dart';
-import 'package:front_end/core/services/api_config.dart';    // ✅ centralized base URL
+import 'package:front_end/core/services/api_config.dart'; // ✅ centralized base URL
 import 'package:front_end/core/models/transaction_model.dart';
 
 class TransactionService {
-
   static String get _baseUrl => "${ApiConfig.baseUrl}/api/transaction";
 
   /// --- 1. FETCH HISTORY ---
@@ -26,9 +25,13 @@ class TransactionService {
         queryParams['category'] = category;
       }
 
+      if (lastId != null) {
+        queryParams['lastId'] = lastId;
+      }
+
       // ✅ No userId in URL — backend reads from JWT
-      final uri = Uri.parse('$_baseUrl/history')
-          .replace(queryParameters: queryParams);
+      final uri =
+          Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
 
       final headers = await ApiClient.getHeaders();
       final response = await http.get(uri, headers: headers);
@@ -55,6 +58,7 @@ class TransactionService {
     String? description,
     String direction = "NORMAL",
     required String idempotencyKey,
+    String? transactedAt,
   }) async {
     try {
       final headers = await ApiClient.getHeaders();
@@ -64,13 +68,14 @@ class TransactionService {
         headers: headers,
         body: jsonEncode({
           // ✅ No userId in body — backend extracts from JWT
-          "accountId":       accountId,
-          "amount":          amount,
+          "accountId": accountId,
+          "amount": amount,
           "transactionType": type.toUpperCase(),
-          "direction":       direction,
-          "category":        category,
-          "description":     description ?? "",
-          "idempotencyKey":  const Uuid().v4(),
+          "direction": direction,
+          "category": category,
+          "description": description ?? "",
+          "idempotencyKey": const Uuid().v4(),
+          "transactedAt": transactedAt,
         }),
       );
 

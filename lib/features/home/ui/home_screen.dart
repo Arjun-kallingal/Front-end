@@ -74,9 +74,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 10),
 
-                _monthlyTrend(context.read<AnalyticsProvider>()),
-
-                const SizedBox(height: 10),
 
                 _buildRecentHeader(),
                 _buildTransactionList(),
@@ -132,102 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── MONTHLY TREND ─────────────────────────────────────────────────────────
-
-  Widget _monthlyTrend(AnalyticsProvider provider) {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Monthly Trend",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 220,
-            child: LineChart(
-              LineChartData(
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    left:   BorderSide(color: Colors.grey.withOpacity(.5)),
-                    bottom: BorderSide(color: Colors.grey.withOpacity(.5)),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color:       Colors.grey.withOpacity(.3),
-                    strokeWidth: 1,
-                    dashArray:   [6, 4],
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= provider.monthly.length) {
-                          return const SizedBox();
-                        }
-                        final month = provider.monthly[value.toInt()].month;
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            month,
-                            style: const TextStyle(
-                              color:    Colors.black54,
-                              fontSize: 12,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles:   true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) => Text(
-                        value.toInt().toString(),
-                        style: const TextStyle(
-                          color:    Colors.black54,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots:    provider.getIncomeSpots(),
-                    isCurved: true,
-                    color:    AppColors.chartIncome,
-                    barWidth: 3,
-                    dotData:  FlDotData(show: true),
-                  ),
-                  LineChartBarData(
-                    spots:    provider.getExpenseSpots(),
-                    isCurved: true,
-                    color:    AppColors.chartExpense,
-                    barWidth: 3,
-                    dotData:  FlDotData(show: true),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── RECENT HEADER ─────────────────────────────────────────────────────────
 

@@ -1,81 +1,98 @@
-class AnalyticsModel {
-  final double income;
-  final double expense;
-  final double balance;
-  final List<MonthlyData> monthly;
-  final List<CategoryData> categories;
-  final List<GoalData> goals;
-
-  AnalyticsModel({
-    required this.income,
-    required this.expense,
-    required this.balance,
-    required this.monthly,
-    required this.categories,
-    required this.goals,
-  });
-
-  factory AnalyticsModel.fromJson(Map<String, dynamic> json) {
-    final data = json["data"] ?? {};
-    final summary = data["summary"] ?? {};
-
-    return AnalyticsModel(
-      income: double.tryParse(summary["income"]?.toString() ?? "0") ?? 0.0,
-      expense: double.tryParse(summary["expense"]?.toString() ?? "0") ?? 0.0,
-      balance: double.tryParse(summary["net"]?.toString() ?? "0") ?? 0.0,
-      monthly: (data["monthly"] as List?)
-              ?.map((e) => MonthlyData.fromJson(e))
-              .toList() ?? [],
-      categories: (data["categorySpending"] as List?)
-              ?.map((e) => CategoryData.fromJson(e))
-              .toList() ?? [],
-      goals: (data["goals"] as List?)
-              ?.map((e) => GoalData.fromJson(e))
-              .toList() ?? [],
-    );
-  }
-}
-
-class MonthlyData {
-  final String month;
-  final double income;
-  final double expense;
-
-  MonthlyData({required this.month, required this.income, required this.expense});
-
-  factory MonthlyData.fromJson(Map<String, dynamic> json) {
-    return MonthlyData(
-      month: json["month"] ?? "Unknown",
-      income: double.tryParse(json["income"]?.toString() ?? "0") ?? 0.0,
-      expense: double.tryParse(json["expense"]?.toString() ?? "0") ?? 0.0,
-    );
-  }
-}
+import 'package:flutter/material.dart';
+import '../../../core/utils/parse_utils.dart';
 
 class CategoryData {
   final String name;
   final double amount;
+  final double percentage;
+  final Color color;
 
-  CategoryData({required this.name, required this.amount});
+  CategoryData({
+    required this.name,
+    required this.amount,
+    required this.percentage,
+    required this.color,
+  });
 
   factory CategoryData.fromJson(Map<String, dynamic> json) {
     return CategoryData(
-      name: json["category"]?.toString() ?? "Unknown",
-      amount: double.tryParse(json["amount"]?.toString() ?? "0") ?? 0.0,
+      name: json["name"]?.toString() ?? "Unknown",
+      amount: toDouble(json["amount"]),
+      percentage: toDouble(json["percentage"]),
+      color: _parseColor(json["color"]),
     );
+  }
+
+  static Color _parseColor(String? hex) {
+    if (hex == null || hex.isEmpty) return Colors.grey;
+    final clean = hex.replaceFirst('#', '');
+    if (clean.length != 6 && clean.length != 8) return Colors.grey;
+    return Color(int.parse('ff$clean', radix: 16));
   }
 }
 
-class GoalData {
-  final String name;
-  final double progress;
+class AnalyticsModel {
+  final String timeRange;
+  final double income;
+  final double expense;
+  final double netSavings;
+  final bool isDeficit;
+  final double savingsRate;
+  final double spendPercentage;
+  final String healthStatus;
+  final int totalTransactions;
+  final List<CategoryData> categories;
 
-  GoalData({required this.name, required this.progress});
+  AnalyticsModel({
+    required this.timeRange,
+    required this.income,
+    required this.expense,
+    required this.netSavings,
+    required this.isDeficit,
+    required this.savingsRate,
+    required this.spendPercentage,
+    required this.healthStatus,
+    required this.totalTransactions,
+    required this.categories,
+  });
 
-  factory GoalData.fromJson(Map<String, dynamic> json) {
-    return GoalData(
-      name: json["name"]?.toString() ?? "Unknown",
-      progress: double.tryParse(json["progress"]?.toString() ?? "0") ?? 0.0,
+  factory AnalyticsModel.fromJson(Map<String, dynamic> json) {
+    final d = json["data"] ?? {};
+    return AnalyticsModel(
+      timeRange: d["timeRange"]?.toString() ?? "Month",
+      income: toDouble(d["income"]),
+      expense: toDouble(d["expense"]),
+      netSavings: toDouble(d["netSavings"]),
+      isDeficit: d["isDeficit"] == true,
+      savingsRate: toDouble(d["savingsRate"]),
+      spendPercentage: toDouble(d["spendPercentage"]),
+      healthStatus: d["healthStatus"]?.toString() ?? "Healthy",
+      totalTransactions: int.tryParse(d["totalTransactions"].toString()) ?? 0,
+      categories: (d["categories"] is List)
+          ? (d["categories"] as List)
+              .map((e) => CategoryData.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : [],
     );
+  }
+
+  String get netSavingsFormatted {
+    final formatted = _formatAmount(netSavings.abs());
+    return isDeficit ? '-₹$formatted' : '₹$formatted';
+  }
+
+  String get savingsRateFormatted {
+    return isDeficit
+        ? '-${savingsRate.abs().toStringAsFixed(1)}%'
+        : '${savingsRate.toStringAsFixed(1)}%';
+  }
+
+  double get spendPercentageClamped => spendPercentage.clamp(0.0, 100.0);
+
+  static String _formatAmount(double v) {
+    return v.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        );
   }
 }
