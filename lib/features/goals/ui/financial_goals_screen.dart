@@ -78,8 +78,36 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     searchQuery = value;
     _applyFilters();
   }
+  Future<void> _confirmDelete(String id) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text("Delete Goal"),
+        content: const Text(
+          "Are you sure you want to delete this goal?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              "Delete",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 
-  Future<void> _deleteGoal(String id) async {
+  if (confirm == true) {
     try {
       await _goalService.deleteGoal(id);
 
@@ -96,6 +124,9 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       );
     }
   }
+}
+
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -144,14 +175,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            "Goal Portfolio",
-            style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                color: Colors.black,
-                letterSpacing: -1),
-          ),
+          
         ],
       ),
     );
@@ -188,14 +212,29 @@ if (totalPercent > 0) {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+const Text(
+  "Goal Progress",
+  style: TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w900,
+    color: Colors.black,
+    letterSpacing: -0.5,
+  ),
+),
+
+const SizedBox(height: 16),
+
+
           // 🎯 MULTI COLOR DONUT
-          SizedBox(
-            height: 180,
-            width: 180,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
+          Center(
+  child: SizedBox(
+    height: 180,
+    width: 180,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
                 CustomPaint(
                   size: const Size(180, 180),
                   painter: _DonutPainter(
@@ -203,7 +242,7 @@ if (totalPercent > 0) {
                     activePercent: activePercent,
                   ),
                 ),
-
+    
                 // CENTER TEXT
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -228,7 +267,7 @@ if (totalPercent > 0) {
               ],
             ),
           ),
-
+          ),
           const SizedBox(height: 20),
 
           _buildLegendRow(
@@ -374,6 +413,7 @@ Widget _buildLegendRow({
     );
   }
 
+
   List<Widget> _buildGoalWidgets() {
     List<Widget> widgets = [];
 
@@ -439,10 +479,14 @@ final double perWeek = perDay * 7;
 
 String predictionText;
 
-if (perDay < 100) {
-  predictionText = "₹${perDay.toStringAsFixed(0)}/day to reach goal";
+if (isCompleted) {
+  predictionText = "Completed 🎉";
+} else if (goal.requiredDailySaving != null &&
+    goal.requiredDailySaving! > 0) {
+  predictionText =
+      "₹${goal.requiredDailySaving!.toStringAsFixed(0)}/day to reach goal";
 } else {
-  predictionText = "₹${perWeek.toStringAsFixed(0)}/week to reach goal";
+  predictionText = "No plan available";
 }
 
     return Container(
@@ -548,7 +592,7 @@ if (perDay < 100) {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       onSelected: (value) async {
-                        if (value == "delete") _deleteGoal(goal.id);
+                        if (value == "delete") _confirmDelete(goal.id);
                         if (value == "edit") {
                           final refresh = await Navigator.push(
                             context,

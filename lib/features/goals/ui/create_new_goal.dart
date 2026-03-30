@@ -102,13 +102,16 @@ Future<void> _loadAccounts() async {
 
     final accountsData = result['accounts'];
 
-    if (accountsData is List) {
-      _accounts = accountsData
-          .map((e) => AccountModel.fromJson(e))
-          .toList();
-    } else {
-      _accounts = [];
-    }
+   if (accountsData is List<AccountModel>) {
+  _accounts = accountsData;
+} else if (accountsData is List) {
+  // fallback (if sometimes API returns JSON)
+  _accounts = accountsData
+      .map((e) => AccountModel.fromJson(e))
+      .toList();
+} else {
+  _accounts = [];
+}
 
     print("ACCOUNTS COUNT: ${_accounts.length}");
 
