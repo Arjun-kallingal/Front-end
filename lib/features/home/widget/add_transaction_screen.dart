@@ -536,8 +536,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Text(
         text,
         style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 12,
+          color:      Colors.grey,
+          fontSize:   12,
           fontWeight: FontWeight.bold,
         ),
       ),

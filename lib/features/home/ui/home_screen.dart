@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
 import 'balance_card.dart';
 import 'package:intl/intl.dart';
-
 import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:front_end/features/transfer/transfer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,24 +57,89 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           color: colorScheme.primary,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 10),
-                const BalanceCard(),
-                const SizedBox(height: 10),
-                _buildRecentHeader(context),
-                _buildTransactionList(context),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
+  physics: const AlwaysScrollableScrollPhysics(),
+  child: Column(
+    children: [
+      _buildHeader(context),
+      const SizedBox(height: 10),
+      const BalanceCard(),
+      const SizedBox(height: 10),
+      _buildActionButtons(context),
+      const SizedBox(height: 10),
+      _buildRecentHeader(context),
+      _buildTransactionList(context),
+    ],
+  ),
+)
         ),
       ),
     );
   }
+Widget _buildActionButtons(BuildContext context) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Row(
+      children: [
 
+        /// ADD INCOME
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddTransactionScreen(
+                    initialIsExpense: false,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text("Income"),
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        /// ADD EXPENSE
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddTransactionScreen(
+                    initialIsExpense: true,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.remove),
+            label: const Text("Expense"),
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        /// ADD TRANSFER
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TransferScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.swap_horiz),
+            label: const Text("Transfer"),
+          ),
+        ),
+      ],
+    ),
+  );
+}
   // ── HEADER ────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context) {
