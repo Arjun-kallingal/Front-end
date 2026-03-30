@@ -1,20 +1,31 @@
 class GoalModel {
   final String id;
-  // ✅ userId removed — backend gets it from JWT
-  final String? accountName;
+
+  /// Account
   final String accountId;
+  final String? accountName;
+
+  /// Basic Info
   String title;
   String category;
+
+  /// Money
   double targetAmount;
   double currentAmount;
+
+  /// Dates
   DateTime targetDate;
   DateTime createdAt;
+
+  /// Status
   String status;
+
+  /// Optional
   String? description;
   String reminderFrequency;
   String transactionType;
 
-  // Calculated fields from backend
+  /// Backend calculated fields
   final int? daysLeft;
   final double? requiredDailySaving;
   final double? progressPercentage;
@@ -22,16 +33,15 @@ class GoalModel {
 
   GoalModel({
     required this.id,
-    // ✅ userId removed
     required this.accountId,
+    this.accountName,
     required this.title,
     required this.category,
     required this.targetAmount,
     required this.currentAmount,
     required this.targetDate,
-    required this.status,
     required this.createdAt,
-    this.accountName,
+    required this.status,
     this.description,
     this.reminderFrequency = 'weekly',
     this.transactionType = 'expense',
@@ -41,6 +51,7 @@ class GoalModel {
     this.isOverdue = false,
   });
 
+  /// ✅ FIXED FROM JSON (IMPORTANT 🔥)
   factory GoalModel.fromJson(Map<String, dynamic> json) {
     // Safely extract from Mongoose populated object
     final accountData = json['accountId'];
@@ -63,6 +74,7 @@ class GoalModel {
       accountName: parsedAccountName,
       title: json['title'] ?? '',
       category: json['category'] ?? '',
+
       targetAmount: (json['targetAmount'] as num? ?? 0).toDouble(),
       currentAmount: (json['currentAmount'] as num? ?? 0).toDouble(),
 
@@ -83,20 +95,24 @@ class GoalModel {
       daysLeft: (json['daysLeft'] ?? json['remainingDays']) != null
           ? ((json['daysLeft'] ?? json['remainingDays']) as num).toInt()
           : null,
+
       requiredDailySaving: json['requiredDailySaving'] != null
           ? (json['requiredDailySaving'] as num).toDouble()
           : null,
+
       progressPercentage: json['progressPercentage'] != null
           ? (json['progressPercentage'] as num).toDouble()
           : null,
+
       isOverdue: json['isOverdue'] ?? false,
     );
   }
 
+  /// ✅ TO JSON (for create/update)
   Map<String, dynamic> toJson({bool isCreate = false}) {
     return {
       if (!isCreate && id.isNotEmpty) "_id": id,
-      // ✅ userId removed — never sent in body, backend reads from JWT
+
       "accountId": accountId,
       "title": title,
       "category": category,
@@ -104,8 +120,10 @@ class GoalModel {
       "currentAmount": currentAmount,
       "status": status,
       "targetDate": targetDate.toIso8601String(),
+
       if (description != null && description!.isNotEmpty)
         "description": description,
+
       "reminderFrequency": reminderFrequency,
       "transactionType": transactionType,
     };

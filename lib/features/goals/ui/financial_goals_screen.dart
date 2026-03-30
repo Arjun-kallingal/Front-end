@@ -78,8 +78,36 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     searchQuery = value;
     _applyFilters();
   }
+  Future<void> _confirmDelete(String id) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text("Delete Goal"),
+        content: const Text(
+          "Are you sure you want to delete this goal?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              "Delete",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 
-  Future<void> _deleteGoal(String id) async {
+  if (confirm == true) {
     try {
       await _goalService.deleteGoal(id);
 
@@ -96,6 +124,9 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       );
     }
   }
+}
+
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +138,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             : CustomScrollView(
                 slivers: [
                   SliverToBoxAdapter(child: _buildLightHeader()),
-                  SliverToBoxAdapter(child: _buildDarkHeroCard()),
+                  SliverToBoxAdapter(child: _buildGoalsDonutChart()),
                   SliverToBoxAdapter(child: _buildAddGoalButton()),
                   SliverToBoxAdapter(child: _buildSearchBar()),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -144,71 +175,164 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            "Goal Portfolio",
-            style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                color: Colors.black,
-                letterSpacing: -1),
-          ),
+          
         ],
       ),
     );
   }
 
-  Widget _buildDarkHeroCard() {
-    double totalSaved =
-        filteredGoals.fold(0, (sum, item) => sum + item.currentAmount);
+  Widget _buildGoalsDonutChart() {
+  final totalGoals = goals.length;
+  final completed =
+      goals.where((g) => g.progress >= 1).length;
+  final active =
+      goals.where((g) => g.progress < 1).length;
 
-    int activeCount =
-        filteredGoals.where((g) => g.currentAmount < g.targetAmount).length;
+  double completedPercent =
+    totalGoals == 0 ? 0.0 : completed / totalGoals;
 
-    int completedCount =
-        filteredGoals.where((g) => g.currentAmount >= g.targetAmount).length;
+double activePercent =
+    totalGoals == 0 ? 0.0 : active / totalGoals;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      padding: const EdgeInsets.all(24),
+// ✅ NORMALIZE (VERY IMPORTANT)
+final totalPercent = completedPercent + activePercent;
+
+if (totalPercent > 0) {
+  completedPercent = completedPercent / totalPercent;
+  activePercent = activePercent / totalPercent;
+}
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    child: Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0052D4), Color(0xFF1A1A1A)],
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Total Saved",
-              style: TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 8),
-          Text(
-            "₹${totalSaved.toStringAsFixed(0)}",
-            style: const TextStyle(
-                color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+const Text(
+  "Goal Progress",
+  style: TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w900,
+    color: Colors.black,
+    letterSpacing: -0.5,
+  ),
+),
+
+const SizedBox(height: 16),
+
+
+          // 🎯 MULTI COLOR DONUT
+          Center(
+  child: SizedBox(
+    height: 180,
+    width: 180,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+                CustomPaint(
+                  size: const Size(180, 180),
+                  painter: _DonutPainter(
+                    completedPercent: completedPercent,
+                    activePercent: activePercent,
+                  ),
+                ),
+    
+                // CENTER TEXT
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      totalGoals.toString(),
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Total Goals",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSubStat("Active Goals", activeCount.toString(), onTap: () {
-                selectedStatus = "Active";
-                _applyFilters();
-              }),
-              _buildSubStat("Completed", completedCount.toString(), onTap: () {
-                selectedStatus = "Completed";
-                _applyFilters();
-              }),
-              _buildSubStat("Total Goals", goals.length.toString(), onTap: () {
-                selectedStatus = "All";
-                _applyFilters();
-              }),
-            ],
-          )
+          ),
+          const SizedBox(height: 20),
+
+          _buildLegendRow(
+            color: Colors.green,
+            label: "Completed",
+            value: completed,
+          ),
+
+          const SizedBox(height: 12),
+
+          _buildLegendRow(
+            color: Colors.blue.shade300,
+            label: "Active",
+            value: active,
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+Widget _buildLegendRow({
+  required Color color,
+  required String label,
+  required int value,
+}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              height: 10,
+              width: 10,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          value.toString(),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildSubStat(String label, String value, {VoidCallback? onTap}) {
     return GestureDetector(
@@ -289,6 +413,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     );
   }
 
+
   List<Widget> _buildGoalWidgets() {
     List<Widget> widgets = [];
 
@@ -346,6 +471,23 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             goal.accountName!.isEmpty)
         ? "Main Account"
         : goal.accountName!;
+        final remainingAmount = goal.targetAmount - goal.currentAmount;
+final int safeDays = daysRemaining > 0 ? daysRemaining : 1;
+
+final double perDay = remainingAmount / safeDays;
+final double perWeek = perDay * 7;
+
+String predictionText;
+
+if (isCompleted) {
+  predictionText = "Completed 🎉";
+} else if (goal.requiredDailySaving != null &&
+    goal.requiredDailySaving! > 0) {
+  predictionText =
+      "₹${goal.requiredDailySaving!.toStringAsFixed(0)}/day to reach goal";
+} else {
+  predictionText = "No plan available";
+}
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -450,7 +592,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       onSelected: (value) async {
-                        if (value == "delete") _deleteGoal(goal.id);
+                        if (value == "delete") _confirmDelete(goal.id);
                         if (value == "edit") {
                           final refresh = await Navigator.push(
                             context,
@@ -505,54 +647,68 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: Colors.grey.shade100,
-                    valueColor: AlwaysStoppedAnimation(primaryColor),
-                  ),
-                ),
 
+Row(
+  children: [
+    Expanded(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: LinearProgressIndicator(
+          value: progress,
+          minHeight: 8,
+          backgroundColor: Colors.grey.shade100,
+          valueColor: AlwaysStoppedAnimation(primaryColor),
+        ),
+      ),
+    ),
+    const SizedBox(width: 10),
+    Text(
+      "${(progress * 100).clamp(0, 100).toInt()}%",
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: primaryColor,
+      ),
+    ),
+  ],
+),
+                
                 const SizedBox(height: 14),
 
                 // ─── BOTTOM ROW: Status Chip & Percentage ───
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isCompleted
-                            ? Colors.green.shade50
-                            : Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        isCompleted
-                            ? "Goal Reached 🎉"
-                            : "${daysRemaining > 0 ? daysRemaining : 0} days left",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: isCompleted
-                              ? Colors.green.shade700
-                              : Colors.orange.shade800,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      "${(progress * 100).clamp(0, 100).toInt()}%",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+              Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    // 🔮 Prediction (LEFT SIDE)
+    Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        isCompleted ? "Completed 🎉" : predictionText,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.blue.shade700,
+        ),
+      ),
+    ),
+
+    // ⏳ Days Left (RIGHT SIDE)
+    Text(
+      isCompleted
+          ? "Done"
+          : "${daysRemaining > 0 ? daysRemaining : 0} days left",
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: Colors.grey.shade600,
+      ),
+    ),
+  ],
+),
               ],
             ),
           ),
@@ -560,4 +716,63 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       ),
     );
   }
+}
+class _DonutPainter extends CustomPainter {
+  final double completedPercent;
+  final double activePercent;
+
+  _DonutPainter({
+    required this.completedPercent,
+    required this.activePercent,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    const strokeWidth = 14.0;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    // Background
+    final bgPaint = Paint()
+      ..color = Colors.grey.shade200
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    canvas.drawArc(rect, 0, 2 * 3.1416, false, bgPaint);
+
+    double startAngle = -3.1416 / 2;
+
+    // 🟢 Completed (Light Green)
+    if (completedPercent > 0) {
+      final completedPaint = Paint()
+        ..color = const Color(0xFF6EE7B7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.butt;
+
+      final sweep = 2 * 3.1416 * completedPercent;
+
+      canvas.drawArc(rect, startAngle, sweep, false, completedPaint);
+
+      startAngle += sweep;
+    }
+
+    // 🔵 Active (Light Blue)
+    if (activePercent > 0) {
+      final activePaint = Paint()
+        ..color = const Color(0xFF93C5FD)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.butt;
+
+      final sweep = 2 * 3.1416 * activePercent;
+
+      canvas.drawArc(rect, startAngle, sweep, false, activePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

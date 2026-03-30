@@ -300,15 +300,10 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
-        ],
-      ),
+  color: Colors.white,
+  borderRadius: BorderRadius.circular(16), // was 20
+  border: Border.all(color: Colors.grey.shade200), // add subtle border
+),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -343,24 +338,23 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                       ? "Completed"
                       : "${daysLeft > 0 ? daysLeft : 0} days left",
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: isCompleted
-                        ? Colors.green.shade700
-                        : Colors.orange.shade800,
-                  ),
+  color: Colors.grey.shade500,
+  fontSize: 10, // smaller
+  fontWeight: FontWeight.w600,
+)
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            widget.goal.title,
-            style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 20,
-                fontWeight: FontWeight.w800),
-          ),
+  widget.goal.title,
+  style: const TextStyle(
+    color: Colors.black87,
+    fontSize: 18, // was 20
+    fontWeight: FontWeight.w700, // slightly lighter
+  ),
+),
           const SizedBox(height: 16),
           if (!isCompleted &&
               widget.goal.requiredDailySaving != null &&

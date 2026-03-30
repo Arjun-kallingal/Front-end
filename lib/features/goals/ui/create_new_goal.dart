@@ -90,34 +90,46 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     super.dispose();
   }
 
-  Future<void> _loadAccounts() async {
-    try {
-      // ✅ No userId param — backend reads user from JWT
-      final result = await AccountService.getAccountDashboard();
+Future<void> _loadAccounts() async {
+  try {
+    final result = await AccountService.getAccountDashboard();
 
-      if (!mounted) return;
+    // 🔥 DEBUG LOGS
+    print("FULL API RESPONSE: $result");
+    print("ACCOUNTS RAW: ${result['accounts']}");
 
-      final accountsData = result['accounts'];
-      _accounts = accountsData is List<AccountModel> ? accountsData : [];
+    if (!mounted) return;
 
-      if (_accounts.isNotEmpty) {
-        final primary = _accounts.firstWhere(
-          (acc) => acc.isDefault == true,
-          orElse: () => _accounts.firstWhere(
-            (acc) => acc.type == "CASH",
-            orElse: () => _accounts.first,
-          ),
-        );
+    final accountsData = result['accounts'];
 
-        selectedAccountId = primary.id;
-        _selectedAccountName = primary.name;
-      }
-    } catch (e) {
-      debugPrint("Error loading accounts: $e");
-    } finally {
-      if (mounted) setState(() => _isFetchingAccounts = false);
+   if (accountsData is List<AccountModel>) {
+  _accounts = accountsData;
+} else if (accountsData is List) {
+  // fallback (if sometimes API returns JSON)
+  _accounts = accountsData
+      .map((e) => AccountModel.fromJson(e))
+      .toList();
+} else {
+  _accounts = [];
+}
+
+    print("ACCOUNTS COUNT: ${_accounts.length}");
+
+    if (_accounts.isNotEmpty) {
+      final primary = _accounts.firstWhere(
+        (acc) => acc.isDefault == true,
+        orElse: () => _accounts.first,
+      );
+
+      selectedAccountId = primary.id;
+      _selectedAccountName = primary.name;
     }
+  } catch (e) {
+    print("❌ ERROR LOADING ACCOUNTS: $e");
+  } finally {
+    if (mounted) setState(() => _isFetchingAccounts = false);
   }
+}
 
   void _saveGoal() async {
     if (!_formKey.currentState!.validate() ||
