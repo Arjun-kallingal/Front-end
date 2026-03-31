@@ -172,7 +172,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       children: [
         Expanded(
           child: _summaryCard(
-            title: "Monthly Income",
+            title:
+                "${context.watch<AnalyticsProvider>().timeframeLabel} Income",
             amount: data.income,
             icon: Icons.trending_up_rounded,
             color: _green,
@@ -182,7 +183,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: _summaryCard(
-            title: "Monthly Expense",
+            title:
+                "${context.watch<AnalyticsProvider>().timeframeLabel} Expense",
             amount: data.expense,
             icon: Icons.trending_down_rounded,
             color: _red,
@@ -238,128 +240,167 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
 // ─── INCOME VS EXPENSE DONUT ───────────────────────────────────────────────
 
   Widget _buildIncomeExpenseCard(AnalyticsModel data) {
-  int? touchedIndex;
+    int touchedIndex = -1; // ✅ FIXED
 
-  final bool hasIncome = data.income > 0;
-  final bool hasExpense = data.expense > 0;
+    final bool hasIncome = data.income > 0;
+    final bool hasExpense = data.expense > 0;
 
-  final List<PieChartSectionData> sections = [];
-  if (!hasIncome && !hasExpense) {
-    sections.add(PieChartSectionData(
-        value: 1, color: _border, radius: 30, showTitle: false));
-  } else {
-    if (hasIncome) {
-      sections.add(PieChartSectionData(
-          value: data.income, color: _green, radius: 30, showTitle: false));
-    }
-    if (hasExpense) {
-      sections.add(PieChartSectionData(
-          value: data.expense, color: _red, radius: 30, showTitle: false));
-    }
+    return StatefulBuilder(
+      builder: (context, setState) {
+        // ✅ DYNAMIC SECTIONS WITH GROW EFFECT
+        List<PieChartSectionData> showingSections() {
+          if (!hasIncome && !hasExpense) {
+            return [
+              PieChartSectionData(
+                value: 1,
+                color: _border,
+                radius: 30,
+                showTitle: false,
+              ),
+            ];
+          }
+
+          final List<PieChartSectionData> list = [];
+          int index = 0;
+
+          if (hasIncome) {
+            final isTouched = index == touchedIndex;
+            list.add(
+              PieChartSectionData(
+                value: data.income,
+                color: _green,
+                radius: isTouched ? 40 : 30, // ✅ GROW EFFECT
+                showTitle: false,
+              ),
+            );
+            index++;
+          }
+
+          if (hasExpense) {
+            final isTouched = index == touchedIndex;
+            list.add(
+              PieChartSectionData(
+                value: data.expense,
+                color: _red,
+                radius: isTouched ? 40 : 30, // ✅ GROW EFFECT
+                showTitle: false,
+              ),
+            );
+          }
+
+          return list;
+        }
+
+        return _whiteCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Income Vs Expense",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: _textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              SizedBox(
+                height: 220,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    PieChart(
+                      PieChartData(
+                        centerSpaceRadius: 60,
+                        sectionsSpace: 2,
+                        sections: showingSections(),
+
+                        // ✅ FIXED TOUCH HANDLING
+                        pieTouchData: PieTouchData(
+                          touchCallback: (event, response) {
+                            setState(() {
+                              if (!event.isInterestedForInteractions ||
+                                  response == null ||
+                                  response.touchedSection == null) {
+                                touchedIndex = -1;
+                                return;
+                              }
+
+                              touchedIndex =
+                                  response.touchedSection!.touchedSectionIndex;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // ✅ CENTER TEXT (WORKS PERFECTLY NOW)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          touchedIndex == 0
+                              ? "₹${_fmt(data.income)}"
+                              : touchedIndex == 1
+                                  ? "₹${_fmt(data.expense)}"
+                                  : data.netSavingsFormatted,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: touchedIndex == 1
+                                ? _red
+                                : touchedIndex == 0
+                                    ? _green
+                                    : (data.isDeficit ? _red : _textPrimary),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          touchedIndex == 0
+                              ? "Income"
+                              : touchedIndex == 1
+                                  ? "Expense"
+                                  : "Net Savings",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: _textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // ✅ UNCHANGED
+              Center(
+                child: Column(
+                  children: [
+                    const Text(
+                      "Savings Rate",
+                      style: TextStyle(fontSize: 12, color: _textSecondary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      data.savingsRateFormatted,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: data.isDeficit ? _red : _green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
-
-  return StatefulBuilder(
-    builder: (context, setState) {
-      return _whiteCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Income Vs Expense",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: _textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            SizedBox(
-              height: 220,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  PieChart(
-                    PieChartData(
-                      centerSpaceRadius: 60,
-                      sectionsSpace: 2,
-                      sections: sections,
-                      pieTouchData: PieTouchData(
-                        touchCallback: (event, response) {
-                          setState(() {
-                            touchedIndex = response
-                                ?.touchedSection?.touchedSectionIndex;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-
-                  // ✅ CENTER TEXT (DYNAMIC)
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        touchedIndex == 0
-                            ? "₹${_fmt(data.income)}"
-                            : touchedIndex == 1
-                                ? "₹${_fmt(data.expense)}"
-                                : data.netSavingsFormatted,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: touchedIndex == 1
-                              ? _red
-                              : touchedIndex == 0
-                                  ? _green
-                                  : (data.isDeficit ? _red : _textPrimary),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        touchedIndex == 0
-                            ? "Income"
-                            : touchedIndex == 1
-                                ? "Expense"
-                                : "Net Savings",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: _textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ✅ KEEP SAVINGS RATE BELOW (unchanged)
-            Center(
-              child: Column(
-                children: [
-                  const Text("Savings Rate",
-                      style:
-                          TextStyle(fontSize: 12, color: _textSecondary)),
-                  const SizedBox(height: 4),
-                  Text(
-                    data.savingsRateFormatted,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: data.isDeficit ? _red : _green,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
 
   // ─── SPEND GAUGE ───────────────────────────────────────────────────────────
 
@@ -476,104 +517,200 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   Widget _buildSpendingInsightsCard(AnalyticsModel data) {
     final totalSpend = data.categories.fold(0.0, (sum, c) => sum + c.amount);
 
-    // ✅ Fix: empty state when no categories
     if (data.categories.isEmpty) {
       return _whiteCard(
         child: const Center(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
-            child: Text("No spending data for this period.",
-                style: TextStyle(color: _textSecondary)),
+            child: Text(
+              "No spending data for this period.",
+              style: TextStyle(color: _textSecondary),
+            ),
           ),
         ),
       );
     }
 
-    return _whiteCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 220,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                PieChart(
-                  PieChartData(
-                    centerSpaceRadius: 60,
-                    sectionsSpace: 2,
-                    sections: data.categories
-                        .map((c) => PieChartSectionData(
-                              value: c.amount,
-                              color: c.color,
-                              radius: 30,
-                              showTitle: false,
-                            ))
-                        .toList(),
-                  ),
+    int? touchedIndex;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        List<PieChartSectionData> showingSections() {
+          return data.categories.asMap().entries.map((entry) {
+            final index = entry.key;
+            final cat = entry.value;
+
+            final isTouched = index == touchedIndex;
+
+            return PieChartSectionData(
+              value: cat.amount,
+              color: cat.color,
+              radius: isTouched ? 40 : 30,
+              showTitle: false,
+            );
+          }).toList();
+        }
+
+        final bool isTouched = touchedIndex != null &&
+            touchedIndex! >= 0 &&
+            touchedIndex! < data.categories.length;
+
+        final selected = isTouched ? data.categories[touchedIndex!] : null;
+        return _whiteCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Top Spending Categories",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: _textPrimary,
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+              ),
+              const SizedBox(height: 12),
+
+              SizedBox(
+                height: 220,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      "₹${_fmt(totalSpend)}",
-                      style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: _textPrimary),
+                    PieChart(
+                      PieChartData(
+                        centerSpaceRadius: 60,
+                        sectionsSpace: 2,
+                        sections: showingSections(),
+                        pieTouchData: PieTouchData(
+                          touchCallback: (event, response) {
+                            setState(() {
+                              if (!event.isInterestedForInteractions ||
+                                  response == null ||
+                                  response.touchedSection == null) {
+                                touchedIndex = -1;
+                                return;
+                              }
+
+                              touchedIndex =
+                                  response.touchedSection!.touchedSectionIndex;
+                            });
+                          },
+                        ),
+                      ),
                     ),
-                    const Text("Total Spending",
-                        style: TextStyle(fontSize: 12, color: _textSecondary)),
+
+                    // CENTER TEXT
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isTouched
+                              ? "₹${_fmt(selected!.amount)}"
+                              : "₹${_fmt(totalSpend)}",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: _textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isTouched ? selected!.name : "Total Spending",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: _textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // ✅ FIXED CATEGORY LIST (HOVER + CLICK + SYNC)
+              ...data.categories.asMap().entries.map((entry) {
+                final index = entry.key;
+                final cat = entry.value;
+
+                return _categoryRow(
+                  cat,
+                  index,
+                  touchedIndex,
+                  (i) => setState(() => touchedIndex = i),
+                );
+              }),
+            ],
           ),
-          const SizedBox(height: 8),
-          ...data.categories.map((cat) => _categoryRow(cat)),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _categoryRow(CategoryData cat) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: cat.color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(cat.name,
-                style: const TextStyle(
+// ✅ NEW CATEGORY ROW (WITH HOVER)
+  Widget _categoryRow(
+    CategoryData cat,
+    int index,
+    int? touchedIndex,
+    Function(int?) onHover,
+  ) {
+    final isActive = touchedIndex == index;
+
+    return MouseRegion(
+      onEnter: (_) => onHover(index),
+      onExit: (_) => onHover(-1),
+      child: GestureDetector(
+        onTap: () => onHover(index),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: cat.color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  cat.name,
+                  style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: _textPrimary)),
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                    color: _textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                "₹${_fmt(cat.amount)}",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isActive ? cat.color : _textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 42,
+                child: Text(
+                  "${cat.percentage}%",
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: _textSecondary,
+                  ),
+                ),
+              ),
+            ],
           ),
-          Text(
-            "₹${_fmt(cat.amount)}",
-            style: const TextStyle(
-                fontSize: 13, fontWeight: FontWeight.bold, color: _textPrimary),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 42,
-            child: Text(
-              "${cat.percentage}%",
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 11, color: _textSecondary),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  // ─── ERROR STATE ───────────────────────────────────────────────────────────
+// ─── ERROR STATE ───────────────────────────────────────────────────────────
 
   Widget _buildError(AnalyticsProvider anaP) {
     return Center(
@@ -584,9 +721,11 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           children: [
             const Icon(Icons.error_outline, color: _red, size: 48),
             const SizedBox(height: 12),
-            Text(anaP.error ?? "Something went wrong.",
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: _textSecondary)),
+            Text(
+              anaP.error ?? "Something went wrong.",
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _textSecondary),
+            ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: anaP.retry,
@@ -599,7 +738,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  // ─── SHARED ────────────────────────────────────────────────────────────────
+// ─── SHARED ────────────────────────────────────────────────────────────────
 
   Widget _whiteCard({required Widget child, EdgeInsets? padding}) {
     return Container(
@@ -610,21 +749,22 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          )
         ],
       ),
       child: child,
     );
   }
 
-  // ─── ADD THIS FUNCTION INSIDE CLASS ─────────────────────────────────────────
+// ─── HELPERS ────────────────────────────────────────────────────────────────
 
   Color _getGaugeColor(double pct) {
-    if (pct <= 40) return const Color(0xFF10B981); // green
-    if (pct <= 70) return const Color(0xFFF59E0B); // yellow
-    return const Color(0xFFEF4444); // red
+    if (pct <= 40) return const Color(0xFF10B981);
+    if (pct <= 70) return const Color(0xFFF59E0B);
+    return const Color(0xFFEF4444);
   }
 
   String _fmt(double v) => v.abs().toStringAsFixed(0).replaceAllMapped(

@@ -13,14 +13,23 @@ class AnalyticsProvider extends ChangeNotifier {
 
   int _activeRequestId = 0;
 
-  Future<void> fetchDashboard({String? accountId, String? timeframe}) async {
+  // ─── FETCH DASHBOARD ─────────────────────────────────────────────
+
+  Future<void> fetchDashboard({
+    String? accountId,
+    String? timeframe,
+  }) async {
     final int requestId = ++_activeRequestId;
 
     isLoading = true;
     error = null;
 
+    // ✅ Update state BEFORE API call
     if (accountId != null) currentAccountId = accountId;
     if (timeframe != null) currentTimeframe = timeframe;
+
+    debugPrint("Fetching Analytics → "
+        "Account: $currentAccountId | Timeframe: $currentTimeframe");
 
     notifyListeners();
 
@@ -29,6 +38,8 @@ class AnalyticsProvider extends ChangeNotifier {
         accountId: currentAccountId,
         timeframe: currentTimeframe,
       );
+
+      // ✅ Prevent stale response overwrite
       if (requestId == _activeRequestId) {
         data = result;
       }
@@ -45,6 +56,8 @@ class AnalyticsProvider extends ChangeNotifier {
     }
   }
 
+  // ─── TIMEFRAME LABEL ─────────────────────────────────────────────
+
   String get timeframeLabel {
     switch (currentTimeframe) {
       case 'Day':
@@ -58,13 +71,29 @@ class AnalyticsProvider extends ChangeNotifier {
     }
   }
 
-  void changeTimeframe(String timeframe) {
+  // ─── CHANGE TIMEFRAME ────────────────────────────────────────────
+
+  Future<void> changeTimeframe(String timeframe) async {
     const valid = ['Day', 'Week', 'Month', 'Year'];
     if (!valid.contains(timeframe)) return;
-    fetchDashboard(timeframe: timeframe);
+
+    // ✅ Prevent unnecessary reload
+    if (timeframe == currentTimeframe) return;
+
+    await fetchDashboard(timeframe: timeframe);
   }
 
-  void changeAccount(String accountId) => fetchDashboard(accountId: accountId);
+  // ─── CHANGE ACCOUNT ──────────────────────────────────────────────
 
-  void retry() => fetchDashboard();
+  Future<void> changeAccount(String accountId) async {
+    if (accountId == currentAccountId) return;
+
+    await fetchDashboard(accountId: accountId);
+  }
+
+  // ─── RETRY ───────────────────────────────────────────────────────
+
+  Future<void> retry() async {
+    await fetchDashboard();
+  }
 }
