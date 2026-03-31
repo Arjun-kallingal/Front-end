@@ -84,7 +84,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       centerTitle: true,
       shape: const Border(bottom: BorderSide(color: _border)),
       title: const Text(
-        "Financial Dashboard",
+        "Analytics & Reports",
         style: TextStyle(
             color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 20),
       ),
@@ -204,7 +204,6 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     return _whiteCard(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
               style: const TextStyle(fontSize: 12, color: _textSecondary)),
@@ -235,141 +234,140 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
 
   // ─── INCOME VS EXPENSE DONUT ───────────────────────────────────────────────
 
+  // ONLY relevant parts changed — rest untouched
+
+// ─── INCOME VS EXPENSE DONUT ───────────────────────────────────────────────
+
   Widget _buildIncomeExpenseCard(AnalyticsModel data) {
-    // ✅ Fix: handle zero income — show full red ring instead of crash
-    final bool hasIncome = data.income > 0;
-    final bool hasExpense = data.expense > 0;
+  int? touchedIndex;
 
-    final List<PieChartSectionData> sections = [];
-    if (!hasIncome && !hasExpense) {
-      // Empty state — single gray ring
+  final bool hasIncome = data.income > 0;
+  final bool hasExpense = data.expense > 0;
+
+  final List<PieChartSectionData> sections = [];
+  if (!hasIncome && !hasExpense) {
+    sections.add(PieChartSectionData(
+        value: 1, color: _border, radius: 30, showTitle: false));
+  } else {
+    if (hasIncome) {
       sections.add(PieChartSectionData(
-          value: 1, color: _border, radius: 30, showTitle: false));
-    } else {
-      if (hasIncome) {
-        sections.add(PieChartSectionData(
-            value: data.income, color: _green, radius: 30, showTitle: false));
-      }
-      if (hasExpense) {
-        sections.add(PieChartSectionData(
-            value: data.expense, color: _red, radius: 30, showTitle: false));
-      }
+          value: data.income, color: _green, radius: 30, showTitle: false));
     }
+    if (hasExpense) {
+      sections.add(PieChartSectionData(
+          value: data.expense, color: _red, radius: 30, showTitle: false));
+    }
+  }
 
-    return _whiteCard(
-      child: Column(
-        children: [
-          // Donut with center label
-          SizedBox(
-            height: 220,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                PieChart(PieChartData(
-                  centerSpaceRadius: 60,
-                  sectionsSpace: 2,
-                  sections: sections,
-                )),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ✅ Fix: show sign + red color when deficit
-                    Text(
-                      data.netSavingsFormatted,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: data.isDeficit ? _red : _textPrimary,
+  return StatefulBuilder(
+    builder: (context, setState) {
+      return _whiteCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Income Vs Expense",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: _textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            SizedBox(
+              height: 220,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  PieChart(
+                    PieChartData(
+                      centerSpaceRadius: 60,
+                      sectionsSpace: 2,
+                      sections: sections,
+                      pieTouchData: PieTouchData(
+                        touchCallback: (event, response) {
+                          setState(() {
+                            touchedIndex = response
+                                ?.touchedSection?.touchedSectionIndex;
+                          });
+                        },
                       ),
                     ),
-                    const Text(
-                      "Net Savings",
-                      style: TextStyle(fontSize: 12, color: _textSecondary),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+                  ),
 
-          const SizedBox(height: 8),
-
-          // Savings rate
-          Column(
-            children: [
-              const Text("Savings Rate",
-                  style: TextStyle(fontSize: 12, color: _textSecondary)),
-              const SizedBox(height: 2),
-              // ✅ Fix: red color when deficit
-              Text(
-                data.savingsRateFormatted,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: data.isDeficit ? _red : _green,
-                ),
+                  // ✅ CENTER TEXT (DYNAMIC)
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        touchedIndex == 0
+                            ? "₹${_fmt(data.income)}"
+                            : touchedIndex == 1
+                                ? "₹${_fmt(data.expense)}"
+                                : data.netSavingsFormatted,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: touchedIndex == 1
+                              ? _red
+                              : touchedIndex == 0
+                                  ? _green
+                                  : (data.isDeficit ? _red : _textPrimary),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        touchedIndex == 0
+                            ? "Income"
+                            : touchedIndex == 1
+                                ? "Expense"
+                                : "Net Savings",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-          _legendBox(
-            dot: _green,
-            label: "Income",
-            amount: "₹${_fmt(data.income)}",
-            bg: const Color(0xFFF0FDF4),
-          ),
-          const SizedBox(height: 8),
-          _legendBox(
-            dot: _red,
-            label: "Expense",
-            amount: "₹${_fmt(data.expense)}",
-            bg: const Color(0xFFFEF2F2),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _legendBox({
-    required Color dot,
-    required String label,
-    required String amount,
-    required Color bg,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Row(
-        children: [
-          Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
-          const SizedBox(width: 8),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: _textPrimary)),
-          const Spacer(),
-          Text(amount,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: _textPrimary)),
-        ],
-      ),
-    );
-  }
+            // ✅ KEEP SAVINGS RATE BELOW (unchanged)
+            Center(
+              child: Column(
+                children: [
+                  const Text("Savings Rate",
+                      style:
+                          TextStyle(fontSize: 12, color: _textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(
+                    data.savingsRateFormatted,
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: data.isDeficit ? _red : _green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   // ─── SPEND GAUGE ───────────────────────────────────────────────────────────
 
   Widget _buildSpendGaugeCard(AnalyticsModel data) {
-    // ✅ Fix: use clamped value from model
     final double pct = data.spendPercentageClamped;
+
+    final Color gaugeColor = _getGaugeColor(pct);
 
     final Color badgeColor;
     final Color badgeBg;
@@ -386,8 +384,17 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
 
     return _whiteCard(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ✅ Fix: OverflowBox clips bottom half → true half-circle gauge
+          const Text(
+            "Spending Percentage",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: _textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             height: 110,
             child: OverflowBox(
@@ -406,7 +413,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                         sections: [
                           PieChartSectionData(
                             value: pct,
-                            color: _green,
+                            color: gaugeColor, // ✅ dynamic color
                             radius: 24,
                             showTitle: false,
                           ),
@@ -416,7 +423,6 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                             radius: 24,
                             showTitle: false,
                           ),
-                          // Transparent bottom half
                           PieChartSectionData(
                             value: 100,
                             color: Colors.transparent,
@@ -448,9 +454,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -614,6 +618,14 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       ),
       child: child,
     );
+  }
+
+  // ─── ADD THIS FUNCTION INSIDE CLASS ─────────────────────────────────────────
+
+  Color _getGaugeColor(double pct) {
+    if (pct <= 40) return const Color(0xFF10B981); // green
+    if (pct <= 70) return const Color(0xFFF59E0B); // yellow
+    return const Color(0xFFEF4444); // red
   }
 
   String _fmt(double v) => v.abs().toStringAsFixed(0).replaceAllMapped(
