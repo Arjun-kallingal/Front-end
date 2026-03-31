@@ -12,27 +12,22 @@ class TransactionProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _errorMessage;
 
-  Future<void> fetchTransactions(String userId) async {
-
+  // ✅ No userId — backend identifies user from JWT
+  Future<void> fetchTransactions() async {
     try {
-
       _isLoading = true;
       notifyListeners();
 
-      final response = await TransactionService.getHistory(userId);
+      final response = await TransactionService.getHistory();
 
       _recentTransactions = response.transactions;
-
       _errorMessage = null;
 
     } catch (e) {
-
       _errorMessage = "Failed to load transactions";
-
     }
 
     _isLoading = false;
-
     notifyListeners();
   }
 }

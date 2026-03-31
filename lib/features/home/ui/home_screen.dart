@@ -1,14 +1,14 @@
-
 import 'package:flutter/material.dart';
-import 'package:front_end/core/services/mock_auth.dart';
 import 'package:front_end/features/profile/ui/profile_screen.dart';
 import 'balance_card.dart';
 import 'package:intl/intl.dart';
+
 import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
+import '../../../core/constants/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,37 +18,21 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? _currentUserId;
-
   @override
   void initState() {
     super.initState();
-    _initializeUserAndData();
-  }
-
-  /// AUTH + DATA LOAD
-  Future<void> _initializeUserAndData() async {
-    try {
-      final userId = await MockAuthService.simulateLogin();
-
-      if (!mounted) return;
-
-      setState(() {
-        _currentUserId = userId;
-      });
-
-      await context.read<TransactionProvider>().fetchTransactions(userId);
-    } catch (e) {
-      debugPrint("Auth Error: $e");
-    }
+    Future.microtask(() {
+      context.read<TransactionProvider>().fetchTransactions();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 252, 252, 252),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-      /// ADD TRANSACTION BUTTON
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final refresh = await Navigator.push(
@@ -57,47 +41,31 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context) => const AddTransactionScreen(),
             ),
           );
-
-          if (refresh == true && _currentUserId != null) {
-            await context
-                .read<TransactionProvider>()
-                .fetchTransactions(_currentUserId!);
+          if (refresh == true && mounted) {
+            await context.read<TransactionProvider>().fetchTransactions();
           }
         },
-        backgroundColor: const Color(0xFF2D2D2D),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         elevation: 6,
         child: const Icon(Icons.add, size: 28),
       ),
-
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            if (_currentUserId != null) {
-              await context
-                  .read<TransactionProvider>()
-                  .fetchTransactions(_currentUserId!);
-            }
+            await context.read<TransactionProvider>().fetchTransactions();
           },
-          color: Colors.black87,
+          color: colorScheme.primary,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
-                _buildHeader(),
+                _buildHeader(context),
                 const SizedBox(height: 10),
-
-                /// BALANCE CARD
-                if (_currentUserId != null)
-                  BalanceCard(userId: _currentUserId!),
-
+                const BalanceCard(),
                 const SizedBox(height: 10),
-
-                /// RECENT HEADER
-                _buildRecentHeader(),
-
-                /// TRANSACTIONS
-                _buildTransactionList(),
-
+                _buildRecentHeader(context),
+                _buildTransactionList(context),
                 const SizedBox(height: 10),
               ],
             ),
@@ -107,24 +75,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// HEADER
-  Widget _buildHeader() {
+  // ── HEADER ────────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        border: Border(
+          bottom: BorderSide(color: theme.dividerColor),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             "WalletCare",
-            style: TextStyle(
-              color: Colors.black87,
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 22,
               letterSpacing: -0.5,
             ),
           ),
@@ -137,10 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             },
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 18,
-              backgroundColor: Color(0xFFF5F5F5),
-              child: Icon(Icons.person_outline, color: Colors.black87),
+              backgroundColor: colorScheme.surfaceVariant,
+              child: Icon(
+                Icons.person_outline,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -148,19 +123,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// RECENT HEADER
-  Widget _buildRecentHeader() {
+  // ── RECENT HEADER ─────────────────────────────────────────────────────────
+
+  Widget _buildRecentHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             "Recent Activity",
-            style: TextStyle(
-              fontSize: 16,
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
             ),
           ),
           TextButton(
@@ -172,20 +149,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             },
-            child: const Row(
+            child: Row(
               children: [
                 Text(
                   "See All",
-                  style: TextStyle(
-                    color: Colors.blueAccent,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.secondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 12,
-                  color: Colors.blueAccent,
+                  color: colorScheme.secondary,
                 ),
               ],
             ),
@@ -195,15 +172,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// TRANSACTION LIST
-  Widget _buildTransactionList() {
+  // ── TRANSACTION LIST ──────────────────────────────────────────────────────
+
+  Widget _buildTransactionList(BuildContext context) {
+    final theme = Theme.of(context);
     final provider = context.watch<TransactionProvider>();
 
     if (provider.isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-          child: CircularProgressIndicator(color: Colors.black87),
+          child: CircularProgressIndicator(
+            color: theme.colorScheme.primary,
+          ),
         ),
       );
     }
@@ -213,17 +194,21 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(30),
         child: Text(
           provider.error!,
-          style: const TextStyle(color: Colors.grey),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+          ),
         ),
       );
     }
 
     if (provider.transactions.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(30),
+      return Padding(
+        padding: const EdgeInsets.all(30),
         child: Text(
           "No recent transactions",
-          style: TextStyle(color: Colors.grey),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+          ),
         ),
       );
     }
@@ -235,8 +220,10 @@ class _HomeScreenState extends State<HomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: transactions.length > 5 ? 5 : transactions.length,
-      separatorBuilder: (context, index) =>
-          Divider(color: Colors.grey.shade200, height: 1),
+      separatorBuilder: (_, __) => Divider(
+        color: theme.dividerColor,
+        height: 1,
+      ),
       itemBuilder: (context, index) {
         final tx = transactions[index];
 
@@ -247,22 +234,22 @@ class _HomeScreenState extends State<HomeScreen> {
         final bool isTransferIn = tx.direction == 'ACCOUNT_TRANSFER_IN';
         final bool isReversal = tx.type == 'REVERSAL';
 
-        Color moneyColor =
-            isIncome
-                ? Colors.green
-                : isAllocation
-                    ? const Color(0xFF1976D2)
-                    : isDealloc
-                        ? Colors.purple
-                        : isCompletion
-                            ? Colors.teal
-                            : isTransferIn
-                                ? Colors.green
-                                : isReversal
-                                    ? Colors.orange
-                                    : const Color(0xFFB81414);
+        // Use AppColors semantic tokens — no raw hex inline
+        final Color moneyColor = isIncome
+            ? AppColors.incomeAmount
+            : isAllocation
+                ? AppColors.savingsPrimary
+                : isDealloc
+                    ? AppColors.progressGreen
+                    : isCompletion
+                        ? AppColors.chartIncome
+                        : isTransferIn
+                            ? AppColors.incomeAmount
+                            : isReversal
+                                ? AppColors.warning
+                                : AppColors.expenseAmount;
 
-        bool isCash = tx.accountName.toLowerCase().contains('cash') ||
+        final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
 
         return Padding(
@@ -271,53 +258,51 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor:
-                    _getTransactionColor(tx).withOpacity(0.1),
+                backgroundColor: _getTransactionColor(tx).withOpacity(0.1),
                 child: Icon(
                   _getTransactionIcon(tx),
                   color: _getTransactionColor(tx),
                   size: 20,
                 ),
               ),
-
               const SizedBox(width: 16),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       tx.title,
-                      style: const TextStyle(
+                      style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-
                     const SizedBox(height: 6),
-
                     Row(
                       children: [
                         Text(
                           DateFormat('dd MMM yyyy').format(tx.date),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
                           ),
                         ),
                         if (tx.subtitle.isNotEmpty) ...[
                           const SizedBox(width: 8),
-                          Text("•",
-                              style: TextStyle(color: Colors.grey.shade400)),
+                          Text(
+                            "•",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.35),
+                            ),
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               tx.subtitle,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.5),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -329,35 +314,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     "₹${tx.amount.abs().toStringAsFixed(2)}",
-                    style: TextStyle(
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
                       color: moneyColor,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         isCash ? Icons.wallet : Icons.account_balance,
                         size: 12,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         tx.accountName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade800,
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -372,67 +353,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── HELPERS ───────────────────────────────────────────────────────────────
+
   Color _getTransactionColor(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") {
-      return const Color(0xFF1976D2);
-    }
-
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") {
-      return Colors.purple;
-    }
-
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") {
-      return Colors.teal;
-    }
-
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") {
-      return Colors.green;
-    }
-
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") {
-      return Colors.grey;
-    }
-
-    if (tx.type == "INCOME") {
-      return Colors.green;
-    }
-
-    if (tx.type == "REVERSAL") {
-      return Colors.orange;
-    }
-
-    return const Color(0xFFB81414);
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
+      return AppColors.savingsPrimary;
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
+      return AppColors.progressGreen;
+    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
+      return AppColors.chartIncome;
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
+      return AppColors.incomeAmount;
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
+      return AppColors.textSecondary;
+    if (tx.type == "INCOME") return AppColors.incomeAmount;
+    if (tx.type == "REVERSAL") return AppColors.warning;
+    return AppColors.expenseAmount;
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") {
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
       return Icons.savings;
-    }
-
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") {
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
       return Icons.savings_outlined;
-    }
-
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") {
+    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
       return Icons.task_alt;
-    }
-
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") {
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
       return Icons.call_received;
-    }
-
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") {
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
       return Icons.call_made;
-    }
-
-    if (tx.type == "INCOME") {
-      return Icons.trending_up;
-    }
-
-    if (tx.type == "REVERSAL") {
-      return Icons.undo;
-    }
-
+    if (tx.type == "INCOME") return Icons.trending_up;
+    if (tx.type == "REVERSAL") return Icons.undo;
     return Icons.trending_down;
+  }
+
+  Widget _card({required BuildContext context, required Widget child}) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: child,
+    );
   }
 }

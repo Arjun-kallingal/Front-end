@@ -14,7 +14,10 @@ class AccountProvider extends ChangeNotifier {
   double totalBank = 0;
   double totalAll = 0;
 
-  Future<void> loadAccounts(String userId) async {
+  get allAccounts => null;
+
+  // ✅ No userId — backend identifies user from JWT
+  Future<void> loadAccounts() async {
 
     isLoading = true;
     notifyListeners();
@@ -22,7 +25,7 @@ class AccountProvider extends ChangeNotifier {
     try {
 
       final Map<String, dynamic> data =
-          await AccountService.getAccountDashboard(userId);
+          await AccountService.getAccountDashboard();
 
       final List<AccountModel> all =
           (data['accounts'] as List<dynamic>?)?.cast<AccountModel>() ?? [];
@@ -51,12 +54,13 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setPrimary(String accountId, String userId) async {
+  // ✅ No userId — just accountId is enough
+  Future<void> setPrimary(String accountId) async {
 
     final success = await AccountService.setPrimaryAccount(accountId);
 
     if (success) {
-      await loadAccounts(userId);
+      await loadAccounts();  // ✅ reload without userId
     }
   }
 }

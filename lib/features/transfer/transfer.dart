@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/models/account_model.dart';
-import '../../core/services/account_service.dart';
-import '../../core/services/transfer_service.dart';
-import '../../core/services/mock_auth.dart';
-import 'package:uuid/uuid.dart';
+import '../../core/providers/transfer_provider.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -13,119 +11,53 @@ class TransferScreen extends StatefulWidget {
 }
 
 class _TransferScreenState extends State<TransferScreen> {
-  List<AccountModel> accounts = [];
-
-  AccountModel? fromAccount;
-  AccountModel? toAccount;
-
-  final amountController = TextEditingController();
-  final descriptionController = TextEditingController();
-final idempotencyKey = const Uuid().v4();
-
-  bool loading = false;
 
   @override
   void initState() {
     super.initState();
-    loadAccounts();
+    Future.microtask(() =>
+        context.read<TransferProvider>().loadAccounts());
   }
 
-  Future<void> loadAccounts() async {
-  try {
-    final result = await AccountService.getAccountDashboard(MockAuthService.token);
-
-    setState(() {
-      accounts = result['accounts'] as List<AccountModel>;
-    });
-  } catch (e) {
-    print("Failed to load accounts: $e");
-  }
-}
-
-  Future<void> submitTransfer() async {
-    final amount = double.tryParse(amountController.text.trim());
-
-    if (fromAccount == null || toAccount == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Select accounts")),
-      );
-      return;
-    }
-
-    if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter valid amount")),
-      );
-      return;
-    }
-
-    if (fromAccount!.id == toAccount!.id) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Accounts cannot be same")),
-      );
-      return;
-    }
-
-    try {
-      setState(() {
-        loading = true;
-      });
-
-      
-await TransferService.accountTransfer(
-  token: MockAuthService.token,
-  fromAccountId: fromAccount!.id,
-  toAccountId: toAccount!.id,
-  amount: amount,
-  category: "TRANSFER",
-  description: descriptionController.text,
-  idempotencyKey: idempotencyKey,
-);
-
-      setState(() {
-        loading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Transfer Successful")),
-      );
-
-      Navigator.pop(context);
-    } catch (e) {
-      setState(() {
-        loading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Transfer Failed: $e")),
-      );
-    }
+  void showSnackBar(String msg, {bool error = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: error ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final provider = context.watch<TransferProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Transfer Money"),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
+
         child: Column(
           children: [
+
             /// FROM ACCOUNT
             DropdownButtonFormField<AccountModel>(
-              value: fromAccount,
+              value: provider.fromAccount,
               hint: const Text("From Account"),
-              items: accounts.map((acc) {
+              items: provider.accounts.map((acc) {
                 return DropdownMenuItem(
                   value: acc,
                   child: Text(acc.name),
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  fromAccount = value;
-                });
+                if (value != null) {
+                  provider.setFromAccount(value);
+                }
               },
             ),
 
@@ -133,18 +65,18 @@ await TransferService.accountTransfer(
 
             /// TO ACCOUNT
             DropdownButtonFormField<AccountModel>(
-              value: toAccount,
+              value: provider.toAccount,
               hint: const Text("To Account"),
-              items: accounts.map((acc) {
+              items: provider.accounts.map((acc) {
                 return DropdownMenuItem(
                   value: acc,
                   child: Text(acc.name),
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  toAccount = value;
-                });
+                if (value != null) {
+                  provider.setToAccount(value);
+                }
               },
             ),
 
@@ -152,7 +84,7 @@ await TransferService.accountTransfer(
 
             /// AMOUNT
             TextField(
-              controller: amountController,
+              controller: provider.amountController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: "Amount",
@@ -164,7 +96,7 @@ await TransferService.accountTransfer(
 
             /// DESCRIPTION
             TextField(
-              controller: descriptionController,
+              controller: provider.descriptionController,
               decoration: const InputDecoration(
                 labelText: "Description",
                 border: OutlineInputBorder(),
@@ -177,12 +109,39 @@ await TransferService.accountTransfer(
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: loading ? null : submitTransfer,
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
+
+                onPressed: provider.loading
+                    ? null
+                    : () async {
+
+                        final error =
+                            await provider.submitTransfer(context);
+
+                        if (error != null) {
+                          showSnackBar(error);
+                        } else {
+
+                          showSnackBar(
+                            "Transfer Successful",
+                            error: false,
+                          );
+
+                          Navigator.pop(context);
+                        }
+                      },
+
+                child: provider.loading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text("Transfer"),
               ),
-            )
+            ),
           ],
         ),
       ),

@@ -1,8 +1,8 @@
 class GoalModel {
   final String id;
-  final String userId;
- final String? accountName;
- final String accountId;
+  // ✅ userId removed — backend gets it from JWT
+  final String? accountName;
+  final String accountId;
   String title;
   String category;
   double targetAmount;
@@ -22,7 +22,7 @@ class GoalModel {
 
   GoalModel({
     required this.id,
-    required this.userId,
+    // ✅ userId removed
     required this.accountId,
     required this.title,
     required this.category,
@@ -42,25 +42,46 @@ class GoalModel {
   });
 
   factory GoalModel.fromJson(Map<String, dynamic> json) {
+    // Safely extract from Mongoose populated object
+    final accountData = json['accountId'];
+    final parsedAccountId = accountData is Map
+        ? (accountData['_id']?.toString() ?? '')
+        : (accountData?.toString() ?? '');
+
+    // Safely extract Account Name whether it is nested in accountId or at the root
+    String parsedAccountName = 'Main Account'; // Default fallback
+    if (json['accountId'] is Map && json['accountId']['name'] != null) {
+      parsedAccountName = json['accountId']['name'].toString();
+    } else if (json['accountName'] != null &&
+        json['accountName'].toString().isNotEmpty) {
+      parsedAccountName = json['accountName'].toString();
+    }
+
     return GoalModel(
-      id: json['_id'] ?? '',
-      userId: json['userId'] ?? '',
-      accountId: json['accountId'] ?? '',
-   accountName: json['accountName'] ?? 'Unknown',
+      id: json['_id']?.toString() ?? '',
+      accountId: parsedAccountId,
+      accountName: parsedAccountName,
       title: json['title'] ?? '',
       category: json['category'] ?? '',
       targetAmount: (json['targetAmount'] as num? ?? 0).toDouble(),
       currentAmount: (json['currentAmount'] as num? ?? 0).toDouble(),
-      targetDate: DateTime.tryParse(json['targetDate'] ?? '') ?? DateTime.now(),
+
+      // ✅ Enforce local timezones
+      targetDate: json['targetDate'] != null
+          ? DateTime.parse(json['targetDate'].toString()).toLocal()
+          : DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString()).toLocal()
+          : DateTime.now(),
+
       status: json['status'] ?? 'active',
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       description: json['description'],
       reminderFrequency: json['reminderFrequency'] ?? 'weekly',
       transactionType: json['transactionType'] ?? 'expense',
 
-      // ✅ Safe null-aware casting for calculated fields
-      daysLeft: json['daysLeft'] != null
-          ? (json['daysLeft'] as num).toInt()
+      // Allow mapping from either backend naming convention
+      daysLeft: (json['daysLeft'] ?? json['remainingDays']) != null
+          ? ((json['daysLeft'] ?? json['remainingDays']) as num).toInt()
           : null,
       requiredDailySaving: json['requiredDailySaving'] != null
           ? (json['requiredDailySaving'] as num).toDouble()
@@ -75,7 +96,7 @@ class GoalModel {
   Map<String, dynamic> toJson({bool isCreate = false}) {
     return {
       if (!isCreate && id.isNotEmpty) "_id": id,
-      "userId": userId,
+      // ✅ userId removed — never sent in body, backend reads from JWT
       "accountId": accountId,
       "title": title,
       "category": category,

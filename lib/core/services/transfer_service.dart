@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'api_client.dart';
+import 'api_config.dart';
 
 class TransferService {
-  static const String baseUrl = "http://localhost:5000/api/transaction"; // Emulator-safe
+
+  static String get baseUrl =>
+      "${ApiConfig.baseUrl}/api/transaction";
 
   static Future<void> accountTransfer({
-    required String token,
     required String fromAccountId,
     required String toAccountId,
     required double amount,
@@ -13,14 +16,12 @@ class TransferService {
     required String description,
     required String idempotencyKey,
   }) async {
-    final url = Uri.parse("$baseUrl/account-transfer");
+
+    final headers = await ApiClient.getHeaders();
 
     final response = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      Uri.parse("$baseUrl/account-transfer"),
+      headers: headers,
       body: jsonEncode({
         "fromAccountId": fromAccountId,
         "toAccountId": toAccountId,
@@ -31,7 +32,8 @@ class TransferService {
       }),
     );
 
-    if (response.statusCode != 201 && response.statusCode != 409) {
+    if (response.statusCode != 201 &&
+        response.statusCode != 409) {
       throw Exception("Transfer failed: ${response.body}");
     }
   }

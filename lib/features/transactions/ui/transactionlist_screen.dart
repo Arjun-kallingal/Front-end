@@ -4,7 +4,6 @@ import 'package:front_end/core/models/transaction_model.dart';
 import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
-import 'package:front_end/core/services/mock_auth.dart';
 import 'filter_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
@@ -18,23 +17,23 @@ class TransactionListScreen extends StatefulWidget {
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
   final Color primaryRed = const Color(0xFFB81414);
-  final Color goalBlue   = const Color(0xFF1976D2);
-  final Color textMuted  = const Color(0xFF757575);
+  final Color goalBlue = const Color(0xFF1976D2);
+  final Color textMuted = const Color(0xFF757575);
 
   // ── Filter state ──────────────────────────────────────────────────────────
-  String selectedType        = "All Type";
-  String selectedCategory    = "All";
+  String selectedType = "All Type";
+  String selectedCategory = "All";
   late String selectedAccountName;
   DateTime? startDate;
   DateTime? endDate;
   String searchQuery = "";
 
   // ── Data state ────────────────────────────────────────────────────────────
-  bool _isLoading      = true;
+  bool _isLoading = true;
   bool _isFetchingMore = false;
   String? _nextCursor;
   List<TransactionModel> _transactions = [];
-  List<AccountModel>     _accounts     = [];
+  List<AccountModel> _accounts = [];
 
   final ScrollController _scrollController = ScrollController();
 
@@ -44,11 +43,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     selectedAccountName = widget.initialAccountName ?? "All Accounts";
     _fetchData();
 
-    // Trigger next page when user is 200px from the bottom
     _scrollController.addListener(() {
+      // 1. Reduced threshold to 50 pixels to prevent double-firing
       if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 200) {
-        _fetchMore();
+          _scrollController.position.maxScrollExtent - 50) {
+        // 2. Added safety checks to ensure we don't fetch if already loading
+        if (!_isLoading && !_isFetchingMore) {
+          _fetchMore();
+        }
       }
     });
   }
@@ -63,29 +65,22 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   Future<void> _fetchData() async {
     setState(() {
-      _isLoading    = true;
-      _nextCursor   = null;
+      _isLoading = true;
+      _nextCursor = null;
       _transactions = [];
     });
 
-    final userId = MockAuthService.currentUserId;
-    if (userId.isEmpty) {
-      if (mounted) _showSnackBar("User not logged in!", isError: true);
-      setState(() => _isLoading = false);
-      return;
-    }
-
     try {
+      // ✅ No userId — backend reads from JWT
       final Map<String, dynamic> accountData =
-          await AccountService.getAccountDashboard(userId);
+          await AccountService.getAccountDashboard();
 
       final List<AccountModel> fetchedAccounts =
           (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
               [];
 
       String? resolvedAccountId;
-      if (selectedAccountName != "All Accounts" &&
-          fetchedAccounts.isNotEmpty) {
+      if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
         try {
           resolvedAccountId = fetchedAccounts
               .firstWhere((a) => a.name == selectedAccountName)
@@ -96,17 +91,17 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         }
       }
 
+      // ✅ No userId — backend reads from JWT
       final historyData = await TransactionService.getHistory(
-        userId,
         accountId: resolvedAccountId,
       );
 
       if (mounted) {
         setState(() {
-          _accounts     = fetchedAccounts;
+          _accounts = fetchedAccounts;
           _transactions = historyData.transactions;
-          _nextCursor   = historyData.nextCursor;
-          _isLoading    = false;
+          _nextCursor = historyData.nextCursor;
+          _isLoading = false;
         });
       }
     } catch (e) {
@@ -126,27 +121,24 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     setState(() => _isFetchingMore = true);
 
     try {
-      final userId = MockAuthService.currentUserId;
-
       String? resolvedAccountId;
       if (selectedAccountName != "All Accounts" && _accounts.isNotEmpty) {
         try {
-          resolvedAccountId = _accounts
-              .firstWhere((a) => a.name == selectedAccountName)
-              .id;
+          resolvedAccountId =
+              _accounts.firstWhere((a) => a.name == selectedAccountName).id;
         } catch (_) {}
       }
 
+      // ✅ No userId — backend reads from JWT
       final historyData = await TransactionService.getHistory(
-        userId,
         accountId: resolvedAccountId,
-        lastId:    _nextCursor,
+        lastId: _nextCursor,
       );
 
       if (mounted) {
         setState(() {
           _transactions.addAll(historyData.transactions);
-          _nextCursor     = historyData.nextCursor;
+          _nextCursor = historyData.nextCursor;
           _isFetchingMore = false;
         });
       }
@@ -171,23 +163,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => FilterScreen(
-          selectedType:        selectedType,
-          selectedCategory:    selectedCategory,
+          selectedType: selectedType,
+          selectedCategory: selectedCategory,
           selectedAccountName: selectedAccountName,
-          startDate:           startDate,
-          endDate:             endDate,
-          availableAccounts:   _accounts,
+          startDate: startDate,
+          endDate: endDate,
+          availableAccounts: _accounts,
         ),
       ),
     );
 
     if (result != null) {
       setState(() {
-        selectedType        = result["type"];
-        selectedCategory    = result["category"];
+        selectedType = result["type"];
+        selectedCategory = result["category"];
         selectedAccountName = result["account"];
-        startDate           = result["startDate"];
-        endDate             = result["endDate"];
+        startDate = result["startDate"];
+        endDate = result["endDate"];
       });
       _fetchData();
     }
@@ -196,7 +188,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   // ── Transaction leading icon ──────────────────────────────────────────────
 
   Widget _getTransactionLeading(TransactionModel tx) {
-    // Goal allocation — money moved into goal
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") {
       return CircleAvatar(
         radius: 22,
@@ -204,18 +195,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.savings, color: Colors.blue, size: 20),
       );
     }
-
-    // Goal deallocation — money returned from goal to available
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") {
       return CircleAvatar(
         radius: 22,
         backgroundColor: Colors.purple.withOpacity(0.1),
-        child: const Icon(Icons.savings_outlined,
-            color: Colors.purple, size: 20),
+        child:
+            const Icon(Icons.savings_outlined, color: Colors.purple, size: 20),
       );
     }
-
-    // Goal completion — goal fully funded
     if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") {
       return CircleAvatar(
         radius: 22,
@@ -223,18 +210,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.task_alt, color: Colors.teal, size: 20),
       );
     }
-
-    // Transfer in — money received from another account
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") {
       return CircleAvatar(
         radius: 22,
         backgroundColor: Colors.green.withOpacity(0.1),
-        child: const Icon(Icons.call_received,
-            color: Colors.green, size: 20),
+        child: const Icon(Icons.call_received, color: Colors.green, size: 20),
       );
     }
-
-    // Transfer out — money sent to another account
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") {
       return CircleAvatar(
         radius: 22,
@@ -242,7 +224,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.call_made, color: Colors.grey, size: 20),
       );
     }
-
     if (tx.type == "INCOME") {
       return CircleAvatar(
         radius: 22,
@@ -250,7 +231,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.trending_up, color: Colors.green, size: 20),
       );
     }
-
     if (tx.type == "REVERSAL") {
       return CircleAvatar(
         radius: 22,
@@ -258,8 +238,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: const Icon(Icons.undo, color: Colors.orange, size: 20),
       );
     }
-
-    // EXPENSE — default
     return CircleAvatar(
       radius: 22,
       backgroundColor: primaryRed.withOpacity(0.1),
@@ -278,31 +256,27 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         () => setState(() => selectedType = "All Type"),
       ));
     }
-
     if (selectedCategory != "All") {
       chips.add(_buildChip(
         selectedCategory,
         () => setState(() => selectedCategory = "All"),
       ));
     }
-
     if (selectedAccountName != "All Accounts") {
       chips.add(_buildChip(selectedAccountName, () {
         setState(() => selectedAccountName = "All Accounts");
         _fetchData();
       }));
     }
-
     if (startDate != null && endDate != null) {
       final dateRange =
           "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
       chips.add(_buildChip(
-        dateRange,
-        () => setState(() {
-          startDate = null;
-          endDate   = null;
-        }),
-      ));
+          dateRange,
+          () => setState(() {
+                startDate = null;
+                endDate = null;
+              })));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -336,20 +310,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   Widget _buildTransactionList() {
     final list = _transactions.where((tx) {
-      // Search
       final mSearch =
           tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
+              tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
 
-      // Category
       final mCategory = selectedCategory == "All" ||
           tx.category.toLowerCase() == selectedCategory.toLowerCase();
 
-      // Account
       final mAccount = selectedAccountName == "All Accounts" ||
           tx.accountName == selectedAccountName;
 
-      // Type
       bool mType;
       switch (selectedType) {
         case "Income":
@@ -370,17 +340,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           mType = true;
       }
 
-      // Date
       bool mDate = true;
       if (startDate != null && endDate != null) {
-        final txDate =
-            DateTime(tx.date.year, tx.date.month, tx.date.day);
+        final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
         final start =
             DateTime(startDate!.year, startDate!.month, startDate!.day);
-        final end =
-            DateTime(endDate!.year, endDate!.month, endDate!.day);
-        mDate =
-            txDate.isAfter(start.subtract(const Duration(days: 1))) &&
+        final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
+        mDate = txDate.isAfter(start.subtract(const Duration(days: 1))) &&
             txDate.isBefore(end.add(const Duration(days: 1)));
       }
 
@@ -392,8 +358,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-          const Icon(Icons.receipt_long_outlined,
-              size: 64, color: Colors.grey),
+          const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
           const Center(
             child: Text(
@@ -409,15 +374,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
     }
 
-    return ListView.separated(
+    return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: list.length + 1, // +1 for bottom loader
-      separatorBuilder: (_, __) =>
-          Divider(color: Colors.grey.shade200, height: 1),
+      itemCount: list.length + 1,
       itemBuilder: (context, i) {
-        // Bottom item — spinner or end message
+        // --- 1. Loading / End State ---
         if (i == list.length) {
           if (_isFetchingMore) {
             return const Padding(
@@ -436,10 +399,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               child: Center(
                 child: Text(
                   "You have reached the end",
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                 ),
               ),
             );
@@ -449,26 +409,49 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
         final tx = list[i];
 
-        final bool isIncome     = tx.type == 'INCOME';
+        // --- 2. Date Header Logic ---
+        bool showHeader = false;
+        if (i == 0) {
+          showHeader = true; // Always show header for the very first item
+        } else {
+          final prevTx = list[i - 1];
+          final currentDay = DateTime(tx.date.year, tx.date.month, tx.date.day);
+          final prevDay =
+              DateTime(prevTx.date.year, prevTx.date.month, prevTx.date.day);
+
+          // Only show header if the day actually changed
+          if (currentDay != prevDay) {
+            showHeader = true;
+          }
+        }
+
+        // --- 3. Style Logic ---
+        final bool isIncome = tx.type == 'INCOME';
         final bool isAllocation = tx.direction == 'GOAL_ALLOCATION';
-        final bool isDealloc    = tx.direction == 'GOAL_DEALLOCATION';
+        final bool isDealloc = tx.direction == 'GOAL_DEALLOCATION';
         final bool isCompletion = tx.direction == 'GOAL_COMPLETION';
         final bool isTransferIn = tx.direction == 'ACCOUNT_TRANSFER_IN';
-        final bool isReversal   = tx.type == 'REVERSAL';
+        final bool isReversal = tx.type == 'REVERSAL';
 
-        final Color moneyColor = isIncome     ? Colors.green
-                               : isAllocation ? goalBlue
-                               : isDealloc    ? Colors.purple
-                               : isCompletion ? Colors.teal
-                               : isTransferIn ? Colors.green
-                               : isReversal   ? Colors.orange
-                               : primaryRed;
+        final Color moneyColor = isIncome
+            ? Colors.green
+            : isAllocation
+                ? goalBlue
+                : isDealloc
+                    ? Colors.purple
+                    : isCompletion
+                        ? Colors.teal
+                        : isTransferIn
+                            ? Colors.green
+                            : isReversal
+                                ? Colors.orange
+                                : primaryRed;
 
-        final bool isCash =
-            tx.accountName.toLowerCase().contains('cash') ||
+        final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
 
-        return Padding(
+        // --- 4. Tile Construction ---
+        final transactionTile = Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
@@ -481,29 +464,34 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     Text(
                       tx.title,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+                          fontWeight: FontWeight.w600, fontSize: 15),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 5),
                     Row(
                       children: [
+                        Icon(
+                          isCash ? Icons.wallet : Icons.account_balance,
+                          size: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
-                          DateFormat('dd MMM yyyy').format(tx.date),
-                          style:
-                              TextStyle(color: textMuted, fontSize: 12),
+                          tx.accountName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         if (tx.subtitle.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Text("•",
-                              style: TextStyle(
-                                  color: Colors.grey.shade400)),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
+                          Text('·',
+                              style: TextStyle(color: Colors.grey.shade400)),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               tx.subtitle,
-                              style: TextStyle(
-                                  color: textMuted, fontSize: 12),
+                              style: TextStyle(color: textMuted, fontSize: 12),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -513,42 +501,62 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "₹${tx.amount.abs().toStringAsFixed(2)}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: moneyColor,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isCash
-                            ? Icons.wallet
-                            : Icons.account_balance,
-                        size: 12,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        tx.accountName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade800,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              const SizedBox(width: 12),
+              Text(
+                "₹${tx.amount.abs().toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: moneyColor,
+                ),
               ),
             ],
           ),
+        );
+
+        // --- 5. Return with Header (if needed) ---
+        if (showHeader) {
+          String headerText;
+          final today = DateTime.now();
+          final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+
+          if (txDate.year == today.year &&
+              txDate.month == today.month &&
+              txDate.day == today.day) {
+            headerText = "Today";
+          } else if (txDate.year == today.year &&
+              txDate.month == today.month &&
+              txDate.day == today.day - 1) {
+            headerText = "Yesterday";
+          } else {
+            headerText = DateFormat('dd MMM, yyyy').format(tx.date);
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+                child: Text(
+                  headerText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+              transactionTile,
+              Divider(color: Colors.grey.shade200, height: 1),
+            ],
+          );
+        }
+
+        return Column(
+          children: [
+            transactionTile,
+            Divider(color: Colors.grey.shade200, height: 1),
+          ],
         );
       },
     );
@@ -572,8 +580,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back_ios_new,
-                            size: 18),
+                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -599,18 +606,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: TextField(
-                            onChanged: (v) =>
-                                setState(() => searchQuery = v),
+                            onChanged: (v) => setState(() => searchQuery = v),
                             decoration: InputDecoration(
                               hintText: "Search transactions...",
-                              hintStyle: TextStyle(
-                                  color: Colors.grey.shade500),
+                              hintStyle: TextStyle(color: Colors.grey.shade500),
                               prefixIcon: Icon(Icons.search,
                                   color: Colors.grey.shade600),
                               border: InputBorder.none,
                               contentPadding:
-                                  const EdgeInsets.symmetric(
-                                      vertical: 12),
+                                  const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ),
@@ -625,8 +629,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             color: Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.tune,
-                              color: Colors.black87),
+                          child: const Icon(Icons.tune, color: Colors.black87),
                         ),
                       ),
                     ],
@@ -638,8 +641,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             Expanded(
               child: _isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(
-                          color: Colors.black87))
+                      child: CircularProgressIndicator(color: Colors.black87))
                   : RefreshIndicator(
                       color: Colors.black87,
                       onRefresh: _fetchData,

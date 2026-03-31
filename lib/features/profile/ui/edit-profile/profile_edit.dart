@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:front_end/features/profile/services/profile_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String currentName;
-  final String currentMobile;
 
   const EditProfileScreen({
     super.key,
     required this.currentName,
-    required this.currentMobile,
   });
 
   @override
@@ -16,28 +15,59 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController nameController;
-  late TextEditingController mobileController;
+
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.currentName);
-    mobileController = TextEditingController(text: widget.currentMobile);
   }
 
   Future<void> saveProfile() async {
-    Navigator.pop(context, {
-      "name": nameController.text,
-      "mobile": mobileController.text,
-    });
+    if (nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a username")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    final name = nameController.text.trim();
+    final success = await ProfileService.updateProfile(name);
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Profile Updated Successfully")),
+      );
+
+      Navigator.pop(context, {"name": name});
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to update profile")),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
     return Scaffold(
       backgroundColor: color.background,
+
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -46,32 +76,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               /// HEADER
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.only(top: 10, bottom: 10),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color.fromARGB(255, 98, 14, 14),
-                      Color.fromARGB(255, 184, 20, 20),
-                    ],
-                  ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: color.primary,
                 ),
                 child: Row(
                   children: [
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_back_ios_new,
-                        color: Colors.white,
+                        color: color.onPrimary,
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       "Edit Profile",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: color.onPrimary,
                       ),
                     ),
                   ],
@@ -80,11 +105,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               /// CARD
               Padding(
-                padding: const EdgeInsets.only(
-                  top: 20,
-                  left: 20,
-                  right: 20,
-                ),
+                padding: const EdgeInsets.all(20),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -98,14 +119,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8),
-                            child: Text(
-                              "User Name",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          Text(
+                            "User Name",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: color.onSurface,
                             ),
                           ),
 
@@ -113,46 +132,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                           TextField(
                             controller: nameController,
+                            style: TextStyle(
+                              color: color.onSurface,
+                            ),
                             decoration: InputDecoration(
+                              hintText: "Enter your name",
+                              hintStyle: TextStyle(
+                                color: color.onSurface.withOpacity(0.6),
+                              ),
+
                               filled: true,
                               fillColor: color.background,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+
+                              /// NORMAL BORDER
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: color.onSurface,
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
 
-                      const SizedBox(height: 20),
-
-                      /// MOBILE NUMBER
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8),
-                            child: Text(
-                              "Mobile Number",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          TextField(
-                            controller: mobileController,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: color.background,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                              /// FOCUS BORDER
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: color.onSurface,
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -166,11 +174,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: saveProfile,
-                          child: const Text(
-                            "Save Changes",
-                            style: TextStyle(fontSize: 16),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: color.primary,
+                            foregroundColor: color.onPrimary,
                           ),
+                          onPressed:
+                              isLoading ? null : saveProfile,
+                          child: isLoading
+                              ? SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child:
+                                      CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: color.onPrimary,
+                                  ),
+                                )
+                              : const Text(
+                                  "Save Changes",
+                                  style:
+                                      TextStyle(fontSize: 16),
+                                ),
                         ),
                       ),
                     ],
