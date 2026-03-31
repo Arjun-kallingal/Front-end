@@ -22,7 +22,6 @@ import 'features/profile/ui/security/otp_verification_screen.dart';
 import 'features/profile/ui/security/reset_password_screen.dart';
 import 'features/profile/ui/profile_screen.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -35,10 +34,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => GoalProvider()),
         ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
-
-    ChangeNotifierProvider(
-      create: (_) => TransferProvider(),
-    ),
+        ChangeNotifierProvider(
+          create: (_) => TransferProvider(),
+        ),
       ],
       child: const WalletCareApp(),
     ),

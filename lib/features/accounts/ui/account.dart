@@ -7,7 +7,6 @@ import '../../../core/providers/account_provider.dart';
 import '../../../core/constants/app_colors.dart';
 
 import 'package:front_end/navigation/navigation_service.dart';
-import 'package:front_end/features/transfer/transfer.dart';
 import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 
 class AccountsOverviewScreen extends StatefulWidget {
@@ -181,18 +180,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
         backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TransferScreen(),
-            ),
-          );
-        },
-        backgroundColor: AppColors.savingsPrimary,              // blueAccent → savingsPrimary
-        child: const Icon(Icons.swap_horiz, color: AppColors.textPrimary),
-      ),
+      
       body: provider.isLoading
           ? Center(
               child: CircularProgressIndicator(color: colorScheme.primary))

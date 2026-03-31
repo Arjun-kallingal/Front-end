@@ -5,6 +5,7 @@ import '../../../core/providers/account_provider.dart';
 import '../provider/analytics_provider.dart';
 import '../data/analytics_model.dart';
 
+
 class AnalyticsDashboardScreen extends StatefulWidget {
   const AnalyticsDashboardScreen({super.key});
 

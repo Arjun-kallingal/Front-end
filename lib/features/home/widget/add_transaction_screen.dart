@@ -6,6 +6,7 @@ import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/account_provider.dart';
+import 'package:front_end/core/providers/transaction_provider.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final bool initialIsExpense;
@@ -140,48 +141,58 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (_selectedAccountId == null ||
-        amount.isEmpty ||
-        double.tryParse(amount) == null ||
-        double.parse(amount) <= 0 ||
-        _selectedCategory == null) {
-      _showSnackBar("Please fill all required fields properly", isError: true);
-      return;
-    }
+  if (_selectedAccountId == null ||
+      amount.isEmpty ||
+      double.tryParse(amount) == null ||
+      double.parse(amount) <= 0 ||
+      _selectedCategory == null) {
+    _showSnackBar("Please fill all required fields properly", isError: true);
+    return;
+  }
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final result = await TransactionService.processTransaction(
-        accountId: _selectedAccountId!,
-        amount: amount,
-        type: _isExpense ? "EXPENSE" : "INCOME",
-        direction: "STANDARD",
-        category: _selectedCategory!,
-        description: descriptionController.text,
-        idempotencyKey: DateTime.now().millisecondsSinceEpoch.toString(),
-        transactedAt: selectedDate.toIso8601String(),
+  try {
+    final result = await TransactionService.processTransaction(
+      accountId: _selectedAccountId!,
+      amount: amount,
+      type: _isExpense ? "EXPENSE" : "INCOME",
+      direction: "STANDARD",
+      category: _selectedCategory!,
+      description: descriptionController.text,
+      idempotencyKey: DateTime.now().millisecondsSinceEpoch.toString(),
+      transactedAt: selectedDate.toIso8601String(),
+    );
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+
+      /// 🔹 Refresh Account Balance
+      await context.read<AccountProvider>().loadAccounts();
+
+      /// 🔹 Refresh Recent Activity + History + Analytics
+      await context.read<TransactionProvider>().fetchTransactions();
+
+      _showSnackBar(
+        "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
+        isError: false,
       );
 
-      if (!mounted) return;
+      /// 🔹 Return to previous screen
+      Navigator.pop(context, true);
 
-      if (result['success'] == true) {
-        context.read<AccountProvider>().loadAccounts();
-        _showSnackBar(
-          "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
-          isError: false,
-        );
-        setState(() => amount = "");
-        Navigator.pop(context, true);
-      } else {
-        _showSnackBar(result['error'] ?? "Failed to save");
-      }
-    } catch (e) {
-      if (mounted) _showSnackBar("Transaction failed: $e");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } else {
+      _showSnackBar(result['error'] ?? "Failed to save");
     }
+  } catch (e) {
+    if (mounted) {
+      _showSnackBar("Transaction failed: $e");
+    }
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   void _showSnackBar(String message, {bool isError = true}) {
     final theme = Theme.of(context);

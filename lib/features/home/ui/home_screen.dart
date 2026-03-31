@@ -33,23 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final refresh = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddTransactionScreen(),
-            ),
-          );
-          if (refresh == true && mounted) {
-            await context.read<TransactionProvider>().fetchTransactions();
-          }
-        },
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        elevation: 6,
-        child: const Icon(Icons.add, size: 28),
-      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -77,14 +60,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 Widget _buildActionButtons(BuildContext context) {
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
     child: Row(
       children: [
 
-        /// ADD INCOME
+        /// INCOME
         Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
+          child: _actionButton(
+            icon: Icons.trending_up,
+            label: "Add Income",
+            color: Colors.green,
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -94,17 +80,18 @@ Widget _buildActionButtons(BuildContext context) {
                 ),
               );
             },
-            icon: const Icon(Icons.add),
-            label: const Text("Income"),
           ),
         ),
 
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
 
-        /// ADD EXPENSE
+        /// EXPENSE
         Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
+          child: _actionButton(
+            icon: Icons.trending_down,
+            label: "Add Expense",
+            color: Colors.red,
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -114,17 +101,18 @@ Widget _buildActionButtons(BuildContext context) {
                 ),
               );
             },
-            icon: const Icon(Icons.remove),
-            label: const Text("Expense"),
           ),
         ),
 
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
 
-        /// ADD TRANSFER
+        /// TRANSFER
         Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
+          child: _actionButton(
+            icon: Icons.swap_horiz,
+            label: "Add Transfer",
+            color: Colors.blue,
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -132,15 +120,12 @@ Widget _buildActionButtons(BuildContext context) {
                 ),
               );
             },
-            icon: const Icon(Icons.swap_horiz),
-            label: const Text("Transfer"),
           ),
         ),
       ],
     ),
   );
-}
-  // ── HEADER ────────────────────────────────────────────────────────────────
+}  // ── HEADER ────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
@@ -464,4 +449,51 @@ Widget _buildActionButtons(BuildContext context) {
       child: child,
     );
   }
+  Widget _actionButton({
+  required IconData icon,
+  required String label,
+  required Color color,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 }
