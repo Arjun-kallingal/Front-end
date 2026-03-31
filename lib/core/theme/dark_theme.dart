@@ -6,15 +6,16 @@ class DarkTheme {
     return ThemeData(
       brightness: Brightness.dark,
       fontFamily: 'Inter',
-
       scaffoldBackgroundColor: AppColors.bgPrimary,
-colorScheme: const ColorScheme.dark(
-  primary: Colors.white,   // 🔥 FIXED
-  secondary: AppColors.accentOrange,
-  background: AppColors.bgPrimary,
-  surface: AppColors.bgSecondary,
-  error: Colors.white,     // 🔥 NO RED
-),
+      
+      colorScheme: const ColorScheme.dark(
+        primary: Colors.white, 
+        secondary: AppColors.accentOrange,
+        // Note: 'background' is deprecated in Flutter 3.22+. Use 'surface' instead.
+        // background: AppColors.bgPrimary, 
+        surface: AppColors.bgSecondary,
+        error: Colors.white, // Completely removes default red for errors
+      ),
 
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.bgPrimary,
@@ -25,11 +26,8 @@ colorScheme: const ColorScheme.dark(
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.bgSecondary,
-
         hintStyle: const TextStyle(color: AppColors.textHint),
-
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
 
         /// NORMAL BORDER
         border: OutlineInputBorder(
@@ -60,7 +58,7 @@ colorScheme: const ColorScheme.dark(
           borderSide: const BorderSide(color: Colors.white, width: 1.5),
         ),
 
-        /// OPTIONAL: remove red error text style
+        /// Error text style
         errorStyle: const TextStyle(color: Colors.white),
       ),
 
@@ -71,17 +69,18 @@ colorScheme: const ColorScheme.dark(
         selectionHandleColor: Colors.white,
       ),
 
-     elevatedButtonTheme: ElevatedButtonThemeData(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.white,   // ✅ FIX
-    foregroundColor: Colors.black,
-    minimumSize: const Size.fromHeight(52),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    elevation: 0,
-  ),
-),
+      /// ✅ ELEVATED BUTTON
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white, 
+          foregroundColor: Colors.black,
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+      ),
 
       dividerColor: AppColors.divider,
     );

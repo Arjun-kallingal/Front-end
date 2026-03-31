@@ -6,16 +6,17 @@ class LightTheme {
     return ThemeData(
       brightness: Brightness.light,
       fontFamily: 'Inter',
-
       scaffoldBackgroundColor: Colors.white,
 
       colorScheme: const ColorScheme.light(
-        primary: Colors.black, // 🔥 FIXED
+        primary: Colors.black, 
         secondary: AppColors.accentOrange,
-        background: Colors.white,
+        // Note: 'background' is deprecated in Flutter 3.22+. Use 'surface' instead.
+        // background: Colors.white,
         surface: Colors.white,
         error: Colors.black, // 🔥 NO RED
       ),
+      
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -26,11 +27,8 @@ class LightTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFFF3F3F3),
-
         hintStyle: const TextStyle(color: Colors.grey),
-
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
 
         /// NORMAL BORDER
         border: OutlineInputBorder(
@@ -72,10 +70,10 @@ class LightTheme {
         selectionHandleColor: Colors.black,
       ),
 
-      
+      /// ✅ ELEVATED BUTTON
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black, // ✅ FIX
+          backgroundColor: Colors.black, 
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
