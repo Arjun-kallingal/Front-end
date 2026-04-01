@@ -7,6 +7,7 @@ import 'package:front_end/core/services/transaction_service.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/account_provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
+import 'package:front_end/features/analytics/provider/analytics_provider.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final bool initialIsExpense;
@@ -172,8 +173,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       await context.read<AccountProvider>().loadAccounts();
 
       /// 🔹 Refresh Recent Activity + History + Analytics
-      await context.read<TransactionProvider>().fetchTransactions();
+await context.read<TransactionProvider>().fetchTransactions();
 
+/// 🔹 Refresh Analytics Dashboard
+await context.read<AnalyticsProvider>().reload();
       _showSnackBar(
         "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
         isError: false,

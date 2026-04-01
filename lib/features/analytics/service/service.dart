@@ -6,19 +6,41 @@ import '../data/analytics_model.dart';
 
 class AnalyticsService {
   /// Fetches the dashboard data using dynamic query parameters
-  /// timeframe: 'Day', 'Week', 'Month', 'Year'
+  /// timeframe: 'Day', 'Week', 'Month', 'Year', 'Custom'
   /// accountId: 'all' or a specific MongoDB ObjectId
+  /// month & year: Specific strings for custom month filtering
   static Future<AnalyticsModel> getDashboardData({
     String accountId = "all", 
-    String timeframe = "Month"
+    String timeframe = "Month",
+    String? month, // 🔥 Added month parameter
+    String? year,  // 🔥 Added year parameter
   }) async {
     try {
       final headers = await ApiClient.getHeaders();
       
-      // Build the URL with the new query parameters
-      final url = Uri.parse(
-        "${ApiConfig.baseUrl}/api/analytics/dashboard?timeframe=$timeframe&accountId=$accountId"
-      );
+      // 1. Build the query parameters map dynamically
+      final Map<String, dynamic> queryParams = {};
+      
+      if (accountId != "all") {
+        queryParams['accountId'] = accountId;
+      }
+      
+      // Only send timeframe if it's not the "Custom" flag we use in the provider
+      if (timeframe != 'Custom') {
+        queryParams['timeframe'] = timeframe;
+      }
+      
+      // Attach month and year if they were provided
+      if (month != null) {
+        queryParams['month'] = month;
+      }
+      if (year != null) {
+        queryParams['year'] = year;
+      }
+
+      // 2. Build the URL safely using Uri.replace
+      final baseUrl = Uri.parse("${ApiConfig.baseUrl}/api/analytics/dashboard");
+      final url = baseUrl.replace(queryParameters: queryParams);
 
       final response = await http.get(url, headers: headers);
 

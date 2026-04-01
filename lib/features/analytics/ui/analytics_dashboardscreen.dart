@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import '../../../core/constants/app_colors.dart'; // Make sure this path is correct!
+// ⚠️ Ensure these imports match your actual project structure
+import '../../../core/constants/app_colors.dart'; 
 import '../../../core/providers/account_provider.dart';
 import '../provider/analytics_provider.dart';
 import '../data/analytics_model.dart';
+import 'package:front_end/navigation/navigation_service.dart';
 
 class AnalyticsDashboardScreen extends StatefulWidget {
   const AnalyticsDashboardScreen({super.key});
@@ -30,43 +33,53 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     final anaP = context.watch<AnalyticsProvider>();
     final accP = context.watch<AccountProvider>();
 
-    // 🔥 Dynamic Theme Setup
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600]!;
+    
+    // 🔥 PREMIUM TEXT COLORS
+    final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A); 
+    final textSecondary = isDark ? Colors.white70 : const Color(0xFF64748B); 
+
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    ));
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: _buildAppBar(anaP, accP, theme, colorScheme, textSec, isDark),
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF8FAFC),
+      appBar: _buildAppBar(anaP, accP, theme, colorScheme, textPrimary, textSecondary, isDark),
       body: anaP.isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.incomeAmount))
+          ? Center(child: CircularProgressIndicator(color: isDark ? Colors.white : const Color(0xFF0F172A)))
           : anaP.error != null
-              ? _buildError(anaP, textSec)
+              ? _buildError(anaP, textSecondary)
               : RefreshIndicator(
-                  color: AppColors.incomeAmount,
-                  backgroundColor: colorScheme.surface,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  backgroundColor: isDark ? const Color(0xFF1E1E2C) : Colors.white,
                   onRefresh: () => anaP.fetchDashboard(),
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     children: [
-                      _buildTimeFilter(anaP, theme, colorScheme, textSec),
-                      const SizedBox(height: 16),
+                      // 🔥 RESTORED & UPGRADED: Day/Week/Month/Year + Master Date Selector
+                      _buildTimeFilter(anaP, isDark, textPrimary, textSecondary, context),
+                      const SizedBox(height: 20),
+                      
                       if (anaP.data != null) ...[
-                        _buildSummaryCards(anaP.data!, colorScheme, textSec, isDark),
+                        _buildSummaryCards(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
                         const SizedBox(height: 16),
-                        _buildIncomeExpenseCard(anaP.data!, colorScheme, textSec, theme, isDark),
+                        _buildIncomeExpenseCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
                         const SizedBox(height: 16),
-                        _buildSpendGaugeCard(anaP.data!, colorScheme, textSec, theme, isDark),
+                        _buildSpendGaugeCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
                         const SizedBox(height: 16),
-                        _buildSpendingInsightsCard(anaP.data!, colorScheme, textSec, isDark),
+                        _buildSpendingInsightsCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
                       ] else
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.only(top: 60),
                             child: Text(
                               "No data available.",
-                              style: TextStyle(color: textSec),
+                              style: TextStyle(color: textSecondary, fontSize: 15),
                             ),
                           ),
                         ),
@@ -77,50 +90,66 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   }
 
   // ─── APPBAR ────────────────────────────────────────────────────────────────
-
   PreferredSizeWidget _buildAppBar(AnalyticsProvider anaP, AccountProvider accP,
-      ThemeData theme, ColorScheme colorScheme, Color textSec, bool isDark) {
+      ThemeData theme, ColorScheme colorScheme, Color textPrimary, Color textSecondary, bool isDark) {
     final accounts = [...accP.cashAccounts, ...accP.bankAccounts];
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+    final surfaceAlt = isDark ? const Color(0xFF1E1E2C) : Colors.white;
 
     return AppBar(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: true,
-      shape: Border(bottom: BorderSide(color: theme.dividerColor)),
-      iconTheme: IconThemeData(color: colorScheme.primary),
+      centerTitle: false,
+      titleSpacing: 0, 
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_rounded, color: textPrimary, size: 20),
+        onPressed: () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            NavigationService.bottomIndex.value = 0;
+          }
+        },
+      ),
       title: Text(
-        "Analytics & Reports",
+        "Analytics",
         style: TextStyle(
-          color: colorScheme.primary,
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
+          color: textPrimary,
+          fontWeight: FontWeight.w900,
+          fontSize: 20, 
+          letterSpacing: -0.5,
         ),
       ),
       actions: [
         Container(
-          margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          margin: const EdgeInsets.only(right: 20, top: 8, bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             color: surfaceAlt,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: isDark ? Colors.white10 : Colors.transparent), 
+            boxShadow: [
+              if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))
+            ]
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: anaP.currentAccountId,
-              dropdownColor: colorScheme.surface,
-              iconEnabledColor: textSec,
-              onChanged: (val) => anaP.changeAccount(val!),
-              style: TextStyle(fontSize: 12, color: colorScheme.primary),
+              dropdownColor: surfaceAlt,
+              icon: Icon(Icons.keyboard_arrow_down_rounded, color: textSecondary, size: 20),
+              onChanged: (val) {
+                HapticFeedback.selectionClick();
+                anaP.changeAccount(val!);
+              },
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textPrimary),
               items: [
                 const DropdownMenuItem(
                   value: "all",
-                  child: Text("All Assets", style: TextStyle(fontSize: 12)),
+                  child: Text("All Assets"),
                 ),
                 ...accounts.map(
                   (a) => DropdownMenuItem(
                     value: a.id,
-                    child: Text(a.name, style: const TextStyle(fontSize: 12)),
+                    child: Text(a.name),
                   ),
                 ),
               ],
@@ -131,88 +160,129 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  // ─── TIME FILTER ───────────────────────────────────────────────────────────
-
-  Widget _buildTimeFilter(AnalyticsProvider anaP, ThemeData theme,
-      ColorScheme colorScheme, Color textSec) {
+  // ─── 🔥 UPGRADED TIME FILTER (WITH INTEGRATED CALENDAR) ───────────────────
+  Widget _buildTimeFilter(AnalyticsProvider anaP, bool isDark, Color textPrimary, Color textSecondary, BuildContext context) {
     const options = ["Day", "Week", "Month", "Year"];
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+    final bgColor = isDark ? const Color(0xFF1E1E2C) : Colors.white;
+    
+    final Color gradStart = isDark ? const Color(0xFF2A2D3E) : const Color(0xFF1E293B);
+    final Color gradEnd = isDark ? const Color(0xFF1A1D27) : const Color(0xFF0F172A);
+
+    final bool isCustomActive = anaP.currentTimeframe == 'Custom';
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: surfaceAlt,
-        borderRadius: BorderRadius.circular(999),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
+        boxShadow: [
+          if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 6))
+        ]
       ),
       child: Row(
-        children: options.map((opt) {
-          final isActive = anaP.currentTimeframe == opt;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => anaP.changeTimeframe(opt),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: isActive ? AppColors.incomeAmount : Colors.transparent,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: isActive
-                      ? [
-                          BoxShadow(
-                            color: AppColors.incomeAmount.withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          )
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Text(
-                    opt,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isActive ? Colors.white : textSec,
+        children: [
+          // 1. The Standard Text Options
+          ...options.map((opt) {
+            final isActive = anaP.currentTimeframe == opt;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  anaP.changeTimeframe(opt);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: isActive 
+                        ? LinearGradient(colors: [gradStart, gradEnd], begin: Alignment.topLeft, end: Alignment.bottomRight) 
+                        : null,
+                    color: isActive ? null : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: isActive && !isDark
+                        ? [BoxShadow(color: gradEnd.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      opt,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                        color: isActive ? Colors.white : textSecondary,
+                      ),
                     ),
                   ),
                 ),
               ),
+            );
+          }),
+          
+          // Tiny Divider
+          Container(
+            width: 1,
+            height: 24,
+            color: isDark ? Colors.white10 : Colors.grey.shade300,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+
+          // 2. The Integrated Master Date Selector (Calendar Icon)
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showMonthPicker(context, anaP, isDark, textPrimary, textSecondary);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+              decoration: BoxDecoration(
+                gradient: isCustomActive 
+                    ? LinearGradient(colors: [gradStart, gradEnd], begin: Alignment.topLeft, end: Alignment.bottomRight) 
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: isCustomActive && !isDark
+                    ? [BoxShadow(color: gradEnd.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))]
+                    : null,
+              ),
+              child: Icon(
+                Icons.calendar_month_rounded,
+                size: 20,
+                color: isCustomActive ? Colors.white : textSecondary,
+              ),
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }
 
   // ─── SUMMARY CARDS ─────────────────────────────────────────────────────────
-
   Widget _buildSummaryCards(AnalyticsModel data, ColorScheme colorScheme,
-      Color textSec, bool isDark) {
+      Color textPrimary, Color textSecondary, bool isDark) {
     return Row(
       children: [
         Expanded(
           child: _summaryCard(
-            title: "Monthly Income",
+            title: "${context.watch<AnalyticsProvider>().timeframeLabel} Income", 
             amount: data.income,
             icon: Icons.trending_up_rounded,
-            color: AppColors.incomeAmount,
-            bgColor: AppColors.incomeAmount.withOpacity(0.15),
-            colorScheme: colorScheme,
-            textSec: textSec,
+            accentColor: const Color(0xFF10B981), 
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
             isDark: isDark,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: _summaryCard(
-            title: "Monthly Expense",
+            title: "${context.watch<AnalyticsProvider>().timeframeLabel} Expense", 
             amount: data.expense,
             icon: Icons.trending_down_rounded,
-            color: AppColors.expenseAmount,
-            bgColor: AppColors.expenseAmount.withOpacity(0.15),
-            colorScheme: colorScheme,
-            textSec: textSec,
+            accentColor: const Color(0xFFEF4444), 
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
             isDark: isDark,
           ),
         ),
@@ -224,95 +294,90 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     required String title,
     required double amount,
     required IconData icon,
-    required Color color,
-    required Color bgColor,
-    required ColorScheme colorScheme,
-    required Color textSec,
+    required Color accentColor,
+    required Color textPrimary,
+    required Color textSecondary,
     required bool isDark,
   }) {
     return _baseCard(
-      colorScheme: colorScheme,
       isDark: isDark,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 12, color: textSec)),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  "₹${_fmt(amount)}",
-                  style: TextStyle(
-                    fontSize: 18, // Slightly reduced to prevent overflow
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-                child: Icon(icon, size: 16, color: color),
-              ),
-            ],
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isDark ? accentColor.withOpacity(0.15) : accentColor.withOpacity(0.1), 
+              borderRadius: BorderRadius.circular(12)
+            ),
+            child: Icon(icon, size: 24, color: accentColor),
+          ),
+          const SizedBox(height: 16),
+          Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)),
+          const SizedBox(height: 4),
+          Text(
+            "₹${_fmt(amount)}",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: textPrimary,
+              letterSpacing: -0.5,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  // ─── INCOME VS EXPENSE DONUT ───────────────────────────────────────────────
-
-  Widget _buildIncomeExpenseCard(AnalyticsModel data, ColorScheme colorScheme,
-      Color textSec, ThemeData theme, bool isDark) {
-    int? touchedIndex;
-
+  // ─── INCOME VS EXPENSE CHART ───────────────────────────────────────────────
+  Widget _buildIncomeExpenseCard(AnalyticsModel data, ColorScheme colorScheme, Color textPrimary, Color textSecondary, bool isDark) {
+    int touchedIndex = -1;
     final bool hasIncome = data.income > 0;
     final bool hasExpense = data.expense > 0;
 
-    final List<PieChartSectionData> sections = [];
-    if (!hasIncome && !hasExpense) {
-      sections.add(PieChartSectionData(
-          value: 1, color: theme.dividerColor, radius: 30, showTitle: false));
-    } else {
-      if (hasIncome) {
-        sections.add(PieChartSectionData(
-            value: data.income,
-            color: AppColors.incomeAmount,
-            radius: 30,
-            showTitle: false));
-      }
-      if (hasExpense) {
-        sections.add(PieChartSectionData(
-            value: data.expense,
-            color: AppColors.expenseAmount,
-            radius: 30,
-            showTitle: false));
-      }
-    }
+    final colorGreen = const Color(0xFF10B981);
+    final colorRed = const Color(0xFFEF4444);
+    final colorEmpty = isDark ? Colors.white10 : Colors.grey.shade200;
 
     return StatefulBuilder(
       builder: (context, setState) {
+        List<PieChartSectionData> showingSections() {
+          if (!hasIncome && !hasExpense) {
+            return [
+              PieChartSectionData(value: 1, color: colorEmpty, radius: 25, showTitle: false),
+            ];
+          }
+
+          final List<PieChartSectionData> list = [];
+          int index = 0;
+
+          if (hasIncome) {
+            final isTouched = index == touchedIndex;
+            list.add(PieChartSectionData(value: data.income, color: colorGreen, radius: isTouched ? 35 : 25, showTitle: false));
+            index++;
+          }
+
+          if (hasExpense) {
+            final isTouched = index == touchedIndex;
+            list.add(PieChartSectionData(value: data.expense, color: colorRed, radius: isTouched ? 35 : 25, showTitle: false));
+          }
+          return list;
+        }
+
         return _baseCard(
-          colorScheme: colorScheme,
           isDark: isDark,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 "Income Vs Expense",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               SizedBox(
                 height: 220,
                 child: Stack(
@@ -320,14 +385,17 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                   children: [
                     PieChart(
                       PieChartData(
-                        centerSpaceRadius: 60,
-                        sectionsSpace: 2,
-                        sections: sections,
+                        centerSpaceRadius: 75,
+                        sectionsSpace: 4,
+                        sections: showingSections(),
                         pieTouchData: PieTouchData(
                           touchCallback: (event, response) {
                             setState(() {
-                              touchedIndex = response
-                                  ?.touchedSection?.touchedSectionIndex;
+                              if (!event.isInterestedForInteractions || response == null || response.touchedSection == null) {
+                                touchedIndex = -1;
+                                return;
+                              }
+                              touchedIndex = response.touchedSection!.touchedSectionIndex;
                             });
                           },
                         ),
@@ -337,53 +405,41 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          touchedIndex == 0
-                              ? "₹${_fmt(data.income)}"
-                              : touchedIndex == 1
-                                  ? "₹${_fmt(data.expense)}"
-                                  : data.netSavingsFormatted,
+                          touchedIndex == 0 ? "₹${_fmt(data.income)}" : touchedIndex == 1 ? "₹${_fmt(data.expense)}" : data.netSavingsFormatted,
                           style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: touchedIndex == 1
-                                ? AppColors.expenseAmount
-                                : touchedIndex == 0
-                                    ? AppColors.incomeAmount
-                                    : (data.isDeficit
-                                        ? AppColors.expenseAmount
-                                        : colorScheme.primary),
+                            fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5,
+                            color: touchedIndex == 1 ? colorRed : touchedIndex == 0 ? colorGreen : (data.isDeficit ? colorRed : textPrimary),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          touchedIndex == 0
-                              ? "Income"
-                              : touchedIndex == 1
-                                  ? "Expense"
-                                  : "Net Savings",
-                          style: TextStyle(fontSize: 12, color: textSec),
+                          touchedIndex == 0 ? "Income" : touchedIndex == 1 ? "Expense" : "Net Savings",
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Center(
-                child: Column(
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: isDark ? colorScheme.surfaceTint.withOpacity(0.05) : const Color(0xFFF8FAFC), 
+                  borderRadius: BorderRadius.circular(16)
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Text("Savings Rate",
-                        style: TextStyle(fontSize: 12, color: textSec)),
-                    const SizedBox(height: 4),
-                    Text(
-                      data.savingsRateFormatted,
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: data.isDeficit
-                            ? AppColors.expenseAmount
-                            : AppColors.incomeAmount,
-                      ),
+                    Column(
+                      children: [
+                        Text("Savings Rate", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)),
+                        const SizedBox(height: 4),
+                        Text(
+                          data.savingsRateFormatted,
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: data.isDeficit ? colorRed : colorGreen),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -395,79 +451,54 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  // ─── SPEND GAUGE ───────────────────────────────────────────────────────────
-
+  // ─── SPEND GAUGE (HALF PIE CHART) ───────────────────────────────────────────
   Widget _buildSpendGaugeCard(AnalyticsModel data, ColorScheme colorScheme,
-      Color textSec, ThemeData theme, bool isDark) {
+      Color textPrimary, Color textSecondary, bool isDark) {
     final double pct = data.spendPercentageClamped;
     final Color gaugeColor = _getGaugeColor(pct);
 
     return _baseCard(
-      colorScheme: colorScheme,
       isDark: isDark,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Spending Percentage",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
+            "Spending Health",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           SizedBox(
-            height: 110,
+            height: 140, 
             child: OverflowBox(
-              maxHeight: 220,
+              maxHeight: 200,
               alignment: Alignment.topCenter,
               child: SizedBox(
-                height: 220,
+                height: 200,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     PieChart(
                       PieChartData(
                         startDegreeOffset: 180,
-                        centerSpaceRadius: 65,
+                        centerSpaceRadius: 60, 
                         sectionsSpace: 0,
                         sections: [
-                          PieChartSectionData(
-                            value: pct,
-                            color: gaugeColor,
-                            radius: 24,
-                            showTitle: false,
-                          ),
-                          PieChartSectionData(
-                            value: 100 - pct,
-                            color: theme.dividerColor,
-                            radius: 24,
-                            showTitle: false,
-                          ),
-                          PieChartSectionData(
-                            value: 100,
-                            color: Colors.transparent,
-                            radius: 24,
-                            showTitle: false,
-                          ),
+                          PieChartSectionData(value: pct, color: gaugeColor, radius: 22, showTitle: false),
+                          PieChartSectionData(value: 100 - pct, color: isDark ? Colors.white10 : Colors.grey.shade200, radius: 22, showTitle: false),
+                          PieChartSectionData(value: 100, color: Colors.transparent, radius: 22, showTitle: false),
                         ],
                       ),
                     ),
                     Positioned(
-                      top: 90,
+                      top: 75, 
                       child: Column(
                         children: [
                           Text(
                             "${pct.toStringAsFixed(1)}%",
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary,
-                            ),
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -1.0),
                           ),
-                          Text("of income",
-                              style: TextStyle(fontSize: 12, color: textSec)),
+                          const SizedBox(height: 2), 
+                          Text("of income spent", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)),
                         ],
                       ),
                     ),
@@ -476,22 +507,19 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: gaugeColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(999),
+              color: gaugeColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
-              "Your spend is: ${data.healthStatus}",
+              "Status: ${data.healthStatus}",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: gaugeColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: gaugeColor, fontWeight: FontWeight.w700, fontSize: 14),
             ),
           ),
         ],
@@ -500,120 +528,129 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   }
 
   // ─── SPENDING INSIGHTS ─────────────────────────────────────────────────────
-
   Widget _buildSpendingInsightsCard(AnalyticsModel data, ColorScheme colorScheme,
-      Color textSec, bool isDark) {
+      Color textPrimary, Color textSecondary, bool isDark) {
     final totalSpend = data.categories.fold(0.0, (sum, c) => sum + c.amount);
 
     if (data.categories.isEmpty) {
       return _baseCard(
-        colorScheme: colorScheme,
         isDark: isDark,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text("No spending data for this period.",
-                style: TextStyle(color: textSec)),
+            child: Text("No spending data for this period.", style: TextStyle(color: textSecondary, fontWeight: FontWeight.w500)),
           ),
         ),
       );
     }
 
-    return _baseCard(
-      colorScheme: colorScheme,
-      isDark: isDark,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 220,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                PieChart(
-                  PieChartData(
-                    centerSpaceRadius: 60,
-                    sectionsSpace: 2,
-                    sections: data.categories
-                        .map((c) => PieChartSectionData(
-                              value: c.amount,
-                              color: c.color,
-                              radius: 30,
-                              showTitle: false,
-                            ))
-                        .toList(),
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+    int? touchedIndex;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        List<PieChartSectionData> showingSections() {
+          return data.categories.asMap().entries.map((entry) {
+            final index = entry.key;
+            final cat = entry.value;
+            final isTouched = index == touchedIndex;
+            return PieChartSectionData(value: cat.amount, color: cat.color, radius: isTouched ? 35 : 25, showTitle: false);
+          }).toList();
+        }
+
+        final bool isTouched = touchedIndex != null && touchedIndex! >= 0 && touchedIndex! < data.categories.length;
+        final selected = isTouched ? data.categories[touchedIndex!] : null;
+        
+        return _baseCard(
+          isDark: isDark,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Top Categories",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 220,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      "₹${_fmt(totalSpend)}",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
+                    PieChart(
+                      PieChartData(
+                        centerSpaceRadius: 75,
+                        sectionsSpace: 3,
+                        sections: showingSections(),
+                        pieTouchData: PieTouchData(
+                          touchCallback: (event, response) {
+                            setState(() {
+                              if (!event.isInterestedForInteractions || response == null || response.touchedSection == null) {
+                                touchedIndex = -1;
+                                return;
+                              }
+                              touchedIndex = response.touchedSection!.touchedSectionIndex;
+                            });
+                          },
+                        ),
                       ),
                     ),
-                    Text("Total Spending",
-                        style: TextStyle(fontSize: 12, color: textSec)),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isTouched ? "₹${_fmt(selected!.amount)}" : "₹${_fmt(totalSpend)}",
+                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -0.5),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isTouched ? selected!.name : "Total Spending",
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+              ...data.categories.asMap().entries.map((entry) {
+                return _categoryRow(entry.value, entry.key, touchedIndex, textPrimary, textSecondary, (i) => setState(() => touchedIndex = i));
+              }),
+            ],
           ),
-          const SizedBox(height: 8),
-          ...data.categories.map((cat) => _categoryRow(cat, colorScheme, textSec)),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _categoryRow(CategoryData cat, ColorScheme colorScheme, Color textSec) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: cat.color, shape: BoxShape.circle),
+  Widget _categoryRow(CategoryData cat, int index, int? touchedIndex, Color textPrimary, Color textSecondary, Function(int?) onHover) {
+    final isActive = touchedIndex == index;
+    return MouseRegion(
+      onEnter: (_) => onHover(index),
+      onExit: (_) => onHover(-1),
+      child: GestureDetector(
+        onTap: () => onHover(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? cat.color.withOpacity(0.08) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              cat.name,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.primary,
-              ),
-            ),
+          child: Row(
+            children: [
+              Container(width: 14, height: 14, decoration: BoxDecoration(color: cat.color, shape: BoxShape.circle)),
+              const SizedBox(width: 14),
+              Expanded(child: Text(cat.name, style: TextStyle(fontSize: 15, fontWeight: isActive ? FontWeight.w800 : FontWeight.w600, color: textPrimary))),
+              Text("₹${_fmt(cat.amount)}", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: isActive ? cat.color : textPrimary)),
+              const SizedBox(width: 12),
+              SizedBox(width: 44, child: Text("${cat.percentage}%", textAlign: TextAlign.right, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary))),
+            ],
           ),
-          Text(
-            "₹${_fmt(cat.amount)}",
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 42,
-            child: Text(
-              "${cat.percentage}%",
-              textAlign: TextAlign.right,
-              style: TextStyle(fontSize: 11, color: textSec),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   // ─── ERROR STATE ───────────────────────────────────────────────────────────
-
   Widget _buildError(AnalyticsProvider anaP, Color textSec) {
     return Center(
       child: Padding(
@@ -621,18 +658,14 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: AppColors.expenseAmount, size: 48),
-            const SizedBox(height: 12),
-            Text(
-              anaP.error ?? "Something went wrong.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: textSec),
-            ),
-            const SizedBox(height: 20),
+            const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 48),
+            const SizedBox(height: 16),
+            Text(anaP.error ?? "Something went wrong.", textAlign: TextAlign.center, style: TextStyle(color: textSec, fontSize: 15)),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: anaP.retry,
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.incomeAmount),
-              child: const Text("Retry", style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+              child: const Text("Retry", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -640,41 +673,85 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  // ─── SHARED BASE CARD ──────────────────────────────────────────────────────
+  // ─── CUSTOM MONTH PICKER BOTTOM SHEET ──────────────────────────────────────
+  void _showMonthPicker(BuildContext context, AnalyticsProvider anaP, bool isDark, Color textPrimary, Color textSecondary) {
+    int selectedYear = DateTime.now().year;
+    final List<String> months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  Widget _baseCard({
-    required Widget child,
-    required ColorScheme colorScheme,
-    required bool isDark,
-    EdgeInsets? padding,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: padding ?? const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: isDark ? Border.all(color: colorScheme.surfaceTint.withOpacity(0.05)) : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: child,
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(icon: Icon(Icons.chevron_left_rounded, color: textPrimary), onPressed: () => setModalState(() => selectedYear--)),
+                      Text(selectedYear.toString(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: textPrimary)),
+                      IconButton(icon: Icon(Icons.chevron_right_rounded, color: textPrimary), onPressed: () => setModalState(() => selectedYear++)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 2),
+                    itemCount: 12,
+                    itemBuilder: (context, index) {
+                      return InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                          anaP.fetchDashboardByMonth(index + 1, selectedYear); 
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(color: isDark ? Colors.white10 : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
+                          alignment: Alignment.center,
+                          child: Text(months[index], style: TextStyle(fontWeight: FontWeight.w700, color: textPrimary)),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  // ─── HELPERS ────────────────────────────────────────────────────────────────
-
-  Color _getGaugeColor(double pct) {
-    if (pct <= 40) return AppColors.incomeAmount; 
-    if (pct <= 70) return AppColors.warning;      
-    return AppColors.expenseAmount;               
+  // ─── SHARED & HELPERS ──────────────────────────────────────────────────────
+  Widget _baseCard({required Widget child, required bool isDark, EdgeInsets? padding}) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent, width: 1.0),
+        boxShadow: [if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 24, offset: const Offset(0, 8))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Padding(padding: padding ?? const EdgeInsets.all(24), child: child),
+      ),
+    );
   }
 
-  String _fmt(double v) => v.abs().toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  Color _getGaugeColor(double pct) {
+    if (pct <= 40) return const Color(0xFF10B981); 
+    if (pct <= 70) return const Color(0xFFF59E0B); 
+    return const Color(0xFFEF4444); 
+  }
+
+  String _fmt(double v) => v.abs().toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 }

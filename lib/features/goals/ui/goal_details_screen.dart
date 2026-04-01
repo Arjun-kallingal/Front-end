@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
 import 'package:front_end/core/services/api_config.dart';
+import 'package:front_end/core/providers/account_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:front_end/core/providers/transaction_provider.dart';
 
 class GoalDetailsScreen extends StatefulWidget {
   final GoalModel goal;
@@ -56,8 +59,17 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
       if (!mounted) return;
 
       if (success) {
-        setState(() => _currentAmount += isDeposit ? amount : -amount);
-        await _loadHistory();
+  setState(() => _currentAmount += isDeposit ? amount : -amount);
+
+  if (mounted) {
+    await Future.wait([
+      context.read<AccountProvider>().loadAccounts(),
+      context.read<TransactionProvider>().fetchTransactions(),
+    ]);
+  }
+
+  await _loadHistory();
+
         _showSnackBar(isDeposit
             ? "Funds deposited successfully!"
             : "Withdrawal successful!");
@@ -225,7 +237,6 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                 color: Colors.black87,
                 fontSize: 16,
                 fontWeight: FontWeight.w700)),
-        centerTitle: true,
       ),
       body: Stack(
         children: [
@@ -300,10 +311,10 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-  color: Colors.white,
-  borderRadius: BorderRadius.circular(16), // was 20
-  border: Border.all(color: Colors.grey.shade200), // add subtle border
-),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16), // was 20
+        border: Border.all(color: Colors.grey.shade200), // add subtle border
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -334,27 +345,26 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isCompleted
-                      ? "Completed"
-                      : "${daysLeft > 0 ? daysLeft : 0} days left",
-                  style: TextStyle(
-  color: Colors.grey.shade500,
-  fontSize: 10, // smaller
-  fontWeight: FontWeight.w600,
-)
-                ),
+                    isCompleted
+                        ? "Completed"
+                        : "${daysLeft > 0 ? daysLeft : 0} days left",
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 10, // smaller
+                      fontWeight: FontWeight.w600,
+                    )),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-  widget.goal.title,
-  style: const TextStyle(
-    color: Colors.black87,
-    fontSize: 18, // was 20
-    fontWeight: FontWeight.w700, // slightly lighter
-  ),
-),
+            widget.goal.title,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 18, // was 20
+              fontWeight: FontWeight.w700, // slightly lighter
+            ),
+          ),
           const SizedBox(height: 16),
           if (!isCompleted &&
               widget.goal.requiredDailySaving != null &&

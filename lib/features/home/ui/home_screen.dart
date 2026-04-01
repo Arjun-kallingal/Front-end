@@ -131,16 +131,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
           Row(
             children: [
-              IconButton(
-                icon: Icon(
-                  isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                  color: colorScheme.primary,
-                ),
-                onPressed: () {
-                  // final provider = context.read<ThemeProvider>();
-                  // provider.toggleTheme(!provider.isDark);
-                },
-              ),
+              // IconButton(
+              //   icon: Icon(
+              //     isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              //     color: colorScheme.primary,
+              //   ),
+              //   onPressed: () {
+              //     // final provider = context.read<ThemeProvider>();
+              //     // provider.toggleTheme(!provider.isDark);
+              //   },
+              // ),
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: () => Navigator.push(

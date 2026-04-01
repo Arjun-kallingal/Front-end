@@ -5,7 +5,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../core/models/account_model.dart';
 import '../../../core/providers/account_provider.dart';
 import 'package:front_end/navigation/navigation_service.dart';
-
 // ── Shared dark-luxury palette (mirrors _P in home_screen.dart) ───────────────
 class _C {
   static const Color bg         = Color(0xFF0F1117);
