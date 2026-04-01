@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class ApiConfig {
-
-  static const String _localIp = "192.168.137.1";  // Use "localhost" for both Android and iOS emulators
+  
+static const String _localIp = "192.168.29.123";
   static const String _port = "5000";
 
   static String get baseUrl {

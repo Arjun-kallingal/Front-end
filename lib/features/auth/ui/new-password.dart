@@ -12,16 +12,12 @@ class NewPasswordScreen extends StatefulWidget {
   });
 
   @override
-  State<NewPasswordScreen> createState() =>
-      _NewPasswordScreenState();
+  State<NewPasswordScreen> createState() => _NewPasswordScreenState();
 }
 
-class _NewPasswordScreenState
-    extends State<NewPasswordScreen> {
-  final TextEditingController passwordController =
-      TextEditingController();
-  final TextEditingController confirmController =
-      TextEditingController();
+class _NewPasswordScreenState extends State<NewPasswordScreen> {
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmController = TextEditingController();
 
   bool showPassword = false;
   bool isLoading = false;
@@ -54,29 +50,27 @@ class _NewPasswordScreenState
 
     setState(() => isLoading = true);
 
-   final success = await AuthService.resetPassword(widget.resetToken, password);
+    final success =
+        await AuthService.resetPassword(widget.resetToken, password);
 
-if (!mounted) return;
+    if (!mounted) return;
 
-setState(() => isLoading = false);
+    setState(() => isLoading = false);
 
-if (success == true) {
-  _showSnack("Password reset successful");
-  Navigator.popUntil(context, (route) => route.isFirst);
-} else if (success == false) {
-  _showSnack("New password cannot be the same as old password");
-}
+    if (success == true) {
+      _showSnack("Password reset successful");
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } else if (success == false) {
+      _showSnack("New password cannot be the same as old password");
+    }
   }
 
   void _showSnack(String msg) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor:
-            isDark ? Colors.white : Colors.black,
+        backgroundColor: isDark ? Colors.white : Colors.black,
       ),
     );
   }
@@ -84,134 +78,206 @@ if (success == true) {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final isLight = theme.brightness == Brightness.light;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: isLight ? Colors.white : Colors.black,
       body: SafeArea(
-        child: Column(
-          children: [
-
-            /// ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(vertical: 12),
-              color: isDark ? Colors.black : Colors.white,
-              child: Row(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: size.width * 0.06,
+            vertical: 24,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-                  ),
-                  Text(
-                    "Set New Password",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                  SizedBox(height: size.height * 0.05),
 
-            /// ================= BODY =================
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(maxWidth: 420),
+                  // ── ICON & HEADING ───────────────────────────────
+                  Center(
                     child: Column(
                       children: [
-
-                        Text(
-                          'Create a New Password',
-                          style: textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? Colors.white
-                                : Colors.black,
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: isLight ? Colors.black : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          textAlign: TextAlign.center,
+                          child: Icon(
+                            Icons.lock_reset_rounded,
+                            size: 34,
+                            color: isLight ? Colors.white : Colors.black,
+                          ),
                         ),
-
-                        const SizedBox(height: 8),
-
+                        const SizedBox(height: 18),
+                        Text(
+                          'Set New Password',
+                          style: textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                            color: isLight ? Colors.black : Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
                         Text(
                           widget.email,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: isDark
-                                ? Colors.white70
-                                : Colors.black87,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: isLight ? Colors.black45 : Colors.white54,
                           ),
                         ),
-
-                        const SizedBox(height: 30),
-
-                        /// PASSWORD FIELD
-                        _passwordField(
-                          controller: passwordController,
-                          label: "New Password",
-                          isDark: isDark,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        /// CONFIRM FIELD
-                        _passwordField(
-                          controller: confirmController,
-                          label: "Confirm Password",
-                          isDark: isDark,
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        isLoading
-                            ? CircularProgressIndicator(
-                                color: isDark
-                                    ? Colors.white
-                                    : Colors.black,
-                              )
-                            : SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton(
-                                  onPressed: handleReset,
-                                  style:
-                                      ElevatedButton.styleFrom(
-                                    backgroundColor: isDark
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                  child: Text(
-                                    "Set Password",
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.black
-                                          : Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
                       ],
                     ),
                   ),
-                ),
+
+                  SizedBox(height: size.height * 0.05),
+
+                  // ── NEW PASSWORD ─────────────────────────────────
+                  _passwordField(
+                    controller: passwordController,
+                    hint: 'New Password',
+                    isLight: isLight,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // ── CONFIRM PASSWORD ─────────────────────────────
+                  _passwordField(
+                    controller: confirmController,
+                    hint: 'Confirm Password',
+                    isLight: isLight,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // ── SHOW/HIDE TOGGLE ─────────────────────────────
+                  GestureDetector(
+                    onTap: () => setState(() => showPassword = !showPassword),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          showPassword ? 'Hide passwords' : 'Show passwords',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: isLight ? Colors.black54 : Colors.white54,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Icon(
+                          showPassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          size: 18,
+                          color: isLight ? Colors.black54 : Colors.white54,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ── SET PASSWORD BUTTON ──────────────────────────
+                  SizedBox(
+                    height: 54,
+                    child: isLoading
+                        ? Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: isLight ? Colors.black : Colors.white,
+                              ),
+                            ),
+                          )
+                        : ElevatedButton(
+                            onPressed: handleReset,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  isLight ? Colors.black : Colors.white,
+                              foregroundColor:
+                                  isLight ? Colors.white : Colors.black,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              'Set Password',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // ── BACK BUTTON ──────────────────────────────────
+                  SizedBox(
+                    height: 54,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        size: 18,
+                        color: isLight ? Colors.black : Colors.white,
+                      ),
+                      label: Text(
+                        'Back',
+                        style: TextStyle(
+                          color: isLight ? Colors.black : Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: isLight ? Colors.black26 : Colors.white24,
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // ── SECURITY NOTE ────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 13,
+                        color: isLight ? Colors.black38 : Colors.white38,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Your new password will be encrypted',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: isLight ? Colors.black38 : Colors.white38,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -219,38 +285,47 @@ if (success == true) {
 
   Widget _passwordField({
     required TextEditingController controller,
-    required String label,
-    required bool isDark,
+    required String hint,
+    required bool isLight,
   }) {
     return TextField(
       controller: controller,
       obscureText: !showPassword,
       style: TextStyle(
-        color: isDark ? Colors.white : Colors.black,
+        color: isLight ? Colors.black : Colors.white,
+        fontSize: 15,
       ),
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          color: isDark ? Colors.white : Colors.black,
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: isLight ? Colors.black38 : Colors.white38,
+          fontSize: 14,
+        ),
+        prefixIcon: Icon(
+          Icons.lock_outline_rounded,
+          color: isLight ? Colors.black45 : Colors.white54,
+          size: 20,
         ),
         filled: true,
-        fillColor:
-            isDark ? Colors.black : Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        fillColor: isLight ? Colors.grey[100] : Colors.grey[900],
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
         ),
-        suffixIcon: IconButton(
-          icon: Icon(
-            showPassword
-                ? Icons.visibility
-                : Icons.visibility_off,
-            color: isDark ? Colors.white : Colors.black,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: isLight ? Colors.black : Colors.white,
+            width: 1.5,
           ),
-          onPressed: () {
-            setState(() {
-              showPassword = !showPassword;
-            });
-          },
         ),
       ),
     );
