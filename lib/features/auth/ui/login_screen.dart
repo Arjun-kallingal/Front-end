@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:front_end/core/widgets/custom_button.dart';
 import 'package:front_end/core/widgets/custom_text_field.dart';
 import 'signup_screen.dart';
 import 'forgot_password_gmail.dart';
