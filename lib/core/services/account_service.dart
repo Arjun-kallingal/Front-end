@@ -78,4 +78,37 @@ class AccountService {
       return false;
     }
   }
+
+  // ================= DELETE ACCOUNT =================
+
+  static Future<Map<String, dynamic>> deleteAccount(String accountId) async {
+    try {
+      final headers = await ApiClient.getHeaders();  // ✅ Bearer token
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/$accountId'),
+        headers: headers,
+      );
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true, 
+          'message': data['message'] ?? 'Account deleted successfully'
+        };
+      } else {
+        return {
+          'success': false, 
+          'message': data['error'] ?? 'Failed to delete account'
+        };
+      }
+    } catch (e) {
+      debugPrint("Failed to delete account: $e");
+      return {
+        'success': false, 
+        'message': 'Connection error: $e'
+      };
+    }
+  }
 }

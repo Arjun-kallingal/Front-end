@@ -33,6 +33,171 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
     await context.read<AccountProvider>().setPrimary(accountId); // ✅ no userId
   }
 
+  // 🔥 Helper for showing standard messages
+  void _showSnackBar(String message, {bool isError = false}) {
+    final theme = Theme.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(color: theme.colorScheme.surface)),
+        backgroundColor: isError ? AppColors.expenseAmount : AppColors.incomeAmount,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // 🔥 NEW: Delete Account Logic with Premium Dialogs
+  Future<void> _handleDeleteAccount(AccountModel acc) async {
+    final double totalBalance = double.tryParse(acc.totalBalance) ?? 0.0;
+    
+    // 1. Premium Error Dialog if balance > 0
+    if (totalBalance > 0) {
+      showDialog(
+        context: context,
+        builder: (ctx) {
+          final theme = Theme.of(ctx);
+          final colorScheme = theme.colorScheme;
+          final isDark = theme.brightness == Brightness.dark;
+          
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: colorScheme.surface,
+            elevation: 8,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppColors.expenseAmount.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.expenseAmount, size: 36),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "Funds Remaining",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: colorScheme.primary),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "This account still holds ₹$totalBalance.\n\nPlease transfer or withdraw all your funds before closing it.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14, 
+                      color: isDark ? Colors.white70 : Colors.black87, 
+                      height: 1.4,
+                      fontWeight: FontWeight.w500
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("Okay", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      );
+      return;
+    }
+
+    // 2. Premium Confirmation Dialog for empty accounts (Top-Right Cancel Icon)
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final colorScheme = theme.colorScheme;
+        final isDark = theme.brightness == Brightness.dark;
+
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: colorScheme.surface,
+          elevation: 8,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Delete Account?",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: colorScheme.primary),
+                    ),
+                    // 🔥 Top Right Cancel Icon
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      icon: Icon(Icons.close_rounded, color: colorScheme.onSurface.withOpacity(0.5)),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Are you sure you want to close '${acc.name}'?\nThis action cannot be undone.",
+                  style: TextStyle(
+                    fontSize: 14, 
+                    color: isDark ? Colors.white70 : Colors.black87, 
+                    height: 1.4,
+                    fontWeight: FontWeight.w500
+                  ),
+                ),
+                const SizedBox(height: 28),
+                // 🔥 Full width Delete button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 31, 28, 28),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text("Delete Account", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    );
+
+    if (confirm == true) {
+      try {
+        final result = await AccountService.deleteAccount(acc.id);
+        
+        if (result['success'] == true) {
+          _showSnackBar("Account successfully closed.");
+          context.read<AccountProvider>().loadAccounts(); // Refresh the list
+        } else {
+          _showSnackBar(result['message'] ?? "Failed to delete account.", isError: true);
+        }
+      } catch (e) {
+        _showSnackBar("Connection error. Could not delete account.", isError: true);
+      }
+    }
+  }
+
   // ================= MODERN BOTTOM SHEET =================
 
   void _showCreateAccountBottomSheet({String initialType = "CASH"}) {
@@ -119,7 +284,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
                       
                       Navigator.pop(ctx);
                       
-                      // 🔥 Reverted to your exact working creation logic
                       await AccountService.createAccount(
                         name: name, 
                         type: selectedType
@@ -189,13 +353,12 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
               onRefresh: () async => provider.loadAccounts(),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                padding: const EdgeInsets.only(bottom: 80), // Matched your original bottom padding
+                padding: const EdgeInsets.only(bottom: 80),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPremiumNetWorthCard(provider, isDark),
                     
-                    // 🔥 Perfectly aligned Action Hub
                     _buildActionHub(colorScheme, isDark),
                     
                     const SizedBox(height: 8),
@@ -225,7 +388,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
     );
   }
 
-  // 🔥 Smart Action Row: Strict Heights & Equal spacing for perfect alignment
   Widget _buildActionHub(ColorScheme colorScheme, bool isDark) {
     const double uniformHeight = 42.0; 
 
@@ -339,23 +501,34 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen> {
                 ),
               ),
               
-              // 🔥 Menu
-              acc.isDefault
-                  ? const SizedBox.shrink() 
-                  : PopupMenuButton<String>(
-                      icon: Icon(Icons.more_horiz_rounded, color: textSec, size: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      onSelected: (val) {
-                        if (val == 'primary') _handleSetPrimary(acc.id);
-                        if (val == 'history') {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionListScreen(initialAccountName: acc.name)));
-                        }
-                      },
-                      itemBuilder: (ctx) => const [
-                        PopupMenuItem(value: 'primary', child: Text("Set as Primary Account")),
-                        PopupMenuItem(value: 'history', child: Text("View Transaction History")),
-                      ],
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_horiz_rounded, color: textSec, size: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                onSelected: (val) {
+                  if (val == 'primary') _handleSetPrimary(acc.id);
+                  if (val == 'history') {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionListScreen(initialAccountName: acc.name)));
+                  }
+                  if (val == 'delete') {
+                    _handleDeleteAccount(acc);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  if (!acc.isDefault)
+                    const PopupMenuItem(
+                      value: 'primary', 
+                      child: Text("Set as Primary Account", style: TextStyle(fontSize: 14))
                     ),
+                  const PopupMenuItem(
+                    value: 'history', 
+                    child: Text("View Transaction History", style: TextStyle(fontSize: 14))
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete', 
+                    child: Text("Delete Account", style: TextStyle(color: AppColors.expenseAmount, fontSize: 14, fontWeight: FontWeight.w600))
+                  ),
+                ],
+              ),
             ],
           ),
           Padding(
