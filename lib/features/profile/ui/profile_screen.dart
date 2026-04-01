@@ -12,11 +12,8 @@ import 'package:front_end/features/profile/ui/edit-profile/profile_edit.dart';
 import 'package:front_end/features/profile/ui/support_legal/feedback.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:front_end/features/profile/ui/notifications/notification.dart';
-
 import 'package:front_end/features/profile/ui/account/delete_account_screen.dart';
-
 import 'package:front_end/features/profile/ui/account/sign_out_screen.dart';
-// import 'package:front_end/core/constants/app_colors.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -31,28 +28,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool goalMilestones = true;
   bool twoFactorAuth = false;
 
-  ///  SAFE INITIALS METHOD
   String getInitials(String name) {
-  if (name.trim().isEmpty) return "U";
-
-  final parts = name
-      .trim()
-      .split(" ")
-      .where((e) => e.isNotEmpty)
-      .toList();
-
-  if (parts.isEmpty) return "U";
-
-  if (parts.length == 1) {
-    return parts[0][0].toUpperCase();
+    if (name.trim().isEmpty) return "U";
+    final parts = name.trim().split(" ").where((e) => e.isNotEmpty).toList();
+    if (parts.isEmpty) return "U";
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
   @override
   void initState() {
     super.initState();
-
     Future.microtask(() {
       context.read<UserProfileProvider>().loadUser();
     });
@@ -62,9 +48,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
-
     final user = context.watch<UserProfileProvider>();
-    final isLight = Theme.of(context).brightness == Brightness.light;
+    final isLight = theme.brightness == Brightness.light;
 
     String userName = user.name;
     String email = user.email;
@@ -76,392 +61,362 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// ================= HEADER =================
+              // ─── AppBar ───────────────────────────────────────────
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.only(top: 10, bottom: 10),
-                decoration: BoxDecoration(
-                  color: isLight ? Colors.white : Colors.black,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                color: color.surface,
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        color: isLight ? Colors.black : Colors.white,
-                        size: 20,
-                      ),
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.arrow_back_ios_new,
+                          size: 20, color: color.onSurface),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Profile & Settings',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: isLight ? Colors.black : Colors.white,
-                        ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Profile & Settings',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: color.onSurface,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              /// ================= PROFILE CARD =================
+              const SizedBox(height: 16),
+
+              // ─── Profile Card ─────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.only(left: 20,right: 20),
-                child: Builder(
-                  builder: (context) {
-                    final textTheme = Theme.of(context).textTheme;
-
-                    return Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF008080), // teal color
-                        borderRadius: BorderRadius.circular(20),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0D9488).withOpacity(0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          /// PROFILE INFO
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: 28,
-                               backgroundColor: const Color(0xFF14B8A6),
-                                child: Text(
-                                  getInitials(userName),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.4),
+                                  width: 2),
+                            ),
+                            child: CircleAvatar(
+                              radius: 30,
+                              backgroundColor: const Color(0xFF14B8A6),
+                              child: Text(
+                                getInitials(userName),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
                                 ),
                               ),
-                              const SizedBox(width: 16),
-
-                              /// Name + Email
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
-                                    /// NAME + EDIT
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            userName,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style:
-                                                textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: textTheme.bodyLarge!.color,
-                                            ),
-                                          ),
+                                    Expanded(
+                                      child: Text(
+                                        userName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
                                         ),
-                                        TextButton(
-                                          onPressed: () async {
-                                            final result = await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    EditProfileScreen(
-                                                  currentName: userName,
-                                                ),
-                                              ),
-                                            );
-                                            if (result != null) {
-                                              context
-                                                  .read<UserProfileProvider>()
-                                                  .updateProfile(
-                                                    newName: result["name"],
-                                                  );
-                                            }
-                                          },
-                                          child: Text(
-                                            "Edit",
-                                            style: TextStyle(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    /// EMAIL
-                                    Text(
-                                      email,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 12),
-                          Divider(
-                            color: Theme.of(context).colorScheme.onBackground,
-                            thickness: 0.6,
-                            height: 1,
-                            indent: 10,
-                            endIndent: 10,
-                          ),
-                          const SizedBox(height: 12),
-
-                          /// PREMIUM BUTTON
-
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const PremiumUpgradeScreen(),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFF59E0B),
-                                    Color(0xFFF97316),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(
-                                    Icons.workspace_premium,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      "Upgrade to Premium",
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
                                       ),
                                     ),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => EditProfileScreen(
+                                                currentName: userName),
+                                          ),
+                                        );
+                                        if (result != null) {
+                                          context
+                                              .read<UserProfileProvider>()
+                                              .updateProfile(
+                                                  newName: result["name"]);
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          border: Border.all(
+                                              color: Colors.white
+                                                  .withOpacity(0.4)),
+                                        ),
+                                        child: const Text(
+                                          "Edit",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.75),
+                                    fontSize: 13,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    );
-                  },
+
+                      const SizedBox(height: 16),
+                      Divider(
+                          color: Colors.white.withOpacity(0.25),
+                          height: 1,
+                          thickness: 1),
+                      const SizedBox(height: 16),
+
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const PremiumUpgradeScreen()),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF59E0B), Color(0xFFF97316)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFF97316).withOpacity(0.4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.workspace_premium,
+                                  color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                "Upgrade to Premium",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.arrow_forward_ios,
+                                  color: Colors.white, size: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
               const SizedBox(height: 24),
 
-              /// ================= APPEARANCE =================
-              _sectionWrapper(context, "Appearance", [
-                _switchTile(
-                  context,
-                  icon: Icons.dark_mode_outlined,
-                  title: "Dark Mode",
-                  value: context.watch<ThemeProvider>().isDark,
-                  onChanged: (value) {
-                    context.read<ThemeProvider>().toggleTheme(value);
-                  },
-                ),
-              ]),
+              // ─── Appearance ───────────────────────────────────────
+              _sectionHeader(context, "Appearance"),
+              _switchTile(
+                context,
+                icon: Icons.dark_mode_outlined,
+                title: "Dark Mode",
+                subtitle: "Switch app theme",
+                value: context.watch<ThemeProvider>().isDark,
+                onChanged: (value) {
+                  context.read<ThemeProvider>().toggleTheme(value);
+                },
+              ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
 
-              /// ================= NOTIFICATIONS =================
-              _sectionWrapper(context, "Notifications", [
-                const SizedBox(height: 8),
-                _navigationTile(
-                  context,
-                  icon: Icons.notifications_outlined,
-                  title: "Notification Settings",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const NotificationScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ]),
-              //  const SizedBox(height: 24),
+              // ─── Notifications ────────────────────────────────────
+              _sectionHeader(context, "Notifications"),
+              _navigationTile(
+                context,
+                icon: Icons.tune_outlined,
+                title: "Notification Settings",
+                subtitle: "Manage alerts & reminders",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const NotificationScreen()));
+                },
+              ),
 
-              /// ================= SECURITY =================
-              _sectionWrapper(context, "Security", [
-              
-                _navigationTile(
-                  context,
-                  icon: Icons.lock_outline,
-                  title: "Change Password",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ChangePasswordScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ]),
+              const SizedBox(height: 8),
 
-              const SizedBox(height: 18),
+              // ─── Security ─────────────────────────────────────────
+              _sectionHeader(context, "Security"),
+              _navigationTile(
+                context,
+                icon: Icons.lock_outline,
+                title: "Change Password",
+                subtitle: "Update your credentials",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
+                },
+              ),
 
-              /// ================= DATA =================
-              _sectionWrapper(context, "Data Management", [
-                const SizedBox(height: 8),
-                _navigationTile(
-                  context,
-                  icon: Icons.download_outlined,
-                  title: "Export Data",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ExportDataScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ]),
+              const SizedBox(height: 8),
 
-              const SizedBox(height: 18),
+              // ─── Data Management ──────────────────────────────────
+              _sectionHeader(context, "Data Management"),
+              _navigationTile(
+                context,
+                icon: Icons.download_outlined,
+                title: "Export Data",
+                subtitle: "Download your financial records",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const ExportDataScreen()));
+                },
+              ),
 
-              /// ================= SUPPORT =================
-              _sectionWrapper(context, "Support & Legal", [
-                const SizedBox(height: 8),
-                _navigationTile(
-                  context,
-                  icon: Icons.help_outline,
-                  title: "Help & Support",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const HelpSupportScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _navigationTile(
-                  context,
-                  icon: Icons.feedback_outlined,
-                  title: "Feedback & Rate Us",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FeedbackScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _navigationTile(
-                  context,
-                  icon: Icons.privacy_tip_outlined,
-                  title: "Privacy Policy",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const PrivacyPolicyScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _navigationTile(
-                  context,
-                  icon: Icons.description_outlined,
-                  title: "Terms of Service",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TermsOfServiceScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ]),
+              const SizedBox(height: 8),
 
-              const SizedBox(height: 18),
+              // ─── Support & Legal ──────────────────────────────────
+              _sectionHeader(context, "Support & Legal"),
+              _navigationTile(
+                context,
+                icon: Icons.help_outline,
+                title: "Help & Support",
+                subtitle: "FAQs and contact us",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
+                },
+              ),
+              _inlineDivider(context),
+              _navigationTile(
+                context,
+                icon: Icons.feedback_outlined,
+                title: "Feedback & Rate Us",
+                subtitle: "Share your experience",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const FeedbackScreen()));
+                },
+              ),
+              _inlineDivider(context),
+              _navigationTile(
+                context,
+                icon: Icons.privacy_tip_outlined,
+                title: "Privacy Policy",
+                subtitle: "How we handle your data",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                },
+              ),
+              _inlineDivider(context),
+              _navigationTile(
+                context,
+                icon: Icons.description_outlined,
+                title: "Terms of Service",
+                subtitle: "Usage terms and conditions",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()));
+                },
+              ),
 
-/// ================= ACCOUNT =================
-/// ================= ACCOUNT =================
-_sectionWrapper(context, "Account", [
-  
-  /// SIGN OUT
-  _navigationTile(
-    context,
-    icon: Icons.logout,
-    title: "Sign Out",
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const SignOutScreen(),
-        ),
-      );
-    },
-  ),
+              const SizedBox(height: 8),
 
-  /// DELETE ACCOUNT
- _navigationTile(
-  context,
-  icon: Icons.delete_outline,
-  title: "Delete Account",
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const DeleteAccountScreen(),
-      ),
-    );
-  },
-),
-]),
-              /// ================= ABOUT =================
-              _sectionWrapper(context, "About", [
-                _navigationTile(
-                  context,
-                  icon: Icons.info_outline,
-                  title: "About WalletCare",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AboutWalletCareScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ]),
+              // ─── Account ──────────────────────────────────────────
+              _sectionHeader(context, "Account"),
+              _navigationTile(
+                context,
+                icon: Icons.logout_rounded,
+                title: "Sign Out",
+                subtitle: "Log out of your account",
+                iconColor: Colors.orange,
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const SignOutScreen()));
+                },
+              ),
+              _inlineDivider(context),
+              _navigationTile(
+                context,
+                icon: Icons.delete_outline_rounded,
+                title: "Delete Account",
+                subtitle: "Permanently remove your data",
+                iconColor: Theme.of(context).colorScheme.error,
+                titleColor: Theme.of(context).colorScheme.error,
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const DeleteAccountScreen()));
+                },
+              ),
 
+              const SizedBox(height: 8),
 
-              const SizedBox(height: 30),
+              // ─── About ────────────────────────────────────────────
+              _sectionHeader(context, "About"),
+              _navigationTile(
+                context,
+                icon: Icons.info_outline,
+                title: "About WalletCare",
+                subtitle: "Version, licenses & more",
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const AboutWalletCareScreen()));
+                },
+              ),
+
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -469,151 +424,156 @@ _sectionWrapper(context, "Account", [
     );
   }
 
-  Widget _sectionWrapper(
-      BuildContext context, String title, List<Widget> children) {
-    final color = Theme.of(context).colorScheme;
+  // ─── Section Header ──────────────────────────────────────────────────
+  Widget _sectionHeader(BuildContext context, String label) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0),
-      child: Container(
-        padding: const EdgeInsets.all(0),
-        decoration: BoxDecoration(
-          color: color.surface,
-          borderRadius: BorderRadius.circular(0),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 2),
+      child: Text(
+        label.toUpperCase(),
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.1,
+          color: color.onSurface.withOpacity(0.45),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 25),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodyMedium!.color,
-              ),
-            ),
-          ),
-          ...children.map((e) => Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 0,
-                ),
-                child: e,
-              )),
-        ]),
       ),
     );
   }
 
+  // ─── Inline Divider ───────────────────────────────────────────────────
+  Widget _inlineDivider(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 68),
+      child: Divider(
+        height: 1,
+        thickness: 0.5,
+        color: Theme.of(context).dividerColor.withOpacity(0.4),
+      ),
+    );
+  }
+
+  // ─── Navigation Tile ─────────────────────────────────────────────────
   Widget _navigationTile(
     BuildContext context, {
     required IconData icon,
     required String title,
     String? subtitle,
     required VoidCallback onTap,
+    Color? iconColor,
+    Color? titleColor,
   }) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final iconColor = isLight ? Colors.black : Colors.white;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    final resolvedIconColor = iconColor ?? color.onSurface.withOpacity(0.7);
 
-    final color = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.only(left: 25, top: 14, bottom: 14),
-        decoration: BoxDecoration(
-          color: color.background,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor),
-
-            const SizedBox(width: 12),
-
-            ///  prevents overflow
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.bodyLarge!.color,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
+    return Material(
+      color: color.background,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: resolvedIconColor),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      subtitle,
+                      title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodySmall!.color,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: titleColor ?? color.onSurface,
                       ),
                     ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: color.onSurface.withOpacity(0.45),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-
-            const SizedBox(width: 8),
-
-            ///  keeps icon visible
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).dividerColor,
-            ),
-          ],
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: color.onSurface.withOpacity(0.25),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-Widget _switchTile(BuildContext context,
-    {required IconData icon,
-    required String title,
-    required bool value,
-    required ValueChanged<bool> onChanged}) {
-  final color = Theme.of(context).colorScheme;
-  final isLight = Theme.of(context).brightness == Brightness.light;
-  final iconColor = isLight ? Colors.black : Colors.white;
+
+// ─── Switch Tile ───────────────────────────────────────────────────────
+Widget _switchTile(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+  String? subtitle,
+  required bool value,
+  required ValueChanged<bool> onChanged,
+}) {
+  final theme = Theme.of(context);
+  final color = theme.colorScheme;
+  final isLight = theme.brightness == Brightness.light;
 
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-    decoration: BoxDecoration(
-      color: color.background,
-      borderRadius: BorderRadius.circular(0),
-    ),
+    color: color.background,
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
     child: Row(
       children: [
-        Icon(icon, color: iconColor),
-        const SizedBox(width: 12),
+        Icon(icon, size: 22, color: color.onSurface.withOpacity(0.7)),
+        const SizedBox(width: 16),
         Expanded(
-          child: Text(title,
-              style: TextStyle(
-                  fontSize: 14.5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.bodyLarge!.color)),
+                  color: color.onSurface,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color.onSurface.withOpacity(0.45),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-       Transform.scale(
-  scale: 0.8,
-  child: Switch(
-    value: value,
-
-    /// ACTIVE (ON)
-    activeThumbColor: isLight ? Colors.white : Colors.black,
-    activeTrackColor: isLight ? Colors.black : Colors.white,
-
-    /// INACTIVE (OFF)
-    inactiveThumbColor: isLight ? Colors.black : Colors.black,
-    inactiveTrackColor: isLight ? Colors.white : Colors.white24,
-
-    onChanged: onChanged,
-  ),
-),
+        Transform.scale(
+          scale: 0.85,
+          child: Switch(
+            value: value,
+            activeThumbColor: isLight ? Colors.white : Colors.black,
+            activeTrackColor: isLight ? Colors.black : Colors.white,
+            inactiveThumbColor: isLight ? Colors.black : Colors.black,
+            inactiveTrackColor: isLight ? Colors.white : Colors.white24,
+            onChanged: onChanged,
+          ),
+        ),
       ],
     ),
   );

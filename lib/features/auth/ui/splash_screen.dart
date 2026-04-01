@@ -39,8 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _startApp() async {
     try {
-      await Future.delayed(const Duration(seconds: 2));
-
+await Future.delayed(const Duration(milliseconds: 600));
       final token = await AuthStorage.getToken();
       final name = await AuthStorage.getName();
       final email = await AuthStorage.getEmail();
@@ -112,10 +111,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            SizedBox(height: 30),
-
-            /// LOADER
-            CircularProgressIndicator(color: Colors.white),
+          
           ],
         ),
       ),

@@ -11,10 +11,8 @@ class HelpSupportScreen extends StatefulWidget {
 class _HelpSupportScreenState extends State<HelpSupportScreen> {
   int? expandedIndex;
   final GlobalKey faqKey = GlobalKey();
-
   final TextEditingController _searchController = TextEditingController();
 
-  /// FAQ DATA
   final List<Map<String, String>> _faqList = [
     {
       "q": "How do I reset my password?",
@@ -38,16 +36,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     _filteredFaqs = _faqList;
   }
 
-  /// EMAIL
   Future<void> _launchEmail() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: 'support@yourapp.com',
-      queryParameters: {
-        'subject': 'App Support Request',
-      },
+      queryParameters: {'subject': 'App Support Request'},
     );
-
     try {
       await launchUrl(emailUri);
     } catch (_) {
@@ -58,7 +52,6 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     }
   }
 
-  /// SEARCH
   void _searchFaq(String query) {
     final results = _faqList.where((faq) {
       final q = faq["q"]!.toLowerCase();
@@ -81,91 +74,144 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     return Scaffold(
       backgroundColor: color.background,
       appBar: AppBar(
-        title: const Text("Help & Support"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-
+  backgroundColor: color.surface,
+  elevation: 0,
+  surfaceTintColor: Colors.transparent,
+  automaticallyImplyLeading: false,
+  titleSpacing: 0,
+  leading: IconButton(
+    onPressed: () => Navigator.pop(context),
+    padding: EdgeInsets.zero,
+    icon: Icon(
+      Icons.arrow_back_ios_new,
+      size: 18,
+      color: color.onSurface,
+    ),
+  ),
+  title: Text(
+    "Help & Support",
+    style: theme.textTheme.titleLarge?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: color.onSurface,
+    ),
+  ),
+),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: color.surface,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-              /// CONTACT SUPPORT
-              _supportTile(
-                context: context,
-                icon: Icons.email_outlined,
-                title: "Contact Support",
-                subtitle: "Reach out to our support team",
-                onTap: _launchEmail,
-              ),
+            // ─── Contact Support ────────────────────────────────────
+            _sectionLabel(context, "Contact"),
+            const SizedBox(height: 10),
+            _supportTile(
+              context: context,
+              icon: Icons.email_outlined,
+              title: "Contact Support",
+              subtitle: "Reach out to our support team",
+              onTap: _launchEmail,
+            ),
 
-              const SizedBox(height: 25),
+            const SizedBox(height: 28),
 
-              /// FAQ TITLE
-              Text(
-                "FAQs",
-                key: faqKey,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+            // ─── FAQs ───────────────────────────────────────────────
+            _sectionLabel(context, "FAQs"),
+            const SizedBox(height: 12),
+
+            TextField(
+              controller: _searchController,
+              onChanged: _searchFaq,
+              style: theme.textTheme.bodyMedium,
+              decoration: InputDecoration(
+                hintText: "Search FAQs...",
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: color.onSurface.withOpacity(0.4),
+                ),
+                prefixIcon: Icon(Icons.search,
+                    size: 20, color: color.onSurface.withOpacity(0.45)),
+                filled: true,
+                fillColor: color.surfaceVariant.withOpacity(0.5),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                      color: color.outline.withOpacity(0.25), width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: color.primary, width: 1.5),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-              /// SEARCH FIELD (THEME CONTROLLED)
-              TextField(
-                controller: _searchController,
-                onChanged: _searchFaq,
-                decoration: const InputDecoration(
-                  hintText: "Search FAQs...",
-                  prefixIcon: Icon(Icons.search),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              /// FAQ LIST
-              if (_filteredFaqs.isEmpty)
-                Center(
-                  child: Text(
-                    "No results found",
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                )
-              else
-                ...List.generate(
-                  _filteredFaqs.length,
-                  (index) {
-                    final faq = _filteredFaqs[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _faqItem(
-                        context,
-                        index,
-                        faq["q"]!,
-                        faq["a"]!,
+            if (_filteredFaqs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.search_off_rounded,
+                          size: 40,
+                          color: color.onSurface.withOpacity(0.25)),
+                      const SizedBox(height: 10),
+                      Text(
+                        "No results found",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color.onSurface.withOpacity(0.45),
+                        ),
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-            ],
-          ),
+              )
+            else
+              ...List.generate(
+                _filteredFaqs.length,
+                (index) {
+                  final faq = _filteredFaqs[index];
+                  final isLast = index == _filteredFaqs.length - 1;
+                  return Column(
+                    children: [
+                      _faqItem(context, index, faq["q"]!, faq["a"]!),
+                      if (!isLast)
+                        Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          indent: 16,
+                          endIndent: 16,
+                          color: color.outline.withOpacity(0.2),
+                        ),
+                    ],
+                  );
+                },
+              ),
+          ],
         ),
       ),
     );
   }
 
-  /// SUPPORT TILE
+  Widget _sectionLabel(BuildContext context, String label) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+    return Text(
+      label.toUpperCase(),
+      style: theme.textTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.1,
+        color: color.onSurface.withOpacity(0.45),
+      ),
+    );
+  }
+
   Widget _supportTile({
     required BuildContext context,
     required IconData icon,
@@ -174,43 +220,50 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: theme.colorScheme.surface.withOpacity(0.6),
-        ),
-        child: Row(
-          children: [
-            Icon(icon),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: color.onSurface.withOpacity(0.7)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: color.onSurface,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: color.onSurface.withOpacity(0.45),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              Icon(Icons.chevron_right_rounded,
+                  size: 20, color: color.onSurface.withOpacity(0.25)),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// FAQ ITEM
   Widget _faqItem(
     BuildContext context,
     int index,
@@ -218,33 +271,44 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     String answer,
   ) {
     final theme = Theme.of(context);
+    final color = theme.colorScheme;
     final bool isExpanded = expandedIndex == index;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: theme.colorScheme.surface.withOpacity(0.6),
-      ),
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         key: PageStorageKey(index),
         initiallyExpanded: isExpanded,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        childrenPadding:
+            const EdgeInsets.only(left: 4, right: 4, bottom: 12),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
         onExpansionChanged: (value) {
           setState(() {
             expandedIndex = value ? index : null;
           });
         },
+        trailing: AnimatedRotation(
+          turns: isExpanded ? 0.5 : 0,
+          duration: const Duration(milliseconds: 200),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: color.onSurface.withOpacity(0.5),
+          ),
+        ),
         title: Text(
           question,
-          style: theme.textTheme.bodyLarge?.copyWith(
+          style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
+            color: color.onSurface,
           ),
         ),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(
-              answer,
-              style: theme.textTheme.bodyMedium,
+          Text(
+            answer,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: color.onSurface.withOpacity(0.6),
+              height: 1.5,
             ),
           ),
         ],
