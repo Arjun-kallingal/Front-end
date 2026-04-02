@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 // ⚠️ Ensure these imports match your actual project structure
-import '../../../core/constants/app_colors.dart'; 
 import '../../../core/providers/account_provider.dart';
 import '../provider/analytics_provider.dart';
 import '../data/analytics_model.dart';
