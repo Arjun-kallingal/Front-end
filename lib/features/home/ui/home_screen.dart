@@ -12,6 +12,11 @@ import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/features/transfer/transfer.dart';
+import 'package:provider/provider.dart';
+import 'package:front_end/core/providers/account_provider.dart';
+import '../../analytics/provider/analytics_provider.dart';
+import '../../goals/provider/goal_provider.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -146,89 +151,107 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── Cancel/Reversal Logic ─────────────────────────────────────────────────
-  Future<void> _handleReversal(TransactionModel tx) async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final colorScheme = theme.colorScheme;
-        final isDark = theme.brightness == Brightness.dark;
+ Future<void> _handleReversal(TransactionModel tx) async {
+  final bool? confirm = await showDialog<bool>(
+    context: context,
+    builder: (ctx) {
+      final theme = Theme.of(ctx);
+      final colorScheme = theme.colorScheme;
+      final isDark = theme.brightness == Brightness.dark;
 
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          backgroundColor: colorScheme.surface,
-          elevation: 8,
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Cancel Transaction?",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: colorScheme.primary),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      icon: Icon(Icons.close_rounded, color: colorScheme.onSurface.withOpacity(0.5)),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
-                  style: TextStyle(
+      return Dialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24)),
+        backgroundColor: colorScheme.surface,
+        elevation: 8,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Cancel Transaction?",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.primary),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    icon: Icon(Icons.close_rounded,
+                        color: colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
+                style: TextStyle(
                     fontSize: 14,
                     color: isDark ? Colors.white70 : Colors.black87,
                     height: 1.4,
-                    fontWeight: FontWeight.w500
+                    fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.expenseAmount,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text(
+                    "Confirm Cancel",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.expenseAmount,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text("Confirm Cancel", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      }
-    );
+        ),
+      );
+    },
+  );
 
-    if (confirm == true) {
-      setState(() => _isProcessing = true);
-      final result = await TransactionService.reverseTransaction(originalTx: tx);
+  if (confirm == true) {
+    setState(() => _isProcessing = true);
+
+    final result =
+        await TransactionService.reverseTransaction(originalTx: tx);
+
+    if (result['success']) {
+      await Future.wait([
+        context.read<TransactionProvider>().fetchTransactions(),
+        context.read<AccountProvider>().loadAccounts(),
+        context.read<GoalProvider>().fetchGoals(),
+        context.read<AnalyticsProvider>().reload(),
+      ]);
+
+      await _loadRecentTransactions();
+
       setState(() => _isProcessing = false);
 
-      if (result['success']) {
-        _showSnackBar("Transaction cancelled successfully!");
-        // Refresh both the balance provider and the recent transactions
-        if (mounted) {
-          context.read<TransactionProvider>().fetchTransactions();
-          _loadRecentTransactions();
-        }
-      } else {
-        _showErrorDialog("Cancellation Failed", result['message'] ?? "An error occurred while cancelling the transaction.");
-      }
+      _showSnackBar("Transaction cancelled successfully!");
+    } else {
+      setState(() => _isProcessing = false);
+
+      _showErrorDialog(
+        "Cancellation Failed",
+        result['message'] ??
+            "An error occurred while cancelling the transaction.",
+      );
     }
   }
-
+}
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

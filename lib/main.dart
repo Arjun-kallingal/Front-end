@@ -34,9 +34,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => GoalProvider()),
         ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
-        ChangeNotifierProvider(
-          create: (_) => TransferProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => TransferProvider(),),
       ],
       child: const WalletCareApp(),
     ),

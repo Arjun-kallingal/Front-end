@@ -12,7 +12,7 @@ class TransactionProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _errorMessage;
 
-  // ✅ No userId — backend identifies user from JWT
+  /// Fetch transactions from backend
   Future<void> fetchTransactions() async {
     try {
       _isLoading = true;
@@ -29,5 +29,10 @@ class TransactionProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// Used after adding / cancelling / updating a transaction
+  Future<void> loadTransactions() async {
+    await fetchTransactions();
   }
 }

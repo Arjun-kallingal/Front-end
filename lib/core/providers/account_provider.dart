@@ -14,9 +14,10 @@ class AccountProvider extends ChangeNotifier {
   double totalBank = 0;
   double totalAll = 0;
 
-  get allAccounts => null;
+  /// All accounts getter
+  List<AccountModel> get allAccounts => [...cashAccounts, ...bankAccounts];
 
-  // ✅ No userId — backend identifies user from JWT
+  /// Load accounts dashboard
   Future<void> loadAccounts() async {
 
     isLoading = true;
@@ -30,14 +31,17 @@ class AccountProvider extends ChangeNotifier {
       final List<AccountModel> all =
           (data['accounts'] as List<dynamic>?)?.cast<AccountModel>() ?? [];
 
+      /// Separate accounts
       cashAccounts = all.where((a) => a.type == "CASH").toList();
       bankAccounts = all.where((a) => a.type == "BANK").toList();
 
+      /// Default account
       if (all.isNotEmpty) {
         defaultAccount =
             all.firstWhere((acc) => acc.isDefault, orElse: () => all.first);
       }
 
+      /// Totals
       totalCash =
           cashAccounts.fold(0, (sum, item) => sum + double.parse(item.totalBalance));
 
@@ -54,13 +58,14 @@ class AccountProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ No userId — just accountId is enough
+  /// Set primary account
   Future<void> setPrimary(String accountId) async {
 
     final success = await AccountService.setPrimaryAccount(accountId);
 
     if (success) {
-      await loadAccounts();  // ✅ reload without userId
+      await loadAccounts(); // refresh accounts
     }
   }
+
 }
