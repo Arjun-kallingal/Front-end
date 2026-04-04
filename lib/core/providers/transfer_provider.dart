@@ -9,7 +9,6 @@ import '../providers/account_provider.dart';
 import '../providers/transaction_provider.dart';
 
 class TransferProvider extends ChangeNotifier {
-
   List<AccountModel> accounts = [];
 
   AccountModel? fromAccount;
@@ -17,30 +16,27 @@ class TransferProvider extends ChangeNotifier {
 
   bool loading = false;
 
-  final TextEditingController amountController =
-      TextEditingController();
+  final TextEditingController amountController = TextEditingController();
 
-  final TextEditingController descriptionController =
-      TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
   String idempotencyKey = const Uuid().v4();
 
   /// Load Accounts
   Future<void> loadAccounts() async {
+  try {
+    final result = await AccountService.getAccountDashboard();
+    accounts = result['accounts'] as List<AccountModel>;
 
-    try {
+    // Clear selections — old references are now stale
+    fromAccount = null;
+    toAccount = null;
 
-      final result =
-          await AccountService.getAccountDashboard();
-
-      accounts = result['accounts'] as List<AccountModel>;
-
-      notifyListeners();
-
-    } catch (e) {
-      debugPrint("Load accounts failed: $e");
-    }
+    notifyListeners();
+  } catch (e) {
+    debugPrint("Load accounts failed: $e");
   }
+}
 
   /// Select From Account
   void setFromAccount(AccountModel account) {
@@ -56,9 +52,7 @@ class TransferProvider extends ChangeNotifier {
 
   /// Submit Transfer
   Future<String?> submitTransfer(BuildContext context) async {
-
-    final amount =
-        double.tryParse(amountController.text.trim());
+    final amount = double.tryParse(amountController.text.trim());
 
     if (fromAccount == null || toAccount == null) {
       return "Please select both accounts";
@@ -76,7 +70,6 @@ class TransferProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-
       await TransferService.accountTransfer(
         fromAccountId: fromAccount!.id,
         toAccountId: toAccount!.id,
@@ -92,19 +85,18 @@ class TransferProvider extends ChangeNotifier {
         context.read<TransactionProvider>().fetchTransactions(),
       ]);
 
+      
       /// Reset form
       amountController.clear();
       descriptionController.clear();
-
+      fromAccount = null; // ADD THIS
+      toAccount = null; // ADD THIS
       idempotencyKey = const Uuid().v4();
-
       loading = false;
       notifyListeners();
 
       return null;
-
     } catch (e) {
-
       loading = false;
       notifyListeners();
 

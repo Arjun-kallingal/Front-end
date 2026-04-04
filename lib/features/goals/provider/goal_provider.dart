@@ -60,12 +60,14 @@ class GoalProvider extends ChangeNotifier {
     return success;
   }
 
-  Future<bool> deleteGoal(String id) async {
-    await _goalService.deleteGoal(id);
-    await fetchGoals();
-    return true;
-  }
-
+ 
+Future<bool> deleteGoal(String id) async {
+  _goals.removeWhere((g) => g.id == id);
+  _filteredGoals.removeWhere((g) => g.id == id);
+  notifyListeners();
+  await _goalService.deleteGoal(id);
+  return true;
+}
   Future<bool> deposit(String goalId, double amount) async {
     final success = await _goalService.depositToGoal(goalId, amount);
     if (success) await fetchGoals();
