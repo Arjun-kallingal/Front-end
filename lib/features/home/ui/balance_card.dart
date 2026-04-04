@@ -336,7 +336,7 @@ class BalanceCard extends StatelessWidget {
     bool alignRight = false,
   }) {
     final formatted =
-        NumberFormat('#,##,###').format(double.tryParse(value) ?? 0);
+        NumberFormat('#,##,###').format(double.tryParse(value) ?? 2);
 
     return Padding(
       padding: EdgeInsets.only(

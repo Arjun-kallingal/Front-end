@@ -11,6 +11,7 @@ import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
+
 class TransactionListScreen extends StatefulWidget {
   final String? initialAccountName;
 
@@ -249,19 +250,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Cancel Transaction?",
-                        style: TextStyle(
+                      Expanded(
+                        child: Text(
+                          "Cancel Transaction?",
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: colorScheme.primary),
+                            color: colorScheme.primary,
+                          ),
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx, false),
-                        icon: Icon(Icons.close_rounded,
-                            color: colorScheme.onSurface.withOpacity(0.5)),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: colorScheme.onSurface.withOpacity(0.5),
+                        ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -271,10 +276,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   Text(
                     "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
                     style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.white70 : Colors.black87,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500),
+                      fontSize: 14,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   SizedBox(
@@ -285,13 +291,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         backgroundColor: AppColors.expenseAmount,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         elevation: 0,
                       ),
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text("Confirm Cancel",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: const Text(
+                        "Confirm Cancel",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -301,34 +312,33 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         });
 
     if (confirm == true) {
-  setState(() => _isLoading = true);
+      setState(() => _isLoading = true);
 
-  final result =
-      await TransactionService.reverseTransaction(originalTx: tx);
+      final result =
+          await TransactionService.reverseTransaction(originalTx: tx);
 
- if (result['success']) {
+      if (result['success']) {
+        await Future.wait([
+          context.read<TransactionProvider>().fetchTransactions(),
+          context.read<AccountProvider>().loadAccounts(),
+          context.read<GoalProvider>().fetchGoals(),
+          context.read<AnalyticsProvider>().reload(),
+        ]);
 
-  await Future.wait([
-    context.read<TransactionProvider>().fetchTransactions(),
-    context.read<AccountProvider>().loadAccounts(),
-    context.read<GoalProvider>().fetchGoals(),
-    context.read<AnalyticsProvider>().reload(),
-  ]);
+        // 🔥 refresh THIS screen list
+        await _fetchData();
 
-  // 🔥 refresh THIS screen list
-  await _fetchData();
+        _showSnackBar("Transaction cancelled successfully!");
+      } else {
+        setState(() => _isLoading = false);
 
-  _showSnackBar("Transaction cancelled successfully!");
-}else {
-    setState(() => _isLoading = false);
-
-    _showErrorDialog(
-      "Cancellation Failed",
-      result['message'] ??
-          "An error occurred while cancelling the transaction.",
-    );
-  }
-}
+        _showErrorDialog(
+          "Cancellation Failed",
+          result['message'] ??
+              "An error occurred while cancelling the transaction.",
+        );
+      }
+    }
   }
 
   // ── Filter screen ─────────────────────────────────────────────────────────
@@ -360,48 +370,92 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   // ── Helpers for Colors & Icons ────────────────────────────────────────────
+
   Color _getTransactionColor(TransactionModel tx) {
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
       return AppColors.savingsPrimary;
+
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
       return AppColors.progressGreen;
+
     if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
       return AppColors.chartIncome;
+
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
       return AppColors.incomeAmount;
+
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
       return AppColors.textSecondary;
+
     if (tx.type == "INCOME") return AppColors.incomeAmount;
+
     if (tx.type == "REVERSAL") return AppColors.warning;
+
     return AppColors.expenseAmount;
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
-      return Icons.savings_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
-      return Icons.savings_outlined;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
-      return Icons.task_alt_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
-      return Icons.call_received_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return Icons.call_made_rounded;
-    if (tx.type == "INCOME") return Icons.trending_up_rounded;
-    if (tx.type == "REVERSAL") return Icons.undo_rounded;
-    return Icons.trending_down_rounded;
+    switch (tx.type) {
+      case "INCOME":
+        return Icons.trending_up_rounded;
+
+      case "EXPENSE":
+        if (tx.direction == "GOAL_COMPLETION") {
+          return Icons.task_alt_rounded;
+        }
+        return Icons.trending_down_rounded;
+
+      case "TRANSFER":
+        switch (tx.direction) {
+          case "GOAL_ALLOCATION":
+            return Icons.savings_rounded;
+
+          case "GOAL_DEALLOCATION":
+            return Icons.savings_outlined;
+
+          case "ACCOUNT_TRANSFER_IN":
+            return Icons.call_received_rounded;
+
+          case "ACCOUNT_TRANSFER_OUT":
+            return Icons.call_made_rounded;
+
+          default:
+            return Icons.swap_horiz_rounded;
+        }
+
+      case "REVERSAL":
+        return Icons.undo_rounded;
+
+      default:
+        return Icons.receipt_long_rounded;
+    }
   }
 
   Widget _getTransactionLeading(TransactionModel tx) {
-    final Color iconColor = _getTransactionColor(tx);
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(_getTransactionIcon(tx), color: iconColor, size: 20),
+    final color = _getTransactionColor(tx);
+    final icon = _getTransactionIcon(tx);
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.8, end: 1),
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 22,
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -17,7 +17,6 @@ import 'package:front_end/core/providers/account_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -71,11 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message, 
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)
-        ),
-        backgroundColor: isError ? AppColors.expenseAmount : AppColors.incomeAmount,
+        content: Text(message,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w600)),
+        backgroundColor:
+            isError ? AppColors.expenseAmount : AppColors.incomeAmount,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -87,45 +86,120 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── PREMIUM ERROR DIALOG ──────────────────────────────────────────────────
   void _showErrorDialog(String title, String message) {
     showDialog(
+        context: context,
+        builder: (ctx) {
+          final theme = Theme.of(ctx);
+          final colorScheme = theme.colorScheme;
+          final isDark = theme.brightness == Brightness.dark;
+
+          return Dialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: colorScheme.surface,
+            elevation: 8,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppColors.expenseAmount.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.error_outline_rounded,
+                        color: AppColors.expenseAmount, size: 36),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.primary),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("Okay",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  // ── Cancel/Reversal Logic ─────────────────────────────────────────────────
+  Future<void> _handleReversal(TransactionModel tx) async {
+    final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) {
         final theme = Theme.of(ctx);
         final colorScheme = theme.colorScheme;
         final isDark = theme.brightness == Brightness.dark;
-        
+
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           backgroundColor: colorScheme.surface,
           elevation: 8,
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: AppColors.expenseAmount.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.error_outline_rounded, color: AppColors.expenseAmount, size: 36),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Cancel Transaction?",
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.primary),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      icon: Icon(Icons.close_rounded,
+                          color: colorScheme.onSurface.withOpacity(0.5)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: colorScheme.primary),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
+                  "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
                   style: TextStyle(
-                    fontSize: 14, 
-                    color: isDark ? Colors.white70 : Colors.black87, 
-                    height: 1.4,
-                    fontWeight: FontWeight.w500
-                  ),
+                      fontSize: 14,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 28),
                 SizedBox(
@@ -133,125 +207,57 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 52,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
+                      backgroundColor: AppColors.expenseAmount,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text("Okay", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text(
+                      "Confirm Cancel",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         );
-      }
+      },
     );
-  }
 
-  // ── Cancel/Reversal Logic ─────────────────────────────────────────────────
- Future<void> _handleReversal(TransactionModel tx) async {
-  final bool? confirm = await showDialog<bool>(
-    context: context,
-    builder: (ctx) {
-      final theme = Theme.of(ctx);
-      final colorScheme = theme.colorScheme;
-      final isDark = theme.brightness == Brightness.dark;
+    if (confirm == true) {
+      setState(() => _isProcessing = true);
 
-      return Dialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24)),
-        backgroundColor: colorScheme.surface,
-        elevation: 8,
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Cancel Transaction?",
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.primary),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    icon: Icon(Icons.close_rounded,
-                        color: colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
-                style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                    height: 1.4,
-                    fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.expenseAmount,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                  ),
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text(
-                    "Confirm Cancel",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
+      final result =
+          await TransactionService.reverseTransaction(originalTx: tx);
 
-  if (confirm == true) {
-    setState(() => _isProcessing = true);
+      if (result['success']) {
+        await Future.wait([
+          context.read<TransactionProvider>().fetchTransactions(),
+          context.read<AccountProvider>().loadAccounts(),
+          context.read<GoalProvider>().fetchGoals(),
+          context.read<AnalyticsProvider>().reload(),
+        ]);
 
-    final result =
-        await TransactionService.reverseTransaction(originalTx: tx);
+        await _loadRecentTransactions();
 
-    if (result['success']) {
-      await Future.wait([
-        context.read<TransactionProvider>().fetchTransactions(),
-        context.read<AccountProvider>().loadAccounts(),
-        context.read<GoalProvider>().fetchGoals(),
-        context.read<AnalyticsProvider>().reload(),
-      ]);
+        setState(() => _isProcessing = false);
 
-      await _loadRecentTransactions();
+        _showSnackBar("Transaction cancelled successfully!");
+      } else {
+        setState(() => _isProcessing = false);
 
-      setState(() => _isProcessing = false);
-
-      _showSnackBar("Transaction cancelled successfully!");
-    } else {
-      setState(() => _isProcessing = false);
-
-      _showErrorDialog(
-        "Cancellation Failed",
-        result['message'] ??
-            "An error occurred while cancelling the transaction.",
-      );
+        _showErrorDialog(
+          "Cancellation Failed",
+          result['message'] ??
+              "An error occurred while cancelling the transaction.",
+        );
+      }
     }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -301,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            
+
             // Loading Overlay for Reversals
             if (_isProcessing)
               Container(
@@ -317,8 +323,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── APP BAR ───────────────────────────────────────────────────────────────
-  Widget _buildAppBar(BuildContext context, ThemeData theme, ColorScheme colorScheme, bool isDark) {
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+  Widget _buildAppBar(BuildContext context, ThemeData theme,
+      ColorScheme colorScheme, bool isDark) {
+    final surfaceAlt =
+        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
     final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600];
 
     return Padding(
@@ -366,7 +374,8 @@ class _HomeScreenState extends State<HomeScreen> {
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const ProfileSettingsScreen()),
                 ),
                 child: Container(
                   width: 46,
@@ -410,7 +419,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── QUICK ACTION BUTTONS ──────────────────────────────────────────────────
-  Widget _buildActionButtons(BuildContext context, ColorScheme colorScheme, ThemeData theme) {
+  Widget _buildActionButtons(
+      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -424,7 +434,9 @@ class _HomeScreenState extends State<HomeScreen> {
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialIsExpense: false)),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const AddTransactionScreen(initialIsExpense: false)),
               ).then((_) {
                 context.read<TransactionProvider>().fetchTransactions();
                 _loadRecentTransactions();
@@ -441,7 +453,9 @@ class _HomeScreenState extends State<HomeScreen> {
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialIsExpense: true)),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const AddTransactionScreen(initialIsExpense: true)),
               ).then((_) {
                 context.read<TransactionProvider>().fetchTransactions();
                 _loadRecentTransactions();
@@ -453,7 +467,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.swap_horiz_rounded,
               label: "Transfer",
-              color: AppColors.warning,
+              // color: AppColors.warning,
+              color: Colors.purple.shade700, 
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
@@ -523,8 +538,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── RECENT HEADER ─────────────────────────────────────────────────────────
-  Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+  Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
+    final surfaceAlt =
+        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -565,7 +582,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.grey[600]),
+                  Icon(Icons.arrow_forward_ios_rounded,
+                      size: 10, color: Colors.grey[600]),
                 ],
               ),
             ),
@@ -576,14 +594,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── TRANSACTION LIST ──────────────────────────────────────────────────────
-  Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
+  Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
     final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600];
 
     if (_isLoadingRecent) {
       return Padding(
         padding: const EdgeInsets.all(48),
         child: Center(
-          child: CircularProgressIndicator(color: colorScheme.secondary, strokeWidth: 2),
+          child: CircularProgressIndicator(
+              color: colorScheme.secondary, strokeWidth: 2),
         ),
       );
     }
@@ -624,13 +644,17 @@ class _HomeScreenState extends State<HomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       itemCount: _recentTransactions.length,
-      itemBuilder: (context, index) => _buildTile(context, _recentTransactions[index], colorScheme, theme, isDark),
+      itemBuilder: (context, index) => _buildTile(
+          context, _recentTransactions[index], colorScheme, theme, isDark),
     );
   }
+
 // 🔥 TILE WITH PREMIUM SWIPE-TO-CANCEL, RIGHT-ALIGNED DATE & YEAR
-  Widget _buildTile(BuildContext context, TransactionModel tx, ColorScheme colorScheme, ThemeData theme, bool isDark) {
+  Widget _buildTile(BuildContext context, TransactionModel tx,
+      ColorScheme colorScheme, ThemeData theme, bool isDark) {
     final Color moneyColor = _getTransactionColor(tx);
-    final bool isCash = tx.accountName.toLowerCase().contains('cash') || tx.accountName.toLowerCase().contains('wallet');
+    final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
+        tx.accountName.toLowerCase().contains('wallet');
     final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600]!;
 
     bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
@@ -643,7 +667,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _getTransactionLeading(tx),
               const SizedBox(width: 16),
-              
+
               // ── Left Side: Title & Subtitle ──
               Expanded(
                 child: Column(
@@ -655,7 +679,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: colorScheme.primary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        decoration: tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
+                        decoration: tx.status == "VOIDED"
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -697,7 +723,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // ── Right Side: Amount & Date (Including Year) ──
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -708,7 +734,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: tx.status == "VOIDED" ? textSec : moneyColor,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      decoration: tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
+                      decoration: tx.status == "VOIDED"
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -716,8 +744,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     // 🔥 Added ', yyyy' to show the year
                     DateFormat('dd MMM, yyyy').format(tx.date),
                     style: TextStyle(
-                      color: textSec, 
-                      fontSize: 10, // Slightly smaller to fit the year comfortably
+                      color: textSec,
+                      fontSize:
+                          10, // Slightly smaller to fit the year comfortably
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -739,6 +768,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return tileContent;
   }
+
   // ── HELPERS ───────────────────────────────────────────────────────────────
   String _greeting() {
     final h = DateTime.now().hour;
@@ -748,22 +778,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Color _getTransactionColor(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") return AppColors.savingsPrimary;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") return AppColors.progressGreen;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") return AppColors.chartIncome;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") return AppColors.incomeAmount;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") return AppColors.textSecondary;
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
+      return AppColors.savingsPrimary;
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
+      return AppColors.progressGreen;
+    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
+      return AppColors.chartIncome;
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
+      return AppColors.incomeAmount;
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
+      return AppColors.textSecondary;
     if (tx.type == "INCOME") return AppColors.incomeAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
     return AppColors.expenseAmount;
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") return Icons.savings_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") return Icons.savings_outlined;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") return Icons.task_alt_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") return Icons.call_received_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") return Icons.call_made_rounded;
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
+      return Icons.savings_rounded;
+    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
+      return Icons.savings_outlined;
+    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
+      return Icons.task_alt_rounded;
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
+      return Icons.call_received_rounded;
+    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
+      return Icons.call_made_rounded;
     if (tx.type == "INCOME") return Icons.trending_up_rounded;
     if (tx.type == "REVERSAL") return Icons.undo_rounded;
     return Icons.trending_down_rounded;
@@ -790,7 +830,9 @@ class SwipeToCancelTile extends StatefulWidget {
   final Widget child;
   final VoidCallback onCancelTap;
 
-  const SwipeToCancelTile({Key? key, required this.child, required this.onCancelTap}) : super(key: key);
+  const SwipeToCancelTile(
+      {Key? key, required this.child, required this.onCancelTap})
+      : super(key: key);
 
   @override
   State<SwipeToCancelTile> createState() => _SwipeToCancelTileState();
@@ -798,7 +840,7 @@ class SwipeToCancelTile extends StatefulWidget {
 
 class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
   double _dragExtent = 0.0;
-  final double _maxDrag = 100.0; 
+  final double _maxDrag = 100.0;
 
   @override
   Widget build(BuildContext context) {
@@ -807,7 +849,8 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
         setState(() {
           _dragExtent += details.primaryDelta!;
           if (_dragExtent > 0) _dragExtent = 0; // Prevent swiping right
-          if (_dragExtent < -_maxDrag - 20) _dragExtent = -_maxDrag - 20; // Add elastic resistance
+          if (_dragExtent < -_maxDrag - 20)
+            _dragExtent = -_maxDrag - 20; // Add elastic resistance
         });
       },
       onHorizontalDragEnd: (details) {
@@ -828,7 +871,8 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
               alignment: Alignment.centerRight,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
-                opacity: _dragExtent < -30 ? 1.0 : 0.0, // Fade in as user swipes
+                opacity:
+                    _dragExtent < -30 ? 1.0 : 0.0, // Fade in as user swipes
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -850,15 +894,20 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(4), 
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: AppColors.expenseAmount.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.close_rounded, color: AppColors.expenseAmount, size: 14),
+                          child: const Icon(Icons.close_rounded,
+                              color: AppColors.expenseAmount, size: 14),
                         ),
-                        const SizedBox(width: 6), 
-                        const Text("Cancel", style: TextStyle(color: AppColors.expenseAmount, fontSize: 13, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 6),
+                        const Text("Cancel",
+                            style: TextStyle(
+                                color: AppColors.expenseAmount,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -866,14 +915,14 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
               ),
             ),
           ),
-          
+
           // Foreground (The actual transaction tile)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
             transform: Matrix4.translationValues(_dragExtent, 0, 0),
             child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor, 
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: widget.child,
             ),
           ),
