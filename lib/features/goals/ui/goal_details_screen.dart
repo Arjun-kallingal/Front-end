@@ -7,6 +7,8 @@ import 'package:front_end/core/services/api_config.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
+import '../provider/goal_provider.dart';
+import '../../analytics/provider/analytics_provider.dart';
 
 class GoalDetailsScreen extends StatefulWidget {
   final GoalModel goal;
@@ -59,21 +61,23 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
       if (!mounted) return;
 
       if (success) {
-  setState(() => _currentAmount += isDeposit ? amount : -amount);
+        setState(() => _currentAmount += isDeposit ? amount : -amount);
 
-  if (mounted) {
-    await Future.wait([
-      context.read<AccountProvider>().loadAccounts(),
-      context.read<TransactionProvider>().fetchTransactions(),
-    ]);
-  }
+        if (mounted) {
+          await Future.wait([
+            context.read<AccountProvider>().loadAccounts(),
+            context.read<TransactionProvider>().fetchTransactions(),
+            context.read<GoalProvider>().fetchGoals(),
+            context.read<AnalyticsProvider>().reload(),
+          ]);
+        }
 
-  await _loadHistory();
+        await _loadHistory();
 
         _showSnackBar(isDeposit
             ? "Funds deposited successfully!"
             : "Withdrawal successful!");
-        Navigator.pop(context, true);
+        Navigator.pop(context, true); // ✅ returns true
       } else {
         _showSnackBar(isDeposit ? "Deposit failed" : "Withdrawal failed",
             isError: true);

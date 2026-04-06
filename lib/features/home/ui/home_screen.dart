@@ -33,13 +33,28 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _recentError;
 
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      context.read<TransactionProvider>().fetchTransactions();
-    });
+void initState() {
+  super.initState();
+  Future.microtask(() async {
+    await context.read<TransactionProvider>().fetchTransactions();
+    context.read<TransactionProvider>().addListener(_onTransactionUpdate);
+  });
+  _loadRecentTransactions();
+}
+
+void _onTransactionUpdate() {
+  print("🔥 TransactionProvider updated - reloading recent");
+  if (mounted && !_isLoadingRecent) {
     _loadRecentTransactions();
   }
+}
+
+@override
+void dispose() {
+  // ✅ Read without listening to avoid context errors on dispose
+  context.read<TransactionProvider>().removeListener(_onTransactionUpdate);
+  super.dispose();
+}
 
   // 🔥 Fetch the latest transactions directly from the new service method
   Future<void> _loadRecentTransactions() async {
@@ -175,29 +190,29 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-               Row(
-  children: [
-    Expanded(
-      child: Text(
-        "Cancel Transaction?",
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w800,
-          color: colorScheme.primary,
-        ),
-      ),
-    ),
-    IconButton(
-      onPressed: () => Navigator.pop(ctx, false),
-      icon: Icon(
-        Icons.close_rounded,
-        color: colorScheme.onSurface.withOpacity(0.5),
-      ),
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-    ),
-  ],
-),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Cancel Transaction?",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 Text(
                   "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
