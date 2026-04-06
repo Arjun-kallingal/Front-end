@@ -12,10 +12,11 @@ import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/features/transfer/transfer.dart';
-import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
+import 'package:front_end/features/notifications/notification_screen.dart';
+import 'package:front_end/core/providers/notification_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +28,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isProcessing = false;
 
-  // 🔥 State for Latest Transactions
+  // State for Latest Transactions
   List<TransactionModel> _recentTransactions = [];
   bool _isLoadingRecent = true;
   String? _recentError;
@@ -37,11 +38,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     Future.microtask(() {
       context.read<TransactionProvider>().fetchTransactions();
+
+      // 🔥 INITIALIZE NOTIFICATIONS & SOCKET
+      final notifProvider = context.read<NotificationProvider>();
+      notifProvider.loadNotifications();
+      notifProvider.initializeSocketListeners();
     });
     _loadRecentTransactions();
   }
 
-  // 🔥 Fetch the latest transactions directly from the new service method
   Future<void> _loadRecentTransactions() async {
     setState(() {
       _isLoadingRecent = true;
@@ -66,7 +71,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ── PREMIUM SNACKBAR ──────────────────────────────────────────────────────
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -83,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── PREMIUM ERROR DIALOG ──────────────────────────────────────────────────
   void _showErrorDialog(String title, String message) {
     showDialog(
         context: context,
@@ -105,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: AppColors.expenseAmount.withOpacity(0.12),
+                      color: AppColors.expenseAmount.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.error_outline_rounded,
@@ -155,7 +158,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
   }
 
-  // ── Cancel/Reversal Logic ─────────────────────────────────────────────────
   Future<void> _handleReversal(TransactionModel tx) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -277,9 +279,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             RefreshIndicator(
               onRefresh: () async {
-                // Refresh provider (balance) and recent list
                 await context.read<TransactionProvider>().fetchTransactions();
                 await _loadRecentTransactions();
+                await context.read<NotificationProvider>().loadNotifications();
               },
               color: colorScheme.secondary,
               backgroundColor: colorScheme.surface,
@@ -307,8 +309,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
-            // Loading Overlay for Reversals
             if (_isProcessing)
               Container(
                 color: Colors.black.withOpacity(0.3),
@@ -322,7 +322,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── APP BAR ───────────────────────────────────────────────────────────────
   Widget _buildAppBar(BuildContext context, ThemeData theme,
       ColorScheme colorScheme, bool isDark) {
     final surfaceAlt =
@@ -370,7 +369,52 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Row(
             children: [
-              const SizedBox(width: 8),
+              // ── 🔔 LIVE NOTIFICATION BELL (CONSUMER PATTERN) ──
+              Consumer<NotificationProvider>(
+                builder: (context, notifProvider, child) {
+                  final unreadCount = notifProvider.unreadCount;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const NotificationScreen()),
+                      );
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        SizedBox(
+                          width: 46,
+                          height: 46,
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            color: colorScheme.primary,
+                            size: 26,
+                          ),
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: theme.scaffoldBackgroundColor,
+                                    width: 1.5),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
@@ -384,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     shape: BoxShape.circle,
                     color: surfaceAlt,
                     border: Border.all(
-                      color: colorScheme.secondary.withOpacity(0.40),
+                      color: colorScheme.secondary.withValues(alpha: 0.40),
                       width: 1.5,
                     ),
                   ),
@@ -402,7 +446,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── SECTION LABEL ─────────────────────────────────────────────────────────
   Widget _buildSectionLabel(String label, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -418,7 +461,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── QUICK ACTION BUTTONS ──────────────────────────────────────────────────
   Widget _buildActionButtons(
       BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Padding(
@@ -467,8 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.swap_horiz_rounded,
               label: "Transfer",
-              // color: AppColors.warning,
-              color: Colors.purple.shade700, 
+              color: Colors.purple.shade700,
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
@@ -537,7 +578,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── RECENT HEADER ─────────────────────────────────────────────────────────
   Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
     final surfaceAlt =
@@ -593,7 +633,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── TRANSACTION LIST ──────────────────────────────────────────────────────
   Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
     final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600];
@@ -649,7 +688,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-// 🔥 TILE WITH PREMIUM SWIPE-TO-CANCEL, RIGHT-ALIGNED DATE & YEAR
   Widget _buildTile(BuildContext context, TransactionModel tx,
       ColorScheme colorScheme, ThemeData theme, bool isDark) {
     final Color moneyColor = _getTransactionColor(tx);
@@ -667,8 +705,6 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _getTransactionLeading(tx),
               const SizedBox(width: 16),
-
-              // ── Left Side: Title & Subtitle ──
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -723,8 +759,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // ── Right Side: Amount & Date (Including Year) ──
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -741,12 +775,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    // 🔥 Added ', yyyy' to show the year
                     DateFormat('dd MMM, yyyy').format(tx.date),
                     style: TextStyle(
                       color: textSec,
-                      fontSize:
-                          10, // Slightly smaller to fit the year comfortably
+                      fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -769,7 +801,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return tileContent;
   }
 
-  // ── HELPERS ───────────────────────────────────────────────────────────────
   String _greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return "Good morning ☀️";
@@ -823,9 +854,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔥 CUSTOM PREMIUM SWIPE WIDGET
-// ─────────────────────────────────────────────────────────────────────────────
 class SwipeToCancelTile extends StatefulWidget {
   final Widget child;
   final VoidCallback onCancelTap;
@@ -848,14 +876,12 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
       onHorizontalDragUpdate: (details) {
         setState(() {
           _dragExtent += details.primaryDelta!;
-          if (_dragExtent > 0) _dragExtent = 0; // Prevent swiping right
-          if (_dragExtent < -_maxDrag - 20)
-            _dragExtent = -_maxDrag - 20; // Add elastic resistance
+          if (_dragExtent > 0) _dragExtent = 0;
+          if (_dragExtent < -_maxDrag - 20) _dragExtent = -_maxDrag - 20;
         });
       },
       onHorizontalDragEnd: (details) {
         setState(() {
-          // Snap open if dragged more than halfway, otherwise snap closed
           if (_dragExtent < -_maxDrag / 2) {
             _dragExtent = -_maxDrag;
           } else {
@@ -865,14 +891,12 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
       },
       child: Stack(
         children: [
-          // Background (The Premium Button)
           Positioned.fill(
             child: Align(
               alignment: Alignment.centerRight,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
-                opacity:
-                    _dragExtent < -30 ? 1.0 : 0.0, // Fade in as user swipes
+                opacity: _dragExtent < -30 ? 1.0 : 0.0,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -915,8 +939,6 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
               ),
             ),
           ),
-
-          // Foreground (The actual transaction tile)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,

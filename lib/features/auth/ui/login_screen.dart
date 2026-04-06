@@ -8,6 +8,7 @@ import 'forgot_password_gmail.dart';
 import '../../../core/services/api_config.dart';
 import 'package:front_end/core/services/auth_storage.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:front_end/core/providers/notification_provider.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -56,6 +57,9 @@ class _LoginScreenState extends State<LoginScreen> {
               userName: name,
               userEmail: email,
             );
+
+        /// 🔌 CONNECT SOCKET — before navigating so bell is live on arrival
+        await context.read<NotificationProvider>().initializeSocketListeners();
 
         if (!mounted) return;
 
