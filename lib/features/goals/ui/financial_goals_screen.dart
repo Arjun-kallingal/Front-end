@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../data/goal_model.dart';
-import '../services/goal_service.dart';
 import 'create_new_goal.dart';
 import 'goal_details_screen.dart';
 import 'package:front_end/navigation/navigation_service.dart';
-import 'package:front_end/core/services/api_config.dart';
 import 'package:provider/provider.dart';
 import '../provider/goal_provider.dart';
 
@@ -33,10 +31,10 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     });
   }
 
-  void _applyFilters() {
-    // ✅ FIX: use provider's searchGoals for filtering
-    context.read<GoalProvider>().searchGoals(searchQuery);
-  }
+  // void _applyFilters() {
+  //   // ✅ FIX: use provider's searchGoals for filtering
+  //   context.read<GoalProvider>().searchGoals(searchQuery);
+  // }
 
   void _searchGoals(String value) {
     searchQuery = value;

@@ -307,7 +307,6 @@ await context.read<AnalyticsProvider>().reload();
   }
 
   Widget _toggleBtn(String label, bool active, Color borderColor) {
-    final theme = Theme.of(context);
     return Expanded(
       child: GestureDetector(
         onTap: () => _toggleType(label == "Expense"),
@@ -544,7 +543,6 @@ await context.read<AnalyticsProvider>().reload();
   }
 
   Widget _buildLabel(String text) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(

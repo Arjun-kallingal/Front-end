@@ -12,7 +12,6 @@ import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/features/transfer/transfer.dart';
-import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';

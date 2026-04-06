@@ -7,9 +7,6 @@ import '../../../core/providers/account_provider.dart';
 import 'package:front_end/navigation/navigation_service.dart';
 // ── Shared dark-luxury palette (mirrors _P in home_screen.dart) ───────────────
 class _C {
-  static const Color bg         = Color(0xFF0F1117);
-  static const Color surface    = Color(0xFF1A1D27);
-  static const Color surfaceAlt = Color(0xFF21253A);
 
   // Hero gradient
   static const Color g1 = Color(0xFF1CB5E0); // teal
@@ -21,11 +18,9 @@ class _C {
   static const Color white50   = Color(0x80FFFFFF);
   static const Color white20   = Color(0x33FFFFFF);
   static const Color white10   = Color(0x1AFFFFFF);
-  static const Color white06   = Color(0x0FFFFFFF);
 
   static const Color income    = Color(0xFF22C55E);
   static const Color reserved  = Color(0xFFF59E0B);
-  static const Color accent    = Color(0xFF1CB5E0);
 
   static const Color divider   = Color(0x33FFFFFF);
 }

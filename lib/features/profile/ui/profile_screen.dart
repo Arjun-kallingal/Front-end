@@ -49,7 +49,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final user = context.watch<UserProfileProvider>();
-    final isLight = theme.brightness == Brightness.light;
+    // final isLight = theme.brightness == Brightness.light;
 
     String userName = user.name;
     String email = user.email;
