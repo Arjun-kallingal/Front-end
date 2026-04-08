@@ -26,36 +26,33 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isProcessing = false;
 
-  // 🔥 State for Latest Transactions
   List<TransactionModel> _recentTransactions = [];
   bool _isLoadingRecent = true;
   String? _recentError;
 
   @override
-void initState() {
-  super.initState();
-  Future.microtask(() async {
-    await context.read<TransactionProvider>().fetchTransactions();
-    context.read<TransactionProvider>().addListener(_onTransactionUpdate);
-  });
-  _loadRecentTransactions();
-}
-
-void _onTransactionUpdate() {
-  print("🔥 TransactionProvider updated - reloading recent");
-  if (mounted && !_isLoadingRecent) {
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      await context.read<TransactionProvider>().fetchTransactions();
+      context.read<TransactionProvider>().addListener(_onTransactionUpdate);
+    });
     _loadRecentTransactions();
   }
-}
 
-@override
-void dispose() {
-  // ✅ Read without listening to avoid context errors on dispose
-  context.read<TransactionProvider>().removeListener(_onTransactionUpdate);
-  super.dispose();
-}
+  void _onTransactionUpdate() {
+    print("🔥 TransactionProvider updated - reloading recent");
+    if (mounted && !_isLoadingRecent) {
+      _loadRecentTransactions();
+    }
+  }
 
-  // 🔥 Fetch the latest transactions directly from the new service method
+  @override
+  void dispose() {
+    context.read<TransactionProvider>().removeListener(_onTransactionUpdate);
+    super.dispose();
+  }
+
   Future<void> _loadRecentTransactions() async {
     setState(() {
       _isLoadingRecent = true;
@@ -80,13 +77,13 @@ void dispose() {
     }
   }
 
-  // ── PREMIUM SNACKBAR ──────────────────────────────────────────────────────
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message,
             style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
+                color: AppColors.darkTextPrimary,
+                fontWeight: FontWeight.w600)),
         backgroundColor:
             isError ? AppColors.expenseAmount : AppColors.incomeAmount,
         behavior: SnackBarBehavior.floating,
@@ -97,7 +94,6 @@ void dispose() {
     );
   }
 
-  // ── PREMIUM ERROR DIALOG ──────────────────────────────────────────────────
   void _showErrorDialog(String title, String message) {
     showDialog(
         context: context,
@@ -119,11 +115,11 @@ void dispose() {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: AppColors.expenseAmount.withOpacity(0.12),
+                      color: AppColors.errorBg,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.error_outline_rounded,
-                        color: AppColors.expenseAmount, size: 36),
+                        color: AppColors.error, size: 36),
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -140,7 +136,9 @@ void dispose() {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white70 : Colors.black87,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                         height: 1.4,
                         fontWeight: FontWeight.w500),
                   ),
@@ -169,7 +167,6 @@ void dispose() {
         });
   }
 
-  // ── Cancel/Reversal Logic ─────────────────────────────────────────────────
   Future<void> _handleReversal(TransactionModel tx) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -205,7 +202,9 @@ void dispose() {
                       onPressed: () => Navigator.pop(ctx, false),
                       icon: Icon(
                         Icons.close_rounded,
-                        color: colorScheme.onSurface.withOpacity(0.5),
+                        color: isDark
+                            ? AppColors.darkTextMuted
+                            : AppColors.lightTextMuted,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -217,7 +216,9 @@ void dispose() {
                   "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
                   style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.white70 : Colors.black87,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                       height: 1.4,
                       fontWeight: FontWeight.w500),
                 ),
@@ -228,7 +229,7 @@ void dispose() {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.expenseAmount,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.darkTextPrimary,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                     ),
@@ -297,7 +298,6 @@ void dispose() {
           children: [
             RefreshIndicator(
               onRefresh: () async {
-                // Refresh provider (balance) and recent list
                 await context.read<TransactionProvider>().fetchTransactions();
                 await _loadRecentTransactions();
               },
@@ -328,10 +328,9 @@ void dispose() {
               ),
             ),
 
-            // Loading Overlay for Reversals
             if (_isProcessing)
               Container(
-                color: Colors.black.withOpacity(0.3),
+                color: AppColors.darkBgPrimary.withOpacity(0.3),
                 child: Center(
                   child: CircularProgressIndicator(color: colorScheme.primary),
                 ),
@@ -342,12 +341,13 @@ void dispose() {
     );
   }
 
-  // ── APP BAR ───────────────────────────────────────────────────────────────
   Widget _buildAppBar(BuildContext context, ThemeData theme,
       ColorScheme colorScheme, bool isDark) {
     final surfaceAlt =
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600];
+    final textSec = isDark
+        ? AppColors.darkTextMuted
+        : AppColors.lightTextMuted;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
@@ -422,14 +422,13 @@ void dispose() {
     );
   }
 
-  // ── SECTION LABEL ─────────────────────────────────────────────────────────
   Widget _buildSectionLabel(String label, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Text(
         label.toUpperCase(),
         style: TextStyle(
-          color: isDark ? const Color(0xFF8B90A7) : Colors.grey[600],
+          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.4,
@@ -438,7 +437,6 @@ void dispose() {
     );
   }
 
-  // ── QUICK ACTION BUTTONS ──────────────────────────────────────────────────
   Widget _buildActionButtons(
       BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Padding(
@@ -487,8 +485,7 @@ void dispose() {
             child: _actionButton(
               icon: Icons.swap_horiz_rounded,
               label: "Transfer",
-              // color: AppColors.warning,
-              color: Colors.purple.shade700,
+              color: AppColors.transferColor,
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
@@ -524,7 +521,7 @@ void dispose() {
           border: Border.all(color: color.withOpacity(0.20), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: AppColors.darkBgPrimary.withOpacity(0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -557,7 +554,6 @@ void dispose() {
     );
   }
 
-  // ── RECENT HEADER ─────────────────────────────────────────────────────────
   Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
     final surfaceAlt =
@@ -596,14 +592,19 @@ void dispose() {
                   Text(
                     "See all",
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(Icons.arrow_forward_ios_rounded,
-                      size: 10, color: Colors.grey[600]),
+                      size: 10,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted),
                 ],
               ),
             ),
@@ -613,10 +614,10 @@ void dispose() {
     );
   }
 
-  // ── TRANSACTION LIST ──────────────────────────────────────────────────────
   Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600];
+    final textSec =
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     if (_isLoadingRecent) {
       return Padding(
@@ -669,13 +670,13 @@ void dispose() {
     );
   }
 
-// 🔥 TILE WITH PREMIUM SWIPE-TO-CANCEL, RIGHT-ALIGNED DATE & YEAR
   Widget _buildTile(BuildContext context, TransactionModel tx,
       ColorScheme colorScheme, ThemeData theme, bool isDark) {
     final Color moneyColor = _getTransactionColor(tx);
     final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
         tx.accountName.toLowerCase().contains('wallet');
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600]!;
+    final textSec =
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
 
@@ -687,8 +688,6 @@ void dispose() {
             children: [
               _getTransactionLeading(tx),
               const SizedBox(width: 16),
-
-              // ── Left Side: Title & Subtitle ──
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,8 +742,6 @@ void dispose() {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // ── Right Side: Amount & Date (Including Year) ──
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -761,12 +758,10 @@ void dispose() {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    // 🔥 Added ', yyyy' to show the year
                     DateFormat('dd MMM, yyyy').format(tx.date),
                     style: TextStyle(
                       color: textSec,
-                      fontSize:
-                          10, // Slightly smaller to fit the year comfortably
+                      fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -789,7 +784,6 @@ void dispose() {
     return tileContent;
   }
 
-  // ── HELPERS ───────────────────────────────────────────────────────────────
   String _greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return "Good morning ☀️";
@@ -807,7 +801,7 @@ void dispose() {
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
       return AppColors.incomeAmount;
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return AppColors.textSecondary;
+      return AppColors.dateLabel;
     if (tx.type == "INCOME") return AppColors.incomeAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
     return AppColors.expenseAmount;
@@ -843,9 +837,6 @@ void dispose() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔥 CUSTOM PREMIUM SWIPE WIDGET
-// ─────────────────────────────────────────────────────────────────────────────
 class SwipeToCancelTile extends StatefulWidget {
   final Widget child;
   final VoidCallback onCancelTap;
@@ -868,14 +859,12 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
       onHorizontalDragUpdate: (details) {
         setState(() {
           _dragExtent += details.primaryDelta!;
-          if (_dragExtent > 0) _dragExtent = 0; // Prevent swiping right
-          if (_dragExtent < -_maxDrag - 20)
-            _dragExtent = -_maxDrag - 20; // Add elastic resistance
+          if (_dragExtent > 0) _dragExtent = 0;
+          if (_dragExtent < -_maxDrag - 20) _dragExtent = -_maxDrag - 20;
         });
       },
       onHorizontalDragEnd: (details) {
         setState(() {
-          // Snap open if dragged more than halfway, otherwise snap closed
           if (_dragExtent < -_maxDrag / 2) {
             _dragExtent = -_maxDrag;
           } else {
@@ -885,14 +874,12 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
       },
       child: Stack(
         children: [
-          // Background (The Premium Button)
           Positioned.fill(
             child: Align(
               alignment: Alignment.centerRight,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
-                opacity:
-                    _dragExtent < -30 ? 1.0 : 0.0, // Fade in as user swipes
+                opacity: _dragExtent < -30 ? 1.0 : 0.0,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -903,7 +890,7 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
                     width: _maxDrag,
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.expenseAmount.withOpacity(0.12),
+                      color: AppColors.errorBg,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
                         bottomLeft: Radius.circular(16),
@@ -916,7 +903,7 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.expenseAmount.withOpacity(0.2),
+                            color: AppColors.expenseIconBg,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.close_rounded,
@@ -935,8 +922,6 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
               ),
             ),
           ),
-
-          // Foreground (The actual transaction tile)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,

@@ -42,7 +42,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     context.read<GoalProvider>().searchGoals(value);
   }
 
-  Future<void> _confirmDelete(String id) async {
+ Future<void> _confirmDelete(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -84,7 +84,6 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     );
 
     if (confirm == true) {
-      // ✅ FIX: use provider — _goals is populated, removeWhere will work
       final provider = context.read<GoalProvider>();
       final success = await provider.deleteGoal(id);
 
@@ -101,7 +100,6 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

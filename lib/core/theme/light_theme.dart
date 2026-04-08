@@ -6,75 +6,65 @@ class LightTheme {
     return ThemeData(
       brightness: Brightness.light,
       fontFamily: 'Inter',
-      scaffoldBackgroundColor: Colors.white,
+      scaffoldBackgroundColor: AppColors.lightBgPrimary,
 
       colorScheme: const ColorScheme.light(
-        primary: Colors.black, 
+        primary: AppColors.lightTextPrimary,
         secondary: AppColors.accentOrange,
-        // Note: 'background' is deprecated in Flutter 3.22+. Use 'surface' instead.
-        // background: Colors.white,
-        surface: Colors.white,
-        error: Colors.black, // 🔥 NO RED
-      ),
-      
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        surface: AppColors.lightBgPrimary,
+        error: AppColors.lightTextPrimary,
       ),
 
-      /// ✅ TEXT FIELD THEME (NO RED ANYWHERE)
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.lightBgPrimary,
+        elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.lightTextPrimary),
+        titleTextStyle: TextStyle(
+          color: AppColors.lightTextPrimary,
+          fontFamily: 'Inter',
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF3F3F3),
-        hintStyle: const TextStyle(color: Colors.grey),
+        fillColor: AppColors.lightBgInput,
+        hintStyle: const TextStyle(color: AppColors.lightTextHint),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-
-        /// NORMAL BORDER
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.black),
+          borderSide: const BorderSide(color: AppColors.lightTextPrimary),
         ),
-
-        /// ENABLED
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.black),
+          borderSide: const BorderSide(color: AppColors.lightTextPrimary),
         ),
-
-        /// FOCUSED
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.black, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.lightTextPrimary, width: 1.5),
         ),
-
-        /// 🔥 ERROR (NO RED)
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.black),
+          borderSide: const BorderSide(color: AppColors.lightTextPrimary),
         ),
-
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.black, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.lightTextPrimary, width: 1.5),
         ),
-
-        /// OPTIONAL: remove red error text style
-        errorStyle: const TextStyle(color: Colors.black),
+        errorStyle: const TextStyle(color: AppColors.lightTextPrimary),
       ),
 
-      /// ✅ CURSOR + TEXT SELECTION (NO RED)
       textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: Colors.black,
-        selectionColor: Color(0xFFBDBDBD),
-        selectionHandleColor: Colors.black,
+        cursorColor: AppColors.lightTextPrimary,
+        selectionColor: AppColors.lightBgElevated,
+        selectionHandleColor: AppColors.lightTextPrimary,
       ),
 
-      /// ✅ ELEVATED BUTTON
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black, 
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.lightTextPrimary,
+          foregroundColor: AppColors.lightBgPrimary,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -83,7 +73,46 @@ class LightTheme {
         ),
       ),
 
-      dividerColor: const Color(0xFFE5E5E5),
+      dividerColor: AppColors.lightDivider,
+
+      cardColor: AppColors.lightBgCard,
+
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.all(AppColors.switchThumb),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.switchActive;
+          return AppColors.lightSwitchInactive;
+        }),
+      ),
+
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.lightTextPrimary;
+          return AppColors.lightTextMuted;
+        }),
+      ),
+
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.lightNavBg,
+        selectedItemColor: AppColors.navActive,
+        unselectedItemColor: AppColors.lightNavInactive,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.lightFilterBg,
+        selectedColor: AppColors.filterSelectedBg,
+        labelStyle: const TextStyle(color: AppColors.lightFilterText),
+        secondaryLabelStyle: const TextStyle(color: AppColors.filterSelectedText),
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        linearTrackColor: AppColors.lightProgressBg,
+      ),
     );
   }
 }
