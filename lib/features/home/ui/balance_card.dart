@@ -5,30 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../core/models/account_model.dart';
 import '../../../core/providers/account_provider.dart';
 import 'package:front_end/navigation/navigation_service.dart';
-// ── Shared dark-luxury palette (mirrors _P in home_screen.dart) ───────────────
-class _C {
-  static const Color bg         = Color(0xFF0F1117);
-  static const Color surface    = Color(0xFF1A1D27);
-  static const Color surfaceAlt = Color(0xFF21253A);
-
-  // Hero gradient
-  static const Color g1 = Color(0xFF1CB5E0); // teal
-  static const Color g2 = Color(0xFF4F46E5); // indigo
-  static const Color g3 = Color(0xFF7C3AED); // violet
-
-  static const Color white     = Colors.white;
-  static const Color white70   = Color(0xB3FFFFFF);
-  static const Color white50   = Color(0x80FFFFFF);
-  static const Color white20   = Color(0x33FFFFFF);
-  static const Color white10   = Color(0x1AFFFFFF);
-  static const Color white06   = Color(0x0FFFFFFF);
-
-  static const Color income    = Color(0xFF22C55E);
-  static const Color reserved  = Color(0xFFF59E0B);
-  static const Color accent    = Color(0xFF1CB5E0);
-
-  static const Color divider   = Color(0x33FFFFFF);
-}
+import 'package:front_end/core/constants/app_colors.dart';
 
 class BalanceCard extends StatelessWidget {
   const BalanceCard({super.key});
@@ -40,17 +17,16 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider       = context.watch<AccountProvider>();
-    final AccountModel?  account = provider.defaultAccount;
+    final provider = context.watch<AccountProvider>();
+    final AccountModel? account = provider.defaultAccount;
 
-    // ── Loading ───────────────────────────────────────────────────────────
     if (provider.isLoading) {
       return _shell(
         child: const SizedBox(
           height: 200,
           child: Center(
             child: CircularProgressIndicator(
-              color: _C.white,
+              color: AppColors.darkTextPrimary,
               strokeWidth: 2,
             ),
           ),
@@ -58,10 +34,8 @@ class BalanceCard extends StatelessWidget {
       );
     }
 
-    // ── Empty ─────────────────────────────────────────────────────────────
     if (account == null) return const SizedBox.shrink();
 
-    // ── Content ───────────────────────────────────────────────────────────
     return _shell(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
@@ -73,19 +47,20 @@ class BalanceCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Pill label
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _C.white10,
+                    color: AppColors.darkTextPrimary.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _C.white20, width: 0.8),
+                    border: Border.all(
+                        color: AppColors.darkTextPrimary.withOpacity(0.20),
+                        width: 0.8),
                   ),
                   child: Text(
                     account.name.toUpperCase(),
-                    style: const TextStyle(
-                      color: _C.white70,
+                    style: TextStyle(
+                      color: AppColors.darkTextPrimary.withOpacity(0.70),
                       fontSize: 10,
                       letterSpacing: 1.5,
                       fontWeight: FontWeight.w700,
@@ -93,19 +68,19 @@ class BalanceCard extends StatelessWidget {
                   ),
                 ),
 
-                // Wallet icon ring
                 Container(
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _C.white10,
-                    border:
-                        Border.all(color: _C.white20, width: 0.8),
+                    color: AppColors.darkTextPrimary.withOpacity(0.10),
+                    border: Border.all(
+                        color: AppColors.darkTextPrimary.withOpacity(0.20),
+                        width: 0.8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.account_balance_wallet_outlined,
-                    color: _C.white70,
+                    color: AppColors.darkTextPrimary.withOpacity(0.70),
                     size: 17,
                   ),
                 ),
@@ -120,16 +95,16 @@ class BalanceCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.w800,
-                color: _C.white,
+                color: AppColors.darkTextPrimary,
                 letterSpacing: -1.2,
                 height: 1,
               ),
             ),
             const SizedBox(height: 5),
-            const Text(
+            Text(
               "Available Balance",
               style: TextStyle(
-                color: _C.white50,
+                color: AppColors.darkTextPrimary.withOpacity(0.50),
                 fontSize: 12,
                 letterSpacing: 0.3,
               ),
@@ -151,7 +126,7 @@ class BalanceCard extends StatelessWidget {
                       isCurved: true,
                       curveSmoothness: 0.4,
                       barWidth: 2.5,
-                      color: _C.income,
+                      color: AppColors.incomeAmount,
                       dotData: const FlDotData(show: false),
                       spots: const [
                         FlSpot(0, 1.0),
@@ -166,8 +141,8 @@ class BalanceCard extends StatelessWidget {
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            _C.income.withOpacity(0.28),
-                            _C.income.withOpacity(0.00),
+                            AppColors.incomeAmount.withOpacity(0.28),
+                            AppColors.incomeAmount.withOpacity(0.00),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -182,7 +157,9 @@ class BalanceCard extends StatelessWidget {
             const SizedBox(height: 16),
 
             // ── Divider ────────────────────────────────────────────────
-            Container(height: 0.6, color: _C.divider),
+            Container(
+                height: 0.6,
+                color: AppColors.darkTextPrimary.withOpacity(0.20)),
 
             const SizedBox(height: 16),
 
@@ -194,20 +171,20 @@ class BalanceCard extends StatelessWidget {
                     icon: Icons.lock_outline_rounded,
                     label: "Reserved",
                     value: account.reservedBalance,
-                    color: _C.reserved,
+                    color: AppColors.warning,
                   ),
                 ),
                 Container(
                   width: 0.6,
                   height: 36,
-                  color: _C.divider,
+                  color: AppColors.darkTextPrimary.withOpacity(0.20),
                 ),
                 Expanded(
                   child: _stat(
                     icon: Icons.trending_up_rounded,
                     label: "Total Worth",
                     value: account.totalBalance,
-                    color: _C.income,
+                    color: AppColors.incomeAmount,
                     alignRight: true,
                   ),
                 ),
@@ -227,25 +204,27 @@ class BalanceCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  color: _C.white10,
-                  border: Border.all(color: _C.white20, width: 0.8),
+                  color: AppColors.darkTextPrimary.withOpacity(0.10),
+                  border: Border.all(
+                      color: AppColors.darkTextPrimary.withOpacity(0.20),
+                      width: 0.8),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       "Manage Wallets",
                       style: TextStyle(
-                        color: _C.white,
+                        color: AppColors.darkTextPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                         letterSpacing: 0.2,
                       ),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: _C.white70,
+                      color: AppColors.darkTextPrimary.withOpacity(0.70),
                       size: 15,
                     ),
                   ],
@@ -258,19 +237,22 @@ class BalanceCard extends StatelessWidget {
     );
   }
 
-  // ── Hero shell: gradient + decorative circles + shadow ─────────────────────
   Widget _shell({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(
-          colors: [_C.g1, _C.g2, _C.g3],
+          colors: [
+            AppColors.balanceCardStart,
+            AppColors.balanceCardMid,
+            AppColors.balanceCardEnd,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: _C.g2.withOpacity(0.50),
+            color: AppColors.balanceCardMid.withOpacity(0.50),
             blurRadius: 36,
             offset: const Offset(0, 16),
           ),
@@ -280,7 +262,6 @@ class BalanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         child: Stack(
           children: [
-            // Top-right circle
             Positioned(
               top: -32,
               right: -32,
@@ -289,11 +270,10 @@ class BalanceCard extends StatelessWidget {
                 height: 130,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.07),
+                  color: AppColors.darkTextPrimary.withOpacity(0.07),
                 ),
               ),
             ),
-            // Bottom-left circle
             Positioned(
               bottom: -20,
               left: 20,
@@ -302,11 +282,10 @@ class BalanceCard extends StatelessWidget {
                 height: 90,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
+                  color: AppColors.darkTextPrimary.withOpacity(0.05),
                 ),
               ),
             ),
-            // Bottom-right small circle
             Positioned(
               bottom: 30,
               right: -10,
@@ -315,11 +294,10 @@ class BalanceCard extends StatelessWidget {
                 height: 55,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.04),
+                  color: AppColors.darkTextPrimary.withOpacity(0.04),
                 ),
               ),
             ),
-            // Actual content
             child,
           ],
         ),
@@ -327,7 +305,6 @@ class BalanceCard extends StatelessWidget {
     );
   }
 
-  // ── Inline stat widget ──────────────────────────────────────────────────────
   Widget _stat({
     required IconData icon,
     required String label,
@@ -358,8 +335,8 @@ class BalanceCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: _C.white50,
+                style: TextStyle(
+                  color: AppColors.darkTextPrimary.withOpacity(0.50),
                   fontSize: 11,
                   letterSpacing: 0.2,
                 ),

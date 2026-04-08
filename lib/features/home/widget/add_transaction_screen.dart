@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/account_provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/features/analytics/provider/analytics_provider.dart';
+import 'package:front_end/core/constants/app_colors.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final bool initialIsExpense;
@@ -37,79 +38,36 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final TextEditingController descriptionController = TextEditingController();
 
   final List<Map<String, dynamic>> _incomeCategories = [
-    {"name": "Salary", "icon": Icons.payments, "color": Colors.green.shade800},
-    {
-      "name": "Freelance",
-      "icon": Icons.laptop_mac,
-      "color": Colors.teal.shade800
-    },
-    {
-      "name": "Invest",
-      "icon": Icons.trending_up,
-      "color": Colors.blue.shade800
-    },
-    {
-      "name": "Business",
-      "icon": Icons.storefront,
-      "color": Colors.orange.shade800
-    },
-    {"name": "Rental", "icon": Icons.home, "color": Colors.indigo.shade800},
-    {
-      "name": "Grants",
-      "icon": Icons.card_giftcard,
-      "color": Colors.amber.shade900
-    },
-    {
-      "name": "Refunds",
-      "icon": Icons.assignment_return,
-      "color": Colors.cyan.shade900
-    },
-    {"name": "Other", "icon": Icons.more_horiz, "color": Colors.grey.shade800},
+    {"name": "Salary",    "icon": Icons.payments,          "color": AppColors.catSalary},
+    {"name": "Freelance", "icon": Icons.laptop_mac,         "color": AppColors.catFreelance},
+    {"name": "Invest",    "icon": Icons.trending_up,        "color": AppColors.catInvest},
+    {"name": "Business",  "icon": Icons.storefront,         "color": AppColors.catBusiness},
+    {"name": "Rental",    "icon": Icons.home,               "color": AppColors.catRental},
+    {"name": "Grants",    "icon": Icons.card_giftcard,      "color": AppColors.catGrants},
+    {"name": "Refunds",   "icon": Icons.assignment_return,  "color": AppColors.catHealth},
+    {"name": "Other",     "icon": Icons.more_horiz,         "color": AppColors.catOther},
   ];
 
   final List<Map<String, dynamic>> _expenseCategories = [
-    {"name": "Food", "icon": Icons.restaurant, "color": Colors.orange.shade900},
-    {
-      "name": "Transport",
-      "icon": Icons.directions_bus,
-      "color": Colors.blue.shade900
-    },
-    {
-      "name": "Shopping",
-      "icon": Icons.shopping_bag,
-      "color": Colors.pink.shade900
-    },
-    {"name": "Bills", "icon": Icons.bolt, "color": Colors.yellow.shade900},
-    {
-      "name": "Health",
-      "icon": Icons.medical_services,
-      "color": Colors.red.shade900
-    },
-    {"name": "Travel", "icon": Icons.flight, "color": Colors.cyan.shade800},
-    {"name": "Edu", "icon": Icons.school, "color": Colors.purple.shade800},
-    {"name": "Fun", "icon": Icons.movie, "color": Colors.deepPurple.shade800},
-    {
-      "name": "Groceries",
-      "icon": Icons.local_grocery_store,
-      "color": Colors.green.shade900
-    },
-    {
-      "name": "Gifts",
-      "icon": Icons.card_giftcard,
-      "color": Colors.deepOrange.shade800
-    },
-    {"name": "Rent", "icon": Icons.home_work, "color": Colors.brown.shade800},
-    {"name": "Other", "icon": Icons.more_horiz, "color": Colors.grey.shade800},
+    {"name": "Food",      "icon": Icons.restaurant,           "color": AppColors.catFood},
+    {"name": "Transport", "icon": Icons.directions_bus,       "color": AppColors.catTransport},
+    {"name": "Shopping",  "icon": Icons.shopping_bag,         "color": AppColors.catShopping},
+    {"name": "Bills",     "icon": Icons.bolt,                 "color": AppColors.catBills},
+    {"name": "Health",    "icon": Icons.medical_services,     "color": AppColors.catHealth},
+    {"name": "Travel",    "icon": Icons.flight,               "color": AppColors.catTravel},
+    {"name": "Edu",       "icon": Icons.school,               "color": AppColors.catRental},
+    {"name": "Fun",       "icon": Icons.movie,                "color": AppColors.catShopping},
+    {"name": "Groceries", "icon": Icons.local_grocery_store,  "color": AppColors.catSalary},
+    {"name": "Gifts",     "icon": Icons.card_giftcard,        "color": AppColors.catGrants},
+    {"name": "Rent",      "icon": Icons.home_work,            "color": AppColors.catOther},
+    {"name": "Other",     "icon": Icons.more_horiz,           "color": AppColors.catOther},
   ];
-
-  final Color _darkGreen = const Color(0xFF1B5E20);
-  final Color _darkRed = const Color(0xFFB71C1C);
 
   @override
   void initState() {
     super.initState();
     _isExpense = widget.initialIsExpense;
-    _loadWallets(); // ✅ No user init needed — JWT handles identity
+    _loadWallets();
   }
 
   @override
@@ -142,69 +100,59 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _handleSave() async {
-  if (_selectedAccountId == null ||
-      amount.isEmpty ||
-      double.tryParse(amount) == null ||
-      double.parse(amount) <= 0 ||
-      _selectedCategory == null) {
-    _showSnackBar("Please fill all required fields properly", isError: true);
-    return;
-  }
+    if (_selectedAccountId == null ||
+        amount.isEmpty ||
+        double.tryParse(amount) == null ||
+        double.parse(amount) <= 0 ||
+        _selectedCategory == null) {
+      _showSnackBar("Please fill all required fields properly", isError: true);
+      return;
+    }
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    final result = await TransactionService.processTransaction(
-      accountId: _selectedAccountId!,
-      amount: amount,
-      type: _isExpense ? "EXPENSE" : "INCOME",
-      direction: "STANDARD",
-      category: _selectedCategory!,
-      description: descriptionController.text,
-      idempotencyKey: DateTime.now().millisecondsSinceEpoch.toString(),
-      transactedAt: selectedDate.toIso8601String(),
-    );
-
-    if (!mounted) return;
-
-    if (result['success'] == true) {
-
-      /// 🔹 Refresh Account Balance
-      await context.read<AccountProvider>().loadAccounts();
-
-      /// 🔹 Refresh Recent Activity + History + Analytics
-await context.read<TransactionProvider>().fetchTransactions();
-
-/// 🔹 Refresh Analytics Dashboard
-await context.read<AnalyticsProvider>().reload();
-      _showSnackBar(
-        "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
-        isError: false,
+    try {
+      final result = await TransactionService.processTransaction(
+        accountId: _selectedAccountId!,
+        amount: amount,
+        type: _isExpense ? "EXPENSE" : "INCOME",
+        direction: "STANDARD",
+        category: _selectedCategory!,
+        description: descriptionController.text,
+        idempotencyKey: DateTime.now().millisecondsSinceEpoch.toString(),
+        transactedAt: selectedDate.toIso8601String(),
       );
 
-      /// 🔹 Return to previous screen
-      Navigator.pop(context, true);
+      if (!mounted) return;
 
-    } else {
-      _showSnackBar(result['error'] ?? "Failed to save");
+      if (result['success'] == true) {
+        await context.read<AccountProvider>().loadAccounts();
+        await context.read<TransactionProvider>().fetchTransactions();
+        await context.read<AnalyticsProvider>().reload();
+
+        _showSnackBar(
+          "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
+          isError: false,
+        );
+
+        Navigator.pop(context, true);
+      } else {
+        _showSnackBar(result['error'] ?? "Failed to save");
+      }
+    } catch (e) {
+      if (mounted) _showSnackBar("Transaction failed: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-  } catch (e) {
-    if (mounted) {
-      _showSnackBar("Transaction failed: $e");
-    }
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
   }
-}
 
   void _showSnackBar(String message, {bool isError = true}) {
     final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError
-            ? theme.colorScheme.error
-            : theme.colorScheme.secondary,
+        backgroundColor:
+            isError ? theme.colorScheme.error : theme.colorScheme.secondary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -275,11 +223,15 @@ await context.read<AnalyticsProvider>().reload();
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back_ios_new, size: 18, color: theme.colorScheme.primary),
+            icon: Icon(Icons.arrow_back_ios_new,
+                size: 18, color: theme.colorScheme.primary),
           ),
           Text(
             "Add Transaction",
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: theme.colorScheme.primary),
+            style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.primary),
           ),
         ],
       ),
@@ -288,6 +240,8 @@ await context.read<AnalyticsProvider>().reload();
 
   Widget _buildTopToggle() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
@@ -298,16 +252,16 @@ await context.read<AnalyticsProvider>().reload();
         ),
         child: Row(
           children: [
-            _toggleBtn("Income", !_isExpense, _darkGreen),
-            _toggleBtn("Expense", _isExpense, _darkRed),
+            _toggleBtn("Income", !_isExpense, AppColors.success, isDark),
+            _toggleBtn("Expense", _isExpense, AppColors.error, isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _toggleBtn(String label, bool active, Color borderColor) {
-    final theme = Theme.of(context);
+  Widget _toggleBtn(
+      String label, bool active, Color borderColor, bool isDark) {
     return Expanded(
       child: GestureDetector(
         onTap: () => _toggleType(label == "Expense"),
@@ -315,14 +269,22 @@ await context.read<AnalyticsProvider>().reload();
           margin: const EdgeInsets.all(4),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.transparent,
+            color: active
+                ? (isDark ? AppColors.darkBgCard : AppColors.lightBgPrimary)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: active ? Border.all(color: borderColor, width: 2.5) : null,
+            border: active
+                ? Border.all(color: borderColor, width: 2.5)
+                : null,
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: active ? borderColor : Colors.grey,
+              color: active
+                  ? borderColor
+                  : (isDark
+                      ? AppColors.darkTextMuted
+                      : AppColors.lightTextMuted),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -337,6 +299,8 @@ await context.read<AnalyticsProvider>().reload();
     bool isAmount = false,
   }) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return TextField(
       controller: controller,
       keyboardType: isAmount
@@ -348,13 +312,13 @@ await context.read<AnalyticsProvider>().reload();
       style: TextStyle(
         fontSize: isAmount ? 22 : 16,
         fontWeight: isAmount ? FontWeight.bold : FontWeight.normal,
-        color:      theme.colorScheme.primary,
+        color: theme.colorScheme.primary,
       ),
       decoration: InputDecoration(
         prefixText: isAmount ? "₹ " : null,
         hintText: hint,
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -366,6 +330,8 @@ await context.read<AnalyticsProvider>().reload();
 
   Widget _datePicker() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return InkWell(
       onTap: () async {
         final d = await showDatePicker(
@@ -379,7 +345,7 @@ await context.read<AnalyticsProvider>().reload();
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -387,9 +353,15 @@ await context.read<AnalyticsProvider>().reload();
           children: [
             Text(
               DateFormat('dd MMM, yyyy').format(selectedDate),
-              style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary),
             ),
-            Icon(Icons.calendar_month, size: 20, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+            Icon(Icons.calendar_month,
+                size: 20,
+                color: isDark
+                    ? AppColors.darkTextMuted
+                    : AppColors.lightTextMuted),
           ],
         ),
       ),
@@ -398,12 +370,15 @@ await context.read<AnalyticsProvider>().reload();
 
   Widget _buildAccountSelectorBox() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return InkWell(
-      onTap: () => setState(() => _showAccountOptions = !_showAccountOptions),
+      onTap: () =>
+          setState(() => _showAccountOptions = !_showAccountOptions),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -411,9 +386,14 @@ await context.read<AnalyticsProvider>().reload();
           children: [
             Text(
               _selectedAccountName ?? "Select Account",
-              style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary),
             ),
-            Icon(Icons.keyboard_arrow_down, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+            Icon(Icons.keyboard_arrow_down,
+                color: isDark
+                    ? AppColors.darkTextMuted
+                    : AppColors.lightTextMuted),
           ],
         ),
       ),
@@ -422,13 +402,17 @@ await context.read<AnalyticsProvider>().reload();
 
   Widget _buildAccountList() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(top: 8),
       constraints: const BoxConstraints(maxHeight: 200),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkBgCard : AppColors.lightBgPrimary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+            color:
+                isDark ? AppColors.darkBorder : AppColors.lightBorder),
       ),
       child: ListView(
         shrinkWrap: true,
@@ -437,7 +421,9 @@ await context.read<AnalyticsProvider>().reload();
             dense: true,
             title: Text(
               acc.name,
-              style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary),
             ),
             onTap: () => setState(() {
               _selectedAccountId = acc.id;
@@ -452,6 +438,7 @@ await context.read<AnalyticsProvider>().reload();
 
   Widget _buildTwoLineCategories() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final cats = _isExpense ? _expenseCategories : _incomeCategories;
 
     return SizedBox(
@@ -470,27 +457,39 @@ await context.read<AnalyticsProvider>().reload();
           final isSel = _selectedCategory == item['name'];
 
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = item['name']),
+            onTap: () =>
+                setState(() => _selectedCategory = item['name']),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark
+                    ? AppColors.darkBgCard
+                    : AppColors.lightBgPrimary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSel ? theme.colorScheme.primary : theme.dividerColor,
+                  color: isSel
+                      ? theme.colorScheme.primary
+                      : (isDark
+                          ? AppColors.darkBorder
+                          : AppColors.lightBorder),
                   width: 2,
                 ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(item['icon'], color: item['color'], size: 28),
+                  Icon(item['icon'],
+                      color: item['color'] as Color, size: 28),
                   const SizedBox(height: 4),
                   Text(
                     item['name'],
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isSel ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: isSel
+                          ? theme.colorScheme.primary
+                          : (isDark
+                              ? AppColors.darkTextMuted
+                              : AppColors.lightTextMuted),
                     ),
                   ),
                 ],
@@ -502,56 +501,60 @@ await context.read<AnalyticsProvider>().reload();
     );
   }
 
-  Widget _buildStickySaveButton() {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade100),
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          onPressed: _isLoading ? null : _handleSave,
-          child: _isLoading
-              ? SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(
-                  "Save ${_isExpense ? 'Expense' : 'Income'}",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
+ Widget _buildStickySaveButton() {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
 
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgPrimary,
+      border: Border.all(
+        color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+      ),
+    ),
+    child: SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary, // ✅ FIX
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        onPressed: _isLoading ? null : _handleSave,
+        child: _isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: theme.colorScheme.onPrimary, // ✅ FIX
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                "Save ${_isExpense ? 'Expense' : 'Income'}",
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary, // ✅ FIX
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+      ),
+    ),
+  );
+}
   Widget _buildLabel(String text) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
-        style: const TextStyle(
-          color:      Colors.grey,
-          fontSize:   12,
+        style: TextStyle(
+          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
       ),

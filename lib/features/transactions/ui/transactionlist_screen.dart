@@ -22,7 +22,6 @@ class TransactionListScreen extends StatefulWidget {
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-  // ── Filter state ──────────────────────────────────────────────────────────
   String selectedType = "All Type";
   String selectedCategory = "All";
   late String selectedAccountName;
@@ -30,7 +29,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   DateTime? endDate;
   String searchQuery = "";
 
-  // ── Data state ────────────────────────────────────────────────────────────
   bool _isLoading = true;
   bool _isFetchingMore = false;
   String? _nextCursor;
@@ -61,7 +59,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     super.dispose();
   }
 
-  // ── Full reload ───────────────────────────────────────────────────────────
   Future<void> _fetchData() async {
     setState(() {
       _isLoading = true;
@@ -109,7 +106,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  // ── Load next page ────────────────────────────────────────────────────────
   Future<void> _fetchMore() async {
     if (_isFetchingMore || _nextCursor == null) return;
     setState(() => _isFetchingMore = true);
@@ -140,13 +136,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  // 🔥 PREMIUM SNACKBAR (Floating with Rounded Corners)
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message,
             style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
+                color: AppColors.darkTextPrimary,
+                fontWeight: FontWeight.w600)),
         backgroundColor:
             isError ? AppColors.expenseAmount : AppColors.incomeAmount,
         behavior: SnackBarBehavior.floating,
@@ -157,7 +153,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  // 🔥 PREMIUM ERROR DIALOG (Matches Account Screen UX)
   void _showErrorDialog(String title, String message) {
     showDialog(
         context: context,
@@ -179,11 +174,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: AppColors.expenseAmount.withOpacity(0.12),
+                      color: AppColors.errorBg,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.error_outline_rounded,
-                        color: AppColors.expenseAmount, size: 36),
+                        color: AppColors.error, size: 36),
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -200,7 +195,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white70 : Colors.black87,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                         height: 1.4,
                         fontWeight: FontWeight.w500),
                   ),
@@ -229,7 +226,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         });
   }
 
-  // ── Cancel/Reversal Logic (Premium Top-Right Cancel Dialog) ───────────────
   Future<void> _handleReversal(TransactionModel tx) async {
     final bool? confirm = await showDialog<bool>(
         context: context,
@@ -265,7 +261,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         onPressed: () => Navigator.pop(ctx, false),
                         icon: Icon(
                           Icons.close_rounded,
-                          color: colorScheme.onSurface.withOpacity(0.5),
+                          color: isDark
+                              ? AppColors.darkTextMuted
+                              : AppColors.lightTextMuted,
                         ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -277,7 +275,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.white70 : Colors.black87,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                       height: 1.4,
                       fontWeight: FontWeight.w500,
                     ),
@@ -289,7 +289,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.expenseAmount,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.darkTextPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -325,7 +325,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           context.read<AnalyticsProvider>().reload(),
         ]);
 
-        // 🔥 refresh THIS screen list
         await _fetchData();
 
         _showSnackBar("Transaction cancelled successfully!");
@@ -341,7 +340,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  // ── Filter screen ─────────────────────────────────────────────────────────
   void _openFilters() async {
     final result = await Navigator.push(
       context,
@@ -369,28 +367,19 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  // ── Helpers for Colors & Icons ────────────────────────────────────────────
-
   Color _getTransactionColor(TransactionModel tx) {
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
       return AppColors.savingsPrimary;
-
     if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
       return AppColors.progressGreen;
-
     if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
       return AppColors.chartIncome;
-
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
       return AppColors.incomeAmount;
-
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return AppColors.textSecondary;
-
+      return AppColors.dateLabel;
     if (tx.type == "INCOME") return AppColors.incomeAmount;
-
     if (tx.type == "REVERSAL") return AppColors.warning;
-
     return AppColors.expenseAmount;
   }
 
@@ -398,34 +387,24 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     switch (tx.type) {
       case "INCOME":
         return Icons.trending_up_rounded;
-
       case "EXPENSE":
-        if (tx.direction == "GOAL_COMPLETION") {
-          return Icons.task_alt_rounded;
-        }
+        if (tx.direction == "GOAL_COMPLETION") return Icons.task_alt_rounded;
         return Icons.trending_down_rounded;
-
       case "TRANSFER":
         switch (tx.direction) {
           case "GOAL_ALLOCATION":
             return Icons.savings_rounded;
-
           case "GOAL_DEALLOCATION":
             return Icons.savings_outlined;
-
           case "ACCOUNT_TRANSFER_IN":
             return Icons.call_received_rounded;
-
           case "ACCOUNT_TRANSFER_OUT":
             return Icons.call_made_rounded;
-
           default:
             return Icons.swap_horiz_rounded;
         }
-
       case "REVERSAL":
         return Icons.undo_rounded;
-
       default:
         return Icons.receipt_long_rounded;
     }
@@ -448,18 +427,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               color: color.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 22,
-            ),
+            child: Icon(icon, color: color, size: 22),
           ),
         );
       },
     );
   }
 
-  // ── Active filter chips ───────────────────────────────────────────────────
   Widget _buildActiveFilters(
       ThemeData theme, ColorScheme colorScheme, bool isDark) {
     final List<Widget> chips = [];
@@ -525,7 +499,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  // ── Tile Builder Helper ───────────────────────────────────────────────────
   Widget _buildTransactionTile(TransactionModel tx, ThemeData theme,
       ColorScheme colorScheme, Color textSec, bool isCash) {
     final Color moneyColor = _getTransactionColor(tx);
@@ -597,7 +570,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  // ── Transaction list ──────────────────────────────────────────────────────
   Widget _buildTransactionList(
       ThemeData theme, ColorScheme colorScheme, bool isDark, Color textSec) {
     final list = _transactions.where((tx) {
@@ -652,7 +624,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           Center(
             child: Text("No transactions found",
                 style: TextStyle(
-                    fontSize: 16, color: textSec, fontWeight: FontWeight.w500)),
+                    fontSize: 16,
+                    color: textSec,
+                    fontWeight: FontWeight.w500)),
           ),
         ],
       );
@@ -664,7 +638,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: list.length + 1,
       itemBuilder: (context, i) {
-        // --- 1. Loading / End State ---
         if (i == list.length) {
           if (_isFetchingMore) {
             return Padding(
@@ -689,19 +662,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         final isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
 
-        // --- 2. Date Header Logic ---
         bool showHeader = false;
         if (i == 0) {
           showHeader = true;
         } else {
           final prevTx = list[i - 1];
-          final currentDay = DateTime(tx.date.year, tx.date.month, tx.date.day);
+          final currentDay =
+              DateTime(tx.date.year, tx.date.month, tx.date.day);
           final prevDay =
               DateTime(prevTx.date.year, prevTx.date.month, prevTx.date.day);
           if (currentDay != prevDay) showHeader = true;
         }
 
-        // --- 3. Custom Swipe Wrapper ---
         bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
 
         Widget tileContent = Column(
@@ -718,7 +690,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           );
         }
 
-        // --- 4. Return with Header (if needed) ---
         if (showHeader) {
           String headerText;
           final today = DateTime.now();
@@ -759,13 +730,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600]!;
+    final textSec =
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
     final surfaceAlt =
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
@@ -834,7 +805,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           decoration: BoxDecoration(
                               color: surfaceAlt,
                               borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.tune, color: colorScheme.primary),
+                          child:
+                              Icon(Icons.tune, color: colorScheme.primary),
                         ),
                       ),
                     ],
@@ -863,9 +835,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🔥 CUSTOM PREMIUM SWIPE WIDGET
-// ─────────────────────────────────────────────────────────────────────────────
 class SwipeToCancelTile extends StatefulWidget {
   final Widget child;
   final VoidCallback onCancelTap;
@@ -888,14 +857,12 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
       onHorizontalDragUpdate: (details) {
         setState(() {
           _dragExtent += details.primaryDelta!;
-          if (_dragExtent > 0) _dragExtent = 0; // Prevent swiping right
-          if (_dragExtent < -_maxDrag - 20)
-            _dragExtent = -_maxDrag - 20; // Add elastic resistance
+          if (_dragExtent > 0) _dragExtent = 0;
+          if (_dragExtent < -_maxDrag - 20) _dragExtent = -_maxDrag - 20;
         });
       },
       onHorizontalDragEnd: (details) {
         setState(() {
-          // Snap open if dragged more than halfway, otherwise snap closed
           if (_dragExtent < -_maxDrag / 2) {
             _dragExtent = -_maxDrag;
           } else {
@@ -905,27 +872,23 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
       },
       child: Stack(
         children: [
-          // 1. Background (The Premium Button)
           Positioned.fill(
             child: Align(
               alignment: Alignment.centerRight,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
-                opacity:
-                    _dragExtent < -30 ? 1.0 : 0.0, // Fade in as user swipes
+                opacity: _dragExtent < -30 ? 1.0 : 0.0,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    // Close the swipe drawer instantly upon clicking
                     setState(() => _dragExtent = 0.0);
-                    // Fire the cancel dialog
                     widget.onCancelTap();
                   },
                   child: Container(
                     width: _maxDrag,
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.expenseAmount.withOpacity(0.12),
+                      color: AppColors.errorBg,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
                         bottomLeft: Radius.circular(16),
@@ -938,7 +901,7 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.expenseAmount.withOpacity(0.2),
+                            color: AppColors.expenseIconBg,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.close_rounded,
@@ -957,15 +920,12 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
               ),
             ),
           ),
-
-          // 2. Foreground (The actual transaction tile)
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
             transform: Matrix4.translationValues(_dragExtent, 0, 0),
             child: Container(
-              color: Theme.of(context)
-                  .scaffoldBackgroundColor, // Ensure drag covers background
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: widget.child,
             ),
           ),
