@@ -177,23 +177,29 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Cancel Transaction?",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.primary),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      icon: Icon(Icons.close_rounded,
-                          color: colorScheme.onSurface.withOpacity(0.5)),
-                    ),
-                  ],
-                ),
+               Row(
+  children: [
+    Expanded(
+      child: Text(
+        "Cancel Transaction?",
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: colorScheme.primary,
+        ),
+      ),
+    ),
+    IconButton(
+      onPressed: () => Navigator.pop(ctx, false),
+      icon: Icon(
+        Icons.close_rounded,
+        color: colorScheme.onSurface.withOpacity(0.5),
+      ),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+    ),
+  ],
+),
                 const SizedBox(height: 16),
                 Text(
                   "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
@@ -509,7 +515,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.swap_horiz_rounded,
               label: "Transfer",
-              color: Colors.purple.shade700,
+              // color: AppColors.warning,
+              color: Colors.purple.shade700, 
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(

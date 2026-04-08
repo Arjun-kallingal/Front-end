@@ -140,22 +140,25 @@ class GoalService {
   }
 
   /// DELETE GOAL
-  Future<bool> deleteGoal(String goalId, {String? transactedAt}) async {
-    try {
-      final headers = await ApiClient.getHeaders(); // ✅
-      final response = await http
-          .delete(
-            Uri.parse("$baseUrl/goals/$goalId"),
-            headers: headers,
-            body: transactedAt != null
-                ? jsonEncode({"transactedAt": transactedAt})
-                : null,
-          )
-          .timeout(const Duration(seconds: 10));
+ Future<bool> deleteGoal(String goalId, {String? transactedAt}) async {
+  try {
+    final headers = await ApiClient.getHeaders();
+    final response = await http
+        .delete(
+          Uri.parse("$baseUrl/goals/$goalId"),
+          headers: headers,
+          // ✅ Always send a body so backend doesn't crash
+          body: jsonEncode({"transactedAt": transactedAt ?? DateTime.now().toIso8601String()}),
+        )
+        .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 200 || response.statusCode == 204;
-    } catch (e) {
-      return false;
-    }
+    print("DELETE STATUS: ${response.statusCode}");
+    print("DELETE BODY: ${response.body}");
+
+    return response.statusCode == 200 || response.statusCode == 204;
+  } catch (e) {
+    print("DELETE ERROR: $e");
+    return false;
   }
+}
 }
