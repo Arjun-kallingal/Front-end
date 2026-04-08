@@ -15,6 +15,9 @@ import 'package:front_end/features/transfer/transfer.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
+// Notification imports from Snippet 1
+import 'package:front_end/features/notifications/notification_screen.dart';
+import 'package:front_end/core/providers/notification_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +29,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isProcessing = false;
 
+  // State for Latest Transactions
   List<TransactionModel> _recentTransactions = [];
   bool _isLoadingRecent = true;
   String? _recentError;
@@ -35,11 +39,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     Future.microtask(() async {
       await context.read<TransactionProvider>().fetchTransactions();
+      
+      // 🔥 Listener added from Snippet 2
       context.read<TransactionProvider>().addListener(_onTransactionUpdate);
+
+      // 🔥 INITIALIZE NOTIFICATIONS & SOCKET from Snippet 1
+      final notifProvider = context.read<NotificationProvider>();
+      notifProvider.loadNotifications();
+      notifProvider.initializeSocketListeners();
     });
     _loadRecentTransactions();
   }
 
+  // 🔥 Listener logic from Snippet 2
   void _onTransactionUpdate() {
     print("🔥 TransactionProvider updated - reloading recent");
     if (mounted && !_isLoadingRecent) {
@@ -47,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 🔥 Dispose logic from Snippet 2
   @override
   void dispose() {
     context.read<TransactionProvider>().removeListener(_onTransactionUpdate);
@@ -82,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       SnackBar(
         content: Text(message,
             style: const TextStyle(
-                color: AppColors.darkTextPrimary,
+                color: AppColors.darkTextPrimary, // From Snippet 2
                 fontWeight: FontWeight.w600)),
         backgroundColor:
             isError ? AppColors.expenseAmount : AppColors.incomeAmount,
@@ -114,8 +127,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: AppColors.errorBg,
+                    decoration: const BoxDecoration(
+                      color: AppColors.errorBg, // From Snippet 2
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.error_outline_rounded,
@@ -138,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontSize: 14,
                         color: isDark
                             ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
+                            : AppColors.lightTextSecondary, // From Snippet 2
                         height: 1.4,
                         fontWeight: FontWeight.w500),
                   ),
@@ -204,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icons.close_rounded,
                         color: isDark
                             ? AppColors.darkTextMuted
-                            : AppColors.lightTextMuted,
+                            : AppColors.lightTextMuted, // From Snippet 2
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -218,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 14,
                       color: isDark
                           ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
+                          : AppColors.lightTextSecondary, // From Snippet 2
                       height: 1.4,
                       fontWeight: FontWeight.w500),
                 ),
@@ -229,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.expenseAmount,
-                      foregroundColor: AppColors.darkTextPrimary,
+                      foregroundColor: AppColors.darkTextPrimary, // From Snippet 2
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                     ),
@@ -300,6 +313,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onRefresh: () async {
                 await context.read<TransactionProvider>().fetchTransactions();
                 await _loadRecentTransactions();
+                // 🔥 Combined refresh actions
+                await context.read<NotificationProvider>().loadNotifications(); 
               },
               color: colorScheme.secondary,
               backgroundColor: colorScheme.surface,
@@ -327,10 +342,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             if (_isProcessing)
               Container(
-                color: AppColors.darkBgPrimary.withOpacity(0.3),
+                color: AppColors.darkBgPrimary.withOpacity(0.3), // From Snippet 2
                 child: Center(
                   child: CircularProgressIndicator(color: colorScheme.primary),
                 ),
@@ -347,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
     final textSec = isDark
         ? AppColors.darkTextMuted
-        : AppColors.lightTextMuted;
+        : AppColors.lightTextMuted; // From Snippet 2
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
@@ -390,6 +404,51 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Row(
             children: [
+              // ── 🔔 LIVE NOTIFICATION BELL (CONSUMER PATTERN) ── From Snippet 1
+              Consumer<NotificationProvider>(
+                builder: (context, notifProvider, child) {
+                  final unreadCount = notifProvider.unreadCount;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const NotificationScreen()),
+                      );
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        SizedBox(
+                          width: 46,
+                          height: 46,
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            color: colorScheme.primary,
+                            size: 26,
+                          ),
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: theme.scaffoldBackgroundColor,
+                                    width: 1.5),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: () => Navigator.push(
@@ -428,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Text(
         label.toUpperCase(),
         style: TextStyle(
-          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted, // From Snippet 2
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.4,
@@ -485,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.swap_horiz_rounded,
               label: "Transfer",
-              color: AppColors.transferColor,
+              color: AppColors.transferColor, // From Snippet 2
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
@@ -521,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: color.withOpacity(0.20), width: 1),
           boxShadow: [
             BoxShadow(
-              color: AppColors.darkBgPrimary.withOpacity(0.05),
+              color: AppColors.darkBgPrimary.withOpacity(0.05), // From Snippet 2
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -594,7 +653,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       color: isDark
                           ? AppColors.darkTextMuted
-                          : AppColors.lightTextMuted,
+                          : AppColors.lightTextMuted, // From Snippet 2
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -604,7 +663,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       size: 10,
                       color: isDark
                           ? AppColors.darkTextMuted
-                          : AppColors.lightTextMuted),
+                          : AppColors.lightTextMuted), // From Snippet 2
                 ],
               ),
             ),
@@ -617,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
     final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted; // From Snippet 2
 
     if (_isLoadingRecent) {
       return Padding(
@@ -676,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
         tx.accountName.toLowerCase().contains('wallet');
     final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted; // From Snippet 2
 
     bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
 
@@ -801,7 +860,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
       return AppColors.incomeAmount;
     if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return AppColors.dateLabel;
+      return AppColors.dateLabel; // From Snippet 2
     if (tx.type == "INCOME") return AppColors.incomeAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
     return AppColors.expenseAmount;
@@ -889,9 +948,9 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
                   child: Container(
                     width: _maxDrag,
                     margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.errorBg,
-                      borderRadius: const BorderRadius.only(
+                    decoration: const BoxDecoration(
+                      color: AppColors.errorBg, // From Snippet 2
+                      borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(16),
                         bottomLeft: Radius.circular(16),
                       ),
@@ -902,8 +961,8 @@ class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.expenseIconBg,
+                          decoration: const BoxDecoration(
+                            color: AppColors.expenseIconBg, // From Snippet 2
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.close_rounded,

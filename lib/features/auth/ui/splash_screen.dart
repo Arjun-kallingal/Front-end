@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:front_end/core/services/auth_storage.dart';
 import 'package:front_end/core/services/api_config.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:front_end/core/providers/notification_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,7 +15,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _startApp() async {
     try {
-await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 600));
       final token = await AuthStorage.getToken();
       final name = await AuthStorage.getName();
       final email = await AuthStorage.getEmail();
@@ -66,13 +66,17 @@ await Future.delayed(const Duration(milliseconds: 600));
 
       /// ✅ RESTORE USER DATA
       context.read<UserProfileProvider>().setUser(
-        userName: name ?? "",
-        userEmail: email ?? "",
-      );
+            userName: name ?? "",
+            userEmail: email ?? "",
+          );
+
+      /// 🔌 CONNECT SOCKET — must happen before /main mounts HomeScreen
+      await context.read<NotificationProvider>().initializeSocketListeners();
+
+      if (!mounted) return;
 
       /// ✅ GO TO MAIN
       Navigator.pushReplacementNamed(context, '/main');
-
     } catch (e) {
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
@@ -98,7 +102,6 @@ await Future.delayed(const Duration(milliseconds: 600));
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-
             /// APP NAME
             Text(
               "SproutPay",
@@ -110,8 +113,6 @@ await Future.delayed(const Duration(milliseconds: 600));
                 letterSpacing: 1.2,
               ),
             ),
-
-          
           ],
         ),
       ),
