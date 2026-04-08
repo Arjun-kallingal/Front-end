@@ -1,18 +1,23 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/notification_service.dart';
 import '../services/socket_service.dart';
 
 class NotificationProvider extends ChangeNotifier {
   List<dynamic> _notifications = [];
   bool _isLoading = false;
+  bool _fcmInitialized = false;
 
   NotificationProvider() {
     // Kick off socket init immediately when the provider is created (main.dart
     // MultiProvider creates it before any screen mounts).
     // Using Future.microtask so the constructor finishes before async work begins.
-    Future.microtask(() => initializeSocketListeners());
+    Future.microtask(() {
+      initializeSocketListeners();
+      initializeFcm();
+    });
   }
 
   List<dynamic> get notifications => _notifications;
@@ -31,6 +36,47 @@ class NotificationProvider extends ChangeNotifier {
     });
   }
 
+  Future<void> initializeFcm() async {
+    try {
+      final FirebaseMessaging fcm = FirebaseMessaging.instance;
+      NotificationSettings settings = await fcm.requestPermission();
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        String? token = await fcm.getToken();
+        if (token != null) {
+          await NotificationService.updateFcmToken(token);
+        }
+
+        if (!_fcmInitialized) {
+          fcm.onTokenRefresh.listen((newToken) {
+            NotificationService.updateFcmToken(newToken);
+          });
+
+          FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+            if (message.notification != null || message.data.isNotEmpty) {
+              final Map<String, dynamic> mockEvent = {
+                '_id': message.data['notificationId'] ??
+                    DateTime.now().millisecondsSinceEpoch.toString(),
+                'title': message.notification?.title ??
+                    message.data['title'] ??
+                    'New Notification',
+                'message':
+                    message.notification?.body ?? message.data['body'] ?? '',
+                'category': message.data['category'] ?? 'FCM',
+                'isRead': false,
+              };
+              addRealTimeNotification(mockEvent);
+            }
+          });
+
+          _fcmInitialized = true;
+        }
+      }
+    } catch (e) {
+      debugPrint("FCM init skipped or failed: $e");
+    }
+  }
+
   // 🔥 Handles the live injection and triggers the Red Dot instantly.
   // Uses JSON round-trip to safely flatten nested Map<dynamic,dynamic> and
   // ObjectId values that the socket_io_client sometimes delivers.
@@ -47,6 +93,11 @@ class NotificationProvider extends ChangeNotifier {
       // Ensure isRead is present and set to false for unread-count accuracy
       newNotif.putIfAbsent('isRead', () => false);
 
+      if (_notifications.any((n) => n['_id'] != null && n['_id'] == newNotif['_id'])) {
+        debugPrint("⏳ Duplicate notification skipped based on _id.");
+        return;
+      }
+
       _notifications.insert(0, newNotif);
       notifyListeners();
 
@@ -54,25 +105,20 @@ class NotificationProvider extends ChangeNotifier {
           "✅ UI notified. Unread: $unreadCount, Total: ${notifications.length}");
 
       // Trigger Toastification
-      final category = newNotif['category']?.toString() ?? '';
       final title = newNotif['title']?.toString() ?? 'New Notification';
       final message = newNotif['message']?.toString() ?? '';
 
-      Color themeColor = Colors.blue;
+      final titleStr = title.toLowerCase();
+
+      Color themeColor = Colors.blueAccent; // Antigravity brand blue
       IconData iconData = Icons.notifications;
 
-      if (category == 'INCOME') {
+      if (titleStr.contains('income') || titleStr.contains('received')) {
         themeColor = Colors.green;
         iconData = Icons.arrow_downward;
-      } else if (category == 'EXPENSE') {
+      } else if (titleStr.contains('expense') || titleStr.contains('spent')) {
         themeColor = Colors.red;
         iconData = Icons.arrow_upward;
-      } else if (category == 'WALLET_TRANSACTION') {
-        themeColor = Colors.blue;
-        iconData = Icons.account_balance_wallet;
-      } else if (category == 'AUTH_SECURITY') {
-        themeColor = Colors.orange;
-        iconData = Icons.security;
       }
 
       toastification.show(

@@ -24,8 +24,44 @@ import 'features/profile/ui/security/otp_verification_screen.dart';
 import 'features/profile/ui/security/reset_password_screen.dart';
 import 'features/profile/ui/profile_screen.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'core/services/notification_channel_service.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> setupFCMInteractions() async {
+  RemoteMessage? initialMessage =
+      await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    _handleNotificationRouting(initialMessage);
+  }
+
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    _handleNotificationRouting(message);
+  });
+}
+
+void _handleNotificationRouting(RemoteMessage message) {
+  final route = message.data['route'];
+  if (route != null && navigatorKey.currentState != null) {
+    navigatorKey.currentState!.pushNamed(route);
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+  await NotificationChannelService.initialize();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  setupFCMInteractions();
 
   runApp(
     MultiProvider(
@@ -55,6 +91,7 @@ class WalletCareApp extends StatelessWidget {
 
     return ToastificationWrapper(
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'WalletCare',
 

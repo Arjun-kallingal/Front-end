@@ -58,8 +58,9 @@ class _LoginScreenState extends State<LoginScreen> {
               userEmail: email,
             );
 
-        /// 🔌 CONNECT SOCKET — before navigating so bell is live on arrival
+        /// 🔌 CONNECT SOCKET & FCM — before navigating so bell is live on arrival
         await context.read<NotificationProvider>().initializeSocketListeners();
+        await context.read<NotificationProvider>().initializeFcm();
 
         if (!mounted) return;
 

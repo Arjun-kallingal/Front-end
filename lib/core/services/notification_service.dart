@@ -15,7 +15,9 @@ class NotificationService {
         return data['data'] ?? [];
       }
       return [];
-    } catch (e) { return []; }
+    } catch (e) {
+      return [];
+    }
   }
 
   // 🔥 NEW: PATCH request for a single notification
@@ -27,15 +29,20 @@ class NotificationService {
         headers: headers,
       );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   static Future<bool> markAllAsRead() async {
     try {
       final headers = await ApiClient.getHeaders();
-      final response = await http.patch(Uri.parse('$baseUrl/read-all'), headers: headers);
+      final response =
+          await http.patch(Uri.parse('$baseUrl/read-all'), headers: headers);
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
   // ... existing code ...
 
@@ -48,7 +55,9 @@ class NotificationService {
         headers: headers,
       );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   // 🔥 DELETE ALL (Super Clear)
@@ -60,6 +69,22 @@ class NotificationService {
         headers: headers,
       );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 🔥 UPDATE FCM TOKEN
+  static Future<void> updateFcmToken(String fcmToken) async {
+    try {
+      final headers = await ApiClient.getHeaders();
+      await http.patch(
+        Uri.parse('${ApiConfig.baseUrl}/api/user/fcm-token'),
+        headers: headers,
+        body: json.encode({'fcmToken': fcmToken}),
+      );
+    } catch (e) {
+      print("Error uploading FCM token: $e");
+    }
   }
 }

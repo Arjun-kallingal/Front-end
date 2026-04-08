@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   
-static const String _localIp = "localhost"; // Change to your local IP if needed
+static const String _localIp = "127.0.0.1"; // Change to your local IP if needed
   static const String _port = "5000";
 
   static String get baseUrl {
