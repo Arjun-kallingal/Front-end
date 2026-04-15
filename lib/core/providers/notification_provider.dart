@@ -17,7 +17,6 @@ class NotificationProvider extends ChangeNotifier {
     // Using Future.microtask so the constructor finishes before async work begins.
     Future.microtask(() {
       initializeSocketListeners();
-      initializeFcm();
     });
   }
 
@@ -43,11 +42,6 @@ class NotificationProvider extends ChangeNotifier {
       NotificationSettings settings = await fcm.requestPermission();
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        String? token = await fcm.getToken();
-        if (token != null) {
-          await NotificationService.updateFcmToken(token);
-        }
-
         if (!_fcmInitialized) {
           fcm.onTokenRefresh.listen((newToken) {
             NotificationService.updateFcmToken(newToken);
@@ -85,6 +79,29 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> registerFcmToken() async {
+    try {
+      final FirebaseMessaging fcm = FirebaseMessaging.instance;
+      NotificationSettings settings = await fcm.requestPermission();
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Add timeout to prevent hang on emulators without Google Play Services
+        String? token = await fcm.getToken().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint("FCM getToken() timed out.");
+            return null;
+          },
+        );
+        if (token != null) {
+          await NotificationService.updateFcmToken(token);
+        }
+      }
+    } catch (e) {
+      debugPrint("FCM token registration failed: $e");
+    }
+  }
+
   // 🔥 Handles the live injection and triggers the Red Dot instantly.
   // Uses JSON round-trip to safely flatten nested Map<dynamic,dynamic> and
   // ObjectId values that the socket_io_client sometimes delivers.
@@ -101,7 +118,8 @@ class NotificationProvider extends ChangeNotifier {
       // Ensure isRead is present and set to false for unread-count accuracy
       newNotif.putIfAbsent('isRead', () => false);
 
-      if (_notifications.any((n) => n['_id'] != null && n['_id'] == newNotif['_id'])) {
+      if (_notifications
+          .any((n) => n['_id'] != null && n['_id'] == newNotif['_id'])) {
         debugPrint("⏳ Duplicate notification skipped based on _id.");
         return;
       }

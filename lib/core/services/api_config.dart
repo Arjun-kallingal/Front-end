@@ -6,7 +6,7 @@ class ApiConfig {
   // 'localhost' only works on the same machine. For other devices on the same
   // WiFi, open cmd → run `ipconfig` → use the IPv4 address (e.g., 192.168.x.x)
   static const String _localIp =
-      "localhost"; // 🔴 CHANGE THIS to your PC's IP
+      "10.143.103.89"; // 🔴 CHANGE THIS to your PC's IP
   static const String _port = "5000";
 
   static String get baseUrl {

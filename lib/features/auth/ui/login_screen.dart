@@ -61,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
         /// 🔌 CONNECT SOCKET & FCM — before navigating so bell is live on arrival
         await context.read<NotificationProvider>().initializeSocketListeners();
         await context.read<NotificationProvider>().initializeFcm();
+        await context.read<NotificationProvider>().registerFcmToken();
 
         if (!mounted) return;
 
