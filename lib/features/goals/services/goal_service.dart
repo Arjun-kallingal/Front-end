@@ -1,20 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../data/goal_model.dart';
-import 'package:front_end/core/services/api_client.dart'; // ✅ JWT headers
+import 'package:front_end/core/services/api_client.dart';
+// import 'package:uuid/uuid.dart'; // Highly recommended for generating idempotencyKeys!
 
 class GoalService {
   final String baseUrl;
 
   GoalService({required this.baseUrl});
 
-  // ✅ Removed _getHeaders() — ApiClient.getHeaders() handles JWT automatically
-
   /// GET ALL GOALS
   Future<List<GoalModel>> getGoals(
       {int page = 1, int limit = 20, String? status}) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
       String query = "?page=$page&limit=$limit";
       if (status != null) query += "&status=$status";
 
@@ -42,12 +41,12 @@ class GoalService {
   /// CREATE GOAL
   Future<bool> createGoal(GoalModel goal) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals"),
             headers: headers,
-            body: jsonEncode(goal.toJson()),
+            body: jsonEncode(goal.toJson(isCreate: true)), // Make sure your model uses this flag!
           )
           .timeout(const Duration(seconds: 10));
 
@@ -60,7 +59,7 @@ class GoalService {
   /// UPDATE GOAL
   Future<bool> updateGoal(GoalModel goal) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
       final response = await http
           .put(
             Uri.parse("$baseUrl/goals/${goal.id}"),
@@ -75,50 +74,127 @@ class GoalService {
     }
   }
 
-  /// DEPOSIT MONEY TO GOAL
-  Future<bool> depositToGoal(String goalId, double amount,
-      {String? transactedAt}) async {
+  /// DEPOSIT MONEY TO GOAL (The Expense)
+  ///
+  /// Requires [accountId] to deduct funds from, and [idempotencyKey] for safe retries.
+  Future<Map<String, dynamic>> depositToGoal(
+    String goalId,
+    String accountId,
+    double amount,
+    String idempotencyKey, {
+    String? transactedAt,
+  }) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
+
+      final Map<String, dynamic> body = {
+        "accountId": accountId,
+        "amount": amount,
+        "idempotencyKey": idempotencyKey,
+        if (transactedAt != null) "transactedAt": transactedAt,
+      };
+
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/deposit"),
             headers: headers,
-            body: jsonEncode({
-              "amount": amount,
-              if (transactedAt != null) "transactedAt": transactedAt,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 200;
+      final decoded = jsonDecode(response.body);
+
+      // Handle 200 (Success) or 409 (Duplicate, which is safely treated as a success)
+      if (response.statusCode == 200 || response.statusCode == 409) {
+        return {
+          'success': true,
+          'txid': decoded['txid'],
+          'availableBalance': decoded['availableBalance'], // Pass this to UI to update account state instantly
+          'isDuplicate': response.statusCode == 409
+        };
+      } else {
+        return {
+          'success': false, 
+          'message': decoded['message'] ?? 'Deposit failed'
+        };
+      }
     } catch (e) {
-      return false;
+      return {'success': false, 'message': e.toString()};
     }
   }
 
-  /// WITHDRAW MONEY FROM GOAL
-  Future<bool> withdrawFromGoal(String goalId, double amount,
-      {String? transactedAt}) async {
+  /// WITHDRAW MONEY FROM GOAL (The Income)
+  ///
+  /// Requires [accountId] to send funds to, and [idempotencyKey] for safe retries.
+  Future<Map<String, dynamic>> withdrawFromGoal(
+    String goalId,
+    String accountId,
+    double amount,
+    String idempotencyKey, {
+    String? transactedAt,
+  }) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
+      
+      final Map<String, dynamic> body = {
+        "accountId": accountId,
+        "amount": amount,
+        "idempotencyKey": idempotencyKey,
+        if (transactedAt != null) "transactedAt": transactedAt,
+      };
+
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/withdraw"),
             headers: headers,
-            body: jsonEncode({
-              "amount": amount,
-              if (transactedAt != null) "transactedAt": transactedAt,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 200;
+      final decoded = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 409) {
+        return {
+          'success': true,
+          'txid': decoded['txid'],
+          'availableBalance': decoded['availableBalance'], 
+          'isDuplicate': response.statusCode == 409
+        };
+      } else {
+        return {
+          'success': false, 
+          'message': decoded['message'] ?? 'Withdrawal failed'
+        };
+      }
     } catch (e) {
-      return false;
+      return {'success': false, 'message': e.toString()};
     }
   }
 
+  /// DELETE GOAL
+  /// 
+  /// Simply deletes the goal from the database.
+  Future<Map<String, dynamic>> deleteGoal(String goalId) async {
+    try {
+      final headers = await ApiClient.getHeaders();
+
+      final response = await http
+          .delete(
+            Uri.parse("$baseUrl/goals/$goalId"),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {'success': true};
+      } else {
+        final decoded = jsonDecode(response.body);
+        return {'success': false, 'message': decoded['message'] ?? 'Delete failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
   /// GET INDIVIDUAL GOAL TRANSACTION HISTORY
   Future<List<dynamic>> getGoalHistory(String goalId) async {
     try {
@@ -130,7 +206,6 @@ class GoalService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        // Extract the list from the 'data' key
         return body['data'] is List ? body['data'] : [];
       }
       return [];
@@ -138,27 +213,4 @@ class GoalService {
       return [];
     }
   }
-
-  /// DELETE GOAL
- Future<bool> deleteGoal(String goalId, {String? transactedAt}) async {
-  try {
-    final headers = await ApiClient.getHeaders();
-    final response = await http
-        .delete(
-          Uri.parse("$baseUrl/goals/$goalId"),
-          headers: headers,
-          // ✅ Always send a body so backend doesn't crash
-          body: jsonEncode({"transactedAt": transactedAt ?? DateTime.now().toIso8601String()}),
-        )
-        .timeout(const Duration(seconds: 10));
-
-    print("DELETE STATUS: ${response.statusCode}");
-    print("DELETE BODY: ${response.body}");
-
-    return response.statusCode == 200 || response.statusCode == 204;
-  } catch (e) {
-    print("DELETE ERROR: $e");
-    return false;
-  }
-}
 }

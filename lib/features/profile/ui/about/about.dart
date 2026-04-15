@@ -9,7 +9,7 @@ class AboutWalletCareScreen extends StatelessWidget {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       appBar: AppBar(
         backgroundColor: color.surface,
         elevation: 0,

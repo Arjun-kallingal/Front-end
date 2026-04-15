@@ -9,7 +9,7 @@ class PremiumUpgradeScreen extends StatelessWidget {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

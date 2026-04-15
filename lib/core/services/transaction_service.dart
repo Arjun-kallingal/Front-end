@@ -141,4 +141,41 @@ class TransactionService {
       throw Exception("Connection Error: $e");
     }
   }
+static Future<Map<String, dynamic>> reserveFunds({
+    required String accountId,
+    required String amount,
+    required String action, // "RESERVE" or "RELEASE"
+    required String category,
+    String? description,
+    String? idempotencyKey,
+  }) async {
+    try {
+      final headers = await ApiClient.getHeaders();
+      // Ensure we always have a unique key to prevent double-reserving funds
+      final effectiveKey = idempotencyKey ?? const Uuid().v4();
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/reserve'),
+        headers: headers,
+        body: jsonEncode({
+          "accountId": accountId,
+          "amount": amount,
+          "action": action.toUpperCase(),
+          "category": category,
+          "description": description ?? "",
+          "idempotencyKey": effectiveKey,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      return {
+        // Backend returns 201 Created on success
+        "success": response.statusCode == 201,
+        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        "data": data,
+      };
+    } catch (e) {
+      return {"success": false, "message": "Network Failure: $e"};
+    }
+  }
 }

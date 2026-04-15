@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
-import 'package:front_end/core/services/api_config.dart'; // ✅
+import 'package:front_end/core/services/api_config.dart';
 
 class GoalProvider extends ChangeNotifier {
-  // ✅ Use ApiConfig.baseUrl instead of hardcoded localhost
   final GoalService _goalService =
       GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
 
@@ -60,24 +59,12 @@ class GoalProvider extends ChangeNotifier {
     return success;
   }
 
- 
-Future<bool> deleteGoal(String id) async {
-  _goals.removeWhere((g) => g.id == id);
-  _filteredGoals.removeWhere((g) => g.id == id);
-  notifyListeners();
-  await _goalService.deleteGoal(id);
-  return true;
-}
-  Future<bool> deposit(String goalId, double amount) async {
-    final success = await _goalService.depositToGoal(goalId, amount);
-    if (success) await fetchGoals();
-    return success;
-  }
-
-  Future<bool> withdraw(String goalId, double amount) async {
-    final success = await _goalService.withdrawFromGoal(goalId, amount);
-    if (success) await fetchGoals();
-    return success;
+  Future<bool> deleteGoal(String id) async {
+    _goals.removeWhere((g) => g.id == id);
+    _filteredGoals.removeWhere((g) => g.id == id);
+    notifyListeners();
+    await _goalService.deleteGoal(id);
+    return true;
   }
 
   Future<List<dynamic>> getHistory(String goalId) {

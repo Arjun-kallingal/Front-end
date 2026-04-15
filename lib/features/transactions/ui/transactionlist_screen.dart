@@ -13,9 +13,10 @@ import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
 
 class TransactionListScreen extends StatefulWidget {
-  final String? initialAccountName;
+  // ✅ Changed to accountId to sync perfectly with AccountsOverviewScreen
+  final String? accountId;
 
-  const TransactionListScreen({super.key, this.initialAccountName});
+  const TransactionListScreen({super.key, this.accountId});
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
@@ -24,13 +25,14 @@ class TransactionListScreen extends StatefulWidget {
 class _TransactionListScreenState extends State<TransactionListScreen> {
   String selectedType = "All Type";
   String selectedCategory = "All";
-  late String selectedAccountName;
+  String selectedAccountName = "All Accounts"; // Defaults to All Accounts initially
   DateTime? startDate;
   DateTime? endDate;
   String searchQuery = "";
 
   bool _isLoading = true;
   bool _isFetchingMore = false;
+  bool _isFirstLoad = true; // ✅ Tracks initial load for setting the filter name
   String? _nextCursor;
   List<TransactionModel> _transactions = [];
   List<AccountModel> _accounts = [];
@@ -40,7 +42,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void initState() {
     super.initState();
-    selectedAccountName = widget.initialAccountName ?? "All Accounts";
     _fetchData();
 
     _scrollController.addListener(() {
@@ -72,6 +73,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       final List<AccountModel> fetchedAccounts =
           (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
               [];
+
+      // ✅ Map the incoming accountId to the actual account name for the filter UI
+      if (_isFirstLoad && widget.accountId != null && fetchedAccounts.isNotEmpty) {
+        try {
+          selectedAccountName = fetchedAccounts.firstWhere((a) => a.id == widget.accountId).name;
+        } catch (e) {
+          debugPrint("Account ID not found in list: $e");
+        }
+        _isFirstLoad = false;
+      }
 
       String? resolvedAccountId;
       if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
@@ -367,46 +378,69 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  Color _getTransactionColor(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
-      return AppColors.savingsPrimary;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
-      return AppColors.progressGreen;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
-      return AppColors.chartIncome;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
-      return AppColors.incomeAmount;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return AppColors.dateLabel;
+Color _getTransactionColor(TransactionModel tx) {
+    // 1. Check specific directions first (These override general types)
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return AppColors.savingsPrimary;
+      case "GOAL_DEALLOCATION":
+        return AppColors.progressGreen;
+      case "GOAL_COMPLETION":
+        return AppColors.chartIncome;
+      case "ACCOUNT_TRANSFER_IN":
+        return AppColors.incomeAmount;
+      case "ACCOUNT_TRANSFER_OUT":
+        return AppColors.dateLabel;
+      case "RESERVED_IN":
+        return AppColors.warning; // Orange/Warning color for locked reserves
+      case "RESERVED_OUT":
+        return AppColors.incomeAmount; // Green for freeing up funds back to available
+      case "REVERSAL":
+        return AppColors.warning;
+    }
+
+    // 2. Fallback to basic types for STANDARD direction
     if (tx.type == "INCOME") return AppColors.incomeAmount;
+    if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
-    return AppColors.expenseAmount;
+    if (tx.type == "TRANSFER") return AppColors.dateLabel;
+    
+    return AppColors.expenseAmount; // Default fallback
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
+    // 1. Check specific directions first for precise icons
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return Icons.savings_rounded; // Piggy bank for saving
+      case "GOAL_DEALLOCATION":
+        return Icons.savings_outlined; // Empty piggy bank for withdrawing
+      case "GOAL_COMPLETION":
+        return Icons.task_alt_rounded; // Checkmark for achieved goals
+      case "ACCOUNT_TRANSFER_IN":
+        return Icons.call_received_rounded; // Arrow pointing in
+      case "ACCOUNT_TRANSFER_OUT":
+        return Icons.call_made_rounded; // Arrow pointing out
+      case "RESERVED_IN":
+        return Icons.lock_outline_rounded; // Lock icon for moving to reserves
+      case "RESERVED_OUT":
+        return Icons.lock_open_rounded; // Unlock icon for moving back to available
+      case "REVERSAL":
+        return Icons.undo_rounded; // Undo arrow for canceled transactions
+    }
+
+    // 2. Fallback to general types for STANDARD direction
     switch (tx.type) {
       case "INCOME":
-        return Icons.trending_up_rounded;
+        return Icons.trending_up_rounded; // Standard green up arrow
       case "EXPENSE":
-        if (tx.direction == "GOAL_COMPLETION") return Icons.task_alt_rounded;
-        return Icons.trending_down_rounded;
+        return Icons.trending_down_rounded; // Standard red down arrow
       case "TRANSFER":
-        switch (tx.direction) {
-          case "GOAL_ALLOCATION":
-            return Icons.savings_rounded;
-          case "GOAL_DEALLOCATION":
-            return Icons.savings_outlined;
-          case "ACCOUNT_TRANSFER_IN":
-            return Icons.call_received_rounded;
-          case "ACCOUNT_TRANSFER_OUT":
-            return Icons.call_made_rounded;
-          default:
-            return Icons.swap_horiz_rounded;
-        }
+        return Icons.swap_horiz_rounded; // Standard side-to-side arrows
       case "REVERSAL":
         return Icons.undo_rounded;
       default:
-        return Icons.receipt_long_rounded;
+        return Icons.receipt_long_rounded; // Safe fallback
     }
   }
 
@@ -506,9 +540,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // 1. Left: Transaction Icon
           _getTransactionLeading(tx),
           const SizedBox(width: 16),
+          
+          // 2. Middle: Title and Subtitle ONLY
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,47 +561,65 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         ? TextDecoration.lineThrough
                         : null,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Icon(isCash ? Icons.wallet : Icons.account_balance,
-                        size: 11, color: textSec),
-                    const SizedBox(width: 4),
-                    Text(
-                      tx.accountName,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: textSec,
-                          fontWeight: FontWeight.w500),
+                // Only show subtitle if it exists
+                if (tx.subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    tx.subtitle,
+                    style: TextStyle(
+                      color: textSec,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
-                    if (tx.subtitle.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Text('·', style: TextStyle(color: textSec)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          tx.subtitle,
-                          style: TextStyle(color: textSec, fontSize: 12),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            "₹${tx.amount.abs().toStringAsFixed(2)}",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              color: tx.status == "VOIDED" ? textSec : moneyColor,
-              decoration:
-                  tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
-            ),
+          
+          // 3. Right: Amount on top, Account Name underneath
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "₹${tx.amount.abs().toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: tx.status == "VOIDED" ? textSec : moneyColor,
+                  decoration: tx.status == "VOIDED"
+                      ? TextDecoration.lineThrough
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isCash ? Icons.account_balance_wallet_rounded : Icons.account_balance_rounded,
+                    size: 11, 
+                    color: textSec.withOpacity(0.8)
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    tx.accountName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: textSec.withOpacity(0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -840,8 +896,7 @@ class SwipeToCancelTile extends StatefulWidget {
   final VoidCallback onCancelTap;
 
   const SwipeToCancelTile(
-      {Key? key, required this.child, required this.onCancelTap})
-      : super(key: key);
+      {super.key, required this.child, required this.onCancelTap});
 
   @override
   State<SwipeToCancelTile> createState() => _SwipeToCancelTileState();

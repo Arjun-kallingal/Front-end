@@ -133,7 +133,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           decoration: InputDecoration(
             counterText: "",
             filled: true,
-            fillColor: color.surfaceVariant.withOpacity(0.5),
+            fillColor: color.surfaceContainerHighest.withOpacity(0.5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -191,7 +191,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       appBar: AppBar(
         backgroundColor: color.surface,
         elevation: 0,

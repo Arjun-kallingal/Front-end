@@ -28,7 +28,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isProcessing = false;
 
-
   List<TransactionModel> _recentTransactions = [];
   bool _isLoadingRecent = true;
   String? _recentError;
@@ -86,12 +85,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message,
             style: const TextStyle(
-                color: AppColors.darkTextPrimary,
-                fontWeight: FontWeight.w600)),
+                color: AppColors.darkTextPrimary, fontWeight: FontWeight.w600)),
         backgroundColor:
             isError ? AppColors.expenseAmount : AppColors.incomeAmount,
         behavior: SnackBarBehavior.floating,
@@ -336,7 +335,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             if (_isProcessing)
               Container(
                 color: AppColors.darkBgPrimary.withOpacity(0.3),
@@ -354,9 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ColorScheme colorScheme, bool isDark) {
     final surfaceAlt =
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
-    final textSec = isDark
-        ? AppColors.darkTextMuted
-        : AppColors.lightTextMuted;
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
@@ -509,7 +505,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                     builder: (_) =>
                         const AddTransactionScreen(initialIsExpense: false)),
-              ).then((_) {
+              ).then((result) {
+                if (result is String) {
+                  _showSnackBar(result);
+                }
                 context.read<TransactionProvider>().fetchTransactions();
                 _loadRecentTransactions();
               }),
@@ -528,7 +527,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                     builder: (_) =>
                         const AddTransactionScreen(initialIsExpense: true)),
-              ).then((_) {
+              ).then((result) {
+                if (result is String) {
+                  _showSnackBar(result);
+                }
                 context.read<TransactionProvider>().fetchTransactions();
                 _loadRecentTransactions();
               }),
@@ -670,8 +672,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
-    final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     if (_isLoadingRecent) {
       return Padding(
@@ -729,8 +730,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final Color moneyColor = _getTransactionColor(tx);
     final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
         tx.accountName.toLowerCase().contains('wallet');
-    final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
 
@@ -846,37 +846,70 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Color _getTransactionColor(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
-      return AppColors.savingsPrimary;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
-      return AppColors.progressGreen;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
-      return AppColors.chartIncome;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
-      return AppColors.incomeAmount;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return AppColors.dateLabel;
+    // 1. Check specific directions first (These override general types)
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return AppColors.savingsPrimary;
+      case "GOAL_DEALLOCATION":
+        return AppColors.progressGreen;
+      case "GOAL_COMPLETION":
+        return AppColors.chartIncome;
+      case "ACCOUNT_TRANSFER_IN":
+        return AppColors.incomeAmount;
+      case "ACCOUNT_TRANSFER_OUT":
+        return AppColors.dateLabel;
+      case "RESERVED_IN":
+        return AppColors.warning; // Orange/Warning color for locked reserves
+      case "RESERVED_OUT":
+        return AppColors.incomeAmount; // Green for freeing up funds back to available
+      case "REVERSAL":
+        return AppColors.warning;
+    }
+
+    // 2. Fallback to basic types for STANDARD direction
     if (tx.type == "INCOME") return AppColors.incomeAmount;
+    if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
-    return AppColors.expenseAmount;
+    if (tx.type == "TRANSFER") return AppColors.dateLabel;
+    
+    return AppColors.expenseAmount; // Default fallback
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
-      return Icons.savings_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
-      return Icons.savings_outlined;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
-      return Icons.task_alt_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
-      return Icons.call_received_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return Icons.call_made_rounded;
-    if (tx.type == "INCOME") return Icons.trending_up_rounded;
-    if (tx.type == "REVERSAL") return Icons.undo_rounded;
-    return Icons.trending_down_rounded;
-  }
+    // 1. Check specific directions first for precise icons
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return Icons.savings_rounded; // Piggy bank for saving
+      case "GOAL_DEALLOCATION":
+        return Icons.savings_outlined; // Empty piggy bank for withdrawing
+      case "GOAL_COMPLETION":
+        return Icons.task_alt_rounded; // Checkmark for achieved goals
+      case "ACCOUNT_TRANSFER_IN":
+        return Icons.call_received_rounded; // Arrow pointing in
+      case "ACCOUNT_TRANSFER_OUT":
+        return Icons.call_made_rounded; // Arrow pointing out
+      case "RESERVED_IN":
+        return Icons.lock_outline_rounded; // Lock icon for moving to reserves
+      case "RESERVED_OUT":
+        return Icons.lock_open_rounded; // Unlock icon for moving back to available
+      case "REVERSAL":
+        return Icons.undo_rounded; // Undo arrow for canceled transactions
+    }
 
+    // 2. Fallback to general types for STANDARD direction
+    switch (tx.type) {
+      case "INCOME":
+        return Icons.trending_up_rounded; // Standard green up arrow
+      case "EXPENSE":
+        return Icons.trending_down_rounded; // Standard red down arrow
+      case "TRANSFER":
+        return Icons.swap_horiz_rounded; // Standard side-to-side arrows
+      case "REVERSAL":
+        return Icons.undo_rounded;
+      default:
+        return Icons.receipt_long_rounded; // Safe fallback
+    }
+  }
   Widget _getTransactionLeading(TransactionModel tx) {
     final Color iconColor = _getTransactionColor(tx);
     return Container(
@@ -896,8 +929,7 @@ class SwipeToCancelTile extends StatefulWidget {
   final VoidCallback onCancelTap;
 
   const SwipeToCancelTile(
-      {Key? key, required this.child, required this.onCancelTap})
-      : super(key: key);
+      {super.key, required this.child, required this.onCancelTap});
 
   @override
   State<SwipeToCancelTile> createState() => _SwipeToCancelTileState();

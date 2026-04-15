@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/notification_service.dart';
+import '../services/notification_channel_service.dart';
 import '../services/socket_service.dart';
 
 class NotificationProvider extends ChangeNotifier {
@@ -66,6 +67,13 @@ class NotificationProvider extends ChangeNotifier {
                 'isRead': false,
               };
               addRealTimeNotification(mockEvent);
+              // [PROD] Show local foreground push only when socket stream is inactive.
+              if (!SocketService.isConnected) {
+                NotificationChannelService.showForegroundNotification(
+                  title: mockEvent['title']?.toString() ?? 'New Notification',
+                  body: mockEvent['message']?.toString() ?? '',
+                );
+              }
             }
           });
 

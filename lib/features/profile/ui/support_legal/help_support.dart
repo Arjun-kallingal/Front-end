@@ -72,7 +72,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       appBar: AppBar(
   backgroundColor: color.surface,
   elevation: 0,
@@ -131,7 +131,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 prefixIcon: Icon(Icons.search,
                     size: 20, color: color.onSurface.withOpacity(0.45)),
                 filled: true,
-                fillColor: color.surfaceVariant.withOpacity(0.5),
+                fillColor: color.surfaceContainerHighest.withOpacity(0.5),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(

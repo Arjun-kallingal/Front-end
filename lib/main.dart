@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
+import 'dart:io';
 
 import 'core/theme/theme_provider.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
-// import 'core/services/local_storage_service.dart';
 
 import 'features/auth/ui/login_screen.dart';
 import 'features/auth/ui/splash_screen.dart';
@@ -30,8 +31,9 @@ import 'core/services/notification_channel_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Handling a background message: ${message.messageId}");
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    await Firebase.initializeApp();
+  }
 }
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -49,7 +51,13 @@ Future<void> setupFCMInteractions() async {
 }
 
 void _handleNotificationRouting(RemoteMessage message) {
-  final route = message.data['route'];
+  // [PROD] Route taps by business notification type for consistent deep-link behavior.
+  final type = message.data['type'];
+  String? route;
+  if (type == 'transaction') route = '/main';
+  if (type == 'wallet') route = '/main';
+  if (type == 'goal') route = '/main';
+  route ??= message.data['route'];
   if (route != null && navigatorKey.currentState != null) {
     navigatorKey.currentState!.pushNamed(route);
   }
@@ -58,10 +66,14 @@ void _handleNotificationRouting(RemoteMessage message) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp();
-  await NotificationChannelService.initialize();
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  setupFCMInteractions();
+  final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
+  if (isMobile) {
+    await Firebase.initializeApp();
+    await NotificationChannelService.initialize();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    setupFCMInteractions();
+  }
 
   runApp(
     MultiProvider(

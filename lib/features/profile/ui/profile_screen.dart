@@ -55,7 +55,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     String email = user.email;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -468,7 +468,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final resolvedIconColor = iconColor ?? color.onSurface.withOpacity(0.7);
 
     return Material(
-      color: color.background,
+      color: color.surface,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -533,7 +533,7 @@ Widget _switchTile(
   final isLight = theme.brightness == Brightness.light;
 
   return Container(
-    color: color.background,
+    color: color.surface,
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
     child: Row(
       children: [

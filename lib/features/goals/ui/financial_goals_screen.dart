@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../data/goal_model.dart';
 import 'create_new_goal.dart';
 import 'goal_details_screen.dart';
@@ -15,83 +16,121 @@ class FinancialGoalsScreen extends StatefulWidget {
 }
 
 class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
-  // ✅ REMOVED: local GoalService, goals, filteredGoals, _isLoading
-  // All data now comes from GoalProvider
-
   String searchQuery = '';
-  String selectedAccount = 'All';
   String selectedStatus = 'All';
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      // ✅ FIX: fetch via provider so _goals is populated
       context.read<GoalProvider>().fetchGoals();
     });
   }
 
-  // void _applyFilters() {
-  //   // ✅ FIX: use provider's searchGoals for filtering
-  //   context.read<GoalProvider>().searchGoals(searchQuery);
-  // }
-
   void _searchGoals(String value) {
     searchQuery = value;
-    // ✅ FIX: delegate search to provider
     context.read<GoalProvider>().searchGoals(value);
   }
 
- Future<void> _confirmDelete(String id) async {
+  // 🛠️ Dynamic Delete Confirmation with Premium UI
+  Future<void> _confirmDelete(GoalModel goal) async {
+    final bool isCompleted = goal.status == 'completed';
+    final bool hasFunds = goal.currentAmount > 0;
+
+    String dialogTitle;
+    String dialogMessage;
+
+    // 1. Determine the correct messaging
+    if (isCompleted) {
+      dialogTitle = "Delete Completed Goal";
+      dialogMessage = "You've already conquered this goal! 🏆\n\nAre you sure you want to remove it from your history? This action cannot be undone.";
+    } else if (hasFunds) {
+      dialogTitle = "Delete Active Goal";
+      dialogMessage = "This goal currently holds ₹${goal.currentAmount.toInt()}.\n\nIf these funds are still in your possession, remember to withdraw them to your main account to keep your tracking accurate.\n\nAre you sure you want to proceed?";
+    } else {
+      dialogTitle = "Delete Active Goal";
+      dialogMessage = "You are currently working towards this goal.\n\nDeleting it will erase your progress tracking. Are you sure you want to proceed?";
+    }
+
+    // 2. Show the Premium Dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
         return AlertDialog(
-          backgroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Delete Goal",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Color(0xFF0F172A))),
-          content: const Text(
-            "Are you sure you want to delete this goal? This action cannot be undone.",
-            style: TextStyle(color: Colors.black54, height: 1.4, fontSize: 15),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          title: Text(
+            dialogTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          content: Text(
+            dialogMessage,
+            style: TextStyle(
+              height: 1.5, 
+              fontSize: 15,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel",
-                  style: TextStyle(color: Colors.grey, fontSize: 15)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Delete",
-                  style:
-                      TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      "Cancel", 
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.grey.shade700, 
+                        fontSize: 15, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text("Delete", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                ),
+              ],
             ),
           ],
         );
       },
     );
 
+    // 3. Execute Delete if Confirmed
     if (confirm == true) {
       final provider = context.read<GoalProvider>();
-      final success = await provider.deleteGoal(id);
+      final success = await provider.deleteGoal(goal.id);
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            success ? "Goal deleted successfully" : "Delete failed",
+            success ? "Goal deleted successfully." : "Delete failed. Please try again.",
             style: const TextStyle(fontSize: 15),
           ),
           backgroundColor: success ? null : Colors.redAccent,
@@ -100,6 +139,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -111,19 +151,16 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     ));
 
-    // ✅ FIX: read goals from provider instead of local state
     final provider = context.watch<GoalProvider>();
     final goals = provider.goals;
     final filteredGoals = provider.filteredGoals;
     final isLoading = provider.isLoading;
 
-    final ongoingGoals = filteredGoals.where((g) => g.progress < 1).toList();
-    final completedGoals =
-        filteredGoals.where((g) => g.progress >= 1).toList();
+    final ongoingGoals = filteredGoals.where((g) => g.status != 'completed').toList();
+    final completedGoals = filteredGoals.where((g) => g.status == 'completed').toList();
 
     return Scaffold(
-      backgroundColor:
-          isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF8FAFC),
       appBar: AppBar(
         centerTitle: false,
         titleSpacing: 0,
@@ -143,7 +180,6 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
         onPressed: () async {
           final refresh = await Navigator.push(context,
               MaterialPageRoute(builder: (_) => const CreateNewGoalScreen()));
-          // ✅ FIX: refresh via provider
           if (refresh == true) context.read<GoalProvider>().fetchGoals();
         },
         backgroundColor: const Color(0xFF3B82F6),
@@ -159,7 +195,6 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       body: isLoading
           ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
           : RefreshIndicator(
-              // ✅ FIX: refresh via provider
               onRefresh: () async => context.read<GoalProvider>().fetchGoals(),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(
@@ -274,11 +309,11 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     );
   }
 
-  // ✅ FIX: pass goals as parameter instead of using local state
   Widget _buildGoalsOverviewCard(
       List<GoalModel> goals, ColorScheme colorScheme, bool isDark) {
     final totalGoals = goals.length;
-    final completed = goals.where((g) => g.progress >= 1).length;
+    
+    final completed = goals.where((g) => g.status == 'completed').length;
     final active = totalGoals - completed;
 
     double completedPercent = totalGoals == 0 ? 0.0 : completed / totalGoals;
@@ -401,10 +436,12 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
   Widget _buildSleekGoalCard(
       GoalModel goal, ColorScheme colorScheme, bool isDark) {
-    final bool isCompleted = goal.progress >= 1;
+    
+    final bool isCompleted = goal.status == 'completed';
+    final double progress = (goal.currentAmount / goal.targetAmount).clamp(0.0, 1.0);
+    
     final int daysRemaining =
         goal.daysLeft ?? goal.targetDate.difference(DateTime.now()).inDays;
-    final double progress = goal.progress;
 
     final Color cardBgColor = isCompleted
         ? const Color(0xFFECFDF5)
@@ -426,26 +463,16 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
         ? const Color(0xFF065F46)
         : const Color(0xFF1E40AF);
 
-    final Color textPrimary =
-        isDark ? Colors.white : const Color(0xFF0F172A);
-    final Color textSecondary =
-        isDark ? Colors.white70 : const Color(0xFF64748B);
-    final Color textTertiary =
-        isDark ? Colors.white54 : const Color(0xFF94A3B8);
+    final Color textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+    final Color textSecondary = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final Color textTertiary = isDark ? Colors.white54 : const Color(0xFF94A3B8);
 
-    final Color finalCardBgColor =
-        isDark ? const Color(0xFF1E1E2C) : cardBgColor;
+    final Color finalCardBgColor = isDark ? const Color(0xFF1E1E2C) : cardBgColor;
     final Color finalBorderColor = isDark ? Colors.white10 : cardBorderColor;
     final Color finalWatermarkColor =
         isDark ? Colors.white.withOpacity(0.02) : watermarkColor;
     final Color finalIconBgColor =
         isDark ? accentColor.withOpacity(0.15) : iconBgColor;
-
-    final String accountName = (goal.accountName == null ||
-            goal.accountName == 'Unknown' ||
-            goal.accountName!.isEmpty)
-        ? "Main Account"
-        : goal.accountName!;
 
     String predictionText;
     if (isCompleted) {
@@ -481,7 +508,6 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (_) => GoalDetailsScreen(goal: goal)));
-            // ✅ FIX: refresh via provider
             if (refresh == true) context.read<GoalProvider>().fetchGoals();
           },
           child: ClipRRect(
@@ -535,12 +561,12 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(Icons.account_balance_wallet_rounded,
+                                    Icon(Icons.category_rounded,
                                         size: 14, color: textSecondary),
                                     const SizedBox(width: 4),
                                     Flexible(
                                       child: Text(
-                                        accountName,
+                                        goal.category,
                                         style: TextStyle(
                                             fontSize: 13,
                                             color: textSecondary,
@@ -554,7 +580,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                                         style: TextStyle(
                                             color: textTertiary, fontSize: 13)),
                                     const SizedBox(width: 6),
-                                    Text(goal.category,
+                                    Text(DateFormat('MMM dd, yyyy').format(goal.targetDate),
                                         style: TextStyle(
                                             fontSize: 13,
                                             color: textSecondary,
@@ -632,7 +658,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                           SizedBox(
                             width: 45,
                             child: Text(
-                              "${(progress * 100).clamp(0, 100).toInt()}%",
+                              "${(progress * 100).toInt()}%",
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                   fontSize: 15,
@@ -696,36 +722,25 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: isDark ? const Color(0xFF2A2D3E) : Colors.white,
       onSelected: (value) async {
-        if (value == "delete") _confirmDelete(goal.id);
+        if (value == "delete") _confirmDelete(goal); 
+        
         if (value == "edit") {
           final refresh = await Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (_) => CreateNewGoalScreen(existingGoal: goal)));
-          // ✅ FIX: refresh via provider
           if (refresh == true) context.read<GoalProvider>().fetchGoals();
         }
       },
-      itemBuilder: (context) {
-        if (isCompleted) {
-          return const [
-            PopupMenuItem(
-                value: "delete",
-                child: Text("Delete Goal",
-                    style: TextStyle(color: Colors.red, fontSize: 15))),
-          ];
-        } else {
-          return const [
-            PopupMenuItem(
-                value: "edit",
-                child: Text("Edit Goal", style: TextStyle(fontSize: 15))),
-            PopupMenuItem(
-                value: "delete",
-                child: Text("Delete Goal",
-                    style: TextStyle(color: Colors.red, fontSize: 15))),
-          ];
-        }
-      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+            value: "edit",
+            child: Text("Edit Goal", style: TextStyle(fontSize: 15))),
+        PopupMenuItem(
+            value: "delete",
+            child: Text("Delete Goal",
+                style: TextStyle(color: Colors.red, fontSize: 15))),
+      ],
     );
   }
 }

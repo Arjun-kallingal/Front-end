@@ -78,13 +78,12 @@ class NotificationService {
   static Future<void> updateFcmToken(String fcmToken) async {
     try {
       final headers = await ApiClient.getHeaders();
-      await http.patch(
-        Uri.parse('${ApiConfig.baseUrl}/api/user/fcm-token'),
+      // [PROD] Use dedicated notifications endpoint for token registration.
+      await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/notifications/register-token'),
         headers: headers,
         body: json.encode({'fcmToken': fcmToken}),
       );
-    } catch (e) {
-      print("Error uploading FCM token: $e");
-    }
+    } catch (_) {}
   }
 }
