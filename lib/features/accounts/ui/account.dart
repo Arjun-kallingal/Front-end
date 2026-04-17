@@ -478,7 +478,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                       decoration: _getPremiumDecoration(
                           theme, colorScheme, surfaceAlt, textSec,
                           label: "Low Balance Reminder",
-                          icon: Icons.notifications_active_rounded, // REMINDER ICON
+                          icon: Icons
+                              .notifications_active_rounded, // REMINDER ICON
                           prefixText: "₹ "),
                     ),
                     Padding(
@@ -665,8 +666,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                                       fontWeight: FontWeight.w900,
                                       color: colorScheme.onSurface)),
                               const SizedBox(height: 2),
-                              Text(
-                                  "Add a wallet or bank to track your money.",
+                              Text("Add a wallet or bank to track your money.",
                                   style: TextStyle(
                                       fontSize: 13,
                                       color: textSec,
@@ -735,7 +735,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                       decoration: _getPremiumDecoration(
                           theme, colorScheme, surfaceAlt, textSec,
                           label: "Low Balance Reminder",
-                          icon: Icons.notifications_active_rounded, // REMINDER ICON
+                          icon: Icons
+                              .notifications_active_rounded, // REMINDER ICON
                           prefixText: "₹ "),
                     ),
                     Padding(
@@ -1145,26 +1146,15 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                   ),
           ),
 
+          // --- INVISIBLE OVERLAY (No Blur, No Tint) ---
           Positioned.fill(
             child: IgnorePointer(
               ignoring: !_isFabOpen,
-              child: AnimatedBuilder(
-                animation: _fadeAnimation,
-                builder: (context, child) {
-                  return BackdropFilter(
-                    filter: ImageFilter.blur(
-                        sigmaX: 8 * _fadeAnimation.value,
-                        sigmaY: 8 * _fadeAnimation.value),
-                    child: GestureDetector(
-                      onTap: _toggleFab,
-                      child: Container(
-                        color: Colors.black.withValues(
-                            alpha:
-                                (0.5 * _fadeAnimation.value).clamp(0.0, 1.0)),
-                      ),
-                    ),
-                  );
-                },
+              child: GestureDetector(
+                onTap: _toggleFab,
+                child: Container(
+                  color: Colors.transparent, // Completely untouched background
+                ),
               ),
             ),
           ),
@@ -1235,8 +1225,10 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                   angle: _rotationAnimation.value * 3.14159 * 2,
                   child: FloatingActionButton(
                     onPressed: _toggleFab,
-                    backgroundColor: isDark ? const Color(0xFF2A2D3E) : colorScheme.primary,
-                    foregroundColor: isDark ? Colors.white : colorScheme.onPrimary,
+                    backgroundColor:
+                        isDark ? const Color(0xFF2A2D3E) : colorScheme.primary,
+                    foregroundColor:
+                        isDark ? Colors.white : colorScheme.onPrimary,
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18)),
