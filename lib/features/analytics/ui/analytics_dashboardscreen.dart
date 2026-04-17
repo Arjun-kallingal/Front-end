@@ -1,3 +1,4 @@
+import 'dart:ui'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +19,9 @@ class AnalyticsDashboardScreen extends StatefulWidget {
 }
 
 class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
+  // 🔥 CLEAN ACCENT COLOR
+  final Color primaryAccent = const Color(0xFF3B82F6); // Sleek, professional blue
+
   @override
   void initState() {
     super.initState();
@@ -36,7 +40,6 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     
-    // 🔥 PREMIUM TEXT COLORS
     final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A); 
     final textSecondary = isDark ? Colors.white70 : const Color(0xFF64748B); 
 
@@ -46,54 +49,89 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     ));
 
     return Scaffold(
-      backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF8FAFC),
-      appBar: _buildAppBar(anaP, accP, theme, colorScheme, textPrimary, textSecondary, isDark),
-      body: anaP.isLoading
-          ? Center(child: CircularProgressIndicator(color: isDark ? Colors.white : const Color(0xFF0F172A)))
-          : anaP.error != null
-              ? _buildError(anaP, textSecondary)
-              : RefreshIndicator(
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  backgroundColor: isDark ? const Color(0xFF1E1E2C) : Colors.white,
-                  onRefresh: () => anaP.fetchDashboard(),
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                    children: [
-                      // 🔥 RESTORED & UPGRADED: Day/Week/Month/Year + Master Date Selector
-                      _buildTimeFilter(anaP, isDark, textPrimary, textSecondary, context),
-                      const SizedBox(height: 20),
-                      
-                      if (anaP.data != null) ...[
-                        _buildSummaryCards(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
-                        const SizedBox(height: 16),
-                        _buildIncomeExpenseCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
-                        const SizedBox(height: 16),
-                        _buildSpendGaugeCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
-                        const SizedBox(height: 16),
-                        _buildSpendingInsightsCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
-                      ] else
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 60),
-                            child: Text(
-                              "No data available.",
-                              style: TextStyle(color: textSecondary, fontSize: 15),
-                            ),
-                          ),
+      backgroundColor: isDark ? const Color(0xFF0B0F19) : const Color(0xFFF1F5F9), 
+      extendBodyBehindAppBar: true, 
+      appBar: _buildAppBar(theme, textPrimary, textSecondary, isDark),
+      body: Stack(
+        children: [
+          // ─── SUBTLE AMBIENT BACKGROUND ORBS ───
+          Positioned(
+            top: -100,
+            left: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 200,
+            right: -100,
+            child: Container(
+              width: 350,
+              height: 350,
+              decoration: BoxDecoration(
+                color: isDark ? primaryAccent.withOpacity(0.03) : primaryAccent.withOpacity(0.04),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              child: const SizedBox(),
+            ),
+          ),
+          
+          // ─── MAIN CONTENT ───
+          SafeArea(
+            child: anaP.isLoading
+                ? Center(child: CircularProgressIndicator(color: isDark ? Colors.white : const Color(0xFF0F172A)))
+                : anaP.error != null
+                    ? _buildError(anaP, textSecondary)
+                    : RefreshIndicator(
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        backgroundColor: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+                        onRefresh: () => anaP.fetchDashboard(),
+                        child: ListView(
+                          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                          children: [
+                            _buildMasterControlsRow(anaP, accP, isDark, textPrimary, textSecondary),
+                            const SizedBox(height: 24),
+                            
+                            if (anaP.data != null) ...[
+                              _buildSummaryCards(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
+                              const SizedBox(height: 16),
+                              _buildIncomeExpenseCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
+                              const SizedBox(height: 16),
+                              _buildSpendGaugeCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
+                              const SizedBox(height: 16),
+                              _buildSpendingInsightsCard(anaP.data!, colorScheme, textPrimary, textSecondary, isDark),
+                            ] else
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 60),
+                                  child: Text(
+                                    "No data available.",
+                                    style: TextStyle(color: textSecondary, fontSize: 15),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
-                ),
+                      ),
+          ),
+        ],
+      ),
     );
   }
 
   // ─── APPBAR ────────────────────────────────────────────────────────────────
-  PreferredSizeWidget _buildAppBar(AnalyticsProvider anaP, AccountProvider accP,
-      ThemeData theme, ColorScheme colorScheme, Color textPrimary, Color textSecondary, bool isDark) {
-    final accounts = [...accP.cashAccounts, ...accP.bankAccounts];
-    final surfaceAlt = isDark ? const Color(0xFF1E1E2C) : Colors.white;
-
+  PreferredSizeWidget _buildAppBar(ThemeData theme, Color textPrimary, Color textSecondary, bool isDark) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -111,47 +149,63 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       ),
       title: Text(
         "Analytics",
-        style: TextStyle(
-          color: textPrimary,
-          fontWeight: FontWeight.w900,
-          fontSize: 20, 
-          letterSpacing: -0.5,
-        ),
+        style: TextStyle(color: textPrimary, fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: -0.5),
       ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 20, top: 8, bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: surfaceAlt,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: isDark ? Colors.white10 : Colors.transparent), 
-            boxShadow: [
-              if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))
-            ]
+    );
+  }
+
+  // ─── MASTER CONTROLS ROW ───────────────────────────────────────────────────
+  Widget _buildMasterControlsRow(AnalyticsProvider anaP, AccountProvider accP, bool isDark, Color textPrimary, Color textSecondary) {
+    final bool isCustomActive = anaP.currentTimeframe == 'Custom';
+    
+    String currentAccountName = "All Assets";
+    if (anaP.currentAccountId != "all") {
+      final allAccounts = [...accP.cashAccounts, ...accP.bankAccounts];
+      try {
+        currentAccountName = allAccounts.firstWhere((a) => a.id == anaP.currentAccountId).name;
+      } catch (_) {}
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 4,
+          child: _buildSelectorButton(
+            label: currentAccountName,
+            isDark: isDark,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            onTap: () => _showAccountPicker(context, anaP, accP, isDark, textPrimary, textSecondary),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: anaP.currentAccountId,
-              dropdownColor: surfaceAlt,
-              icon: Icon(Icons.keyboard_arrow_down_rounded, color: textSecondary, size: 20),
-              onChanged: (val) {
-                HapticFeedback.selectionClick();
-                anaP.changeAccount(val!);
-              },
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textPrimary),
-              items: [
-                const DropdownMenuItem(
-                  value: "all",
-                  child: Text("All Assets"),
-                ),
-                ...accounts.map(
-                  (a) => DropdownMenuItem(
-                    value: a.id,
-                    child: Text(a.name),
-                  ),
-                ),
-              ],
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          flex: 3,
+          child: _buildSelectorButton(
+            label: isCustomActive ? "Custom" : anaP.currentTimeframe,
+            isDark: isDark,
+            textPrimary: textPrimary,
+            textSecondary: textSecondary,
+            onTap: () => _showTimeframePicker(context, anaP, isDark, textPrimary, textSecondary),
+          ),
+        ),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _showMonthPicker(context, anaP, isDark, textPrimary, textSecondary);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            child: _glassContainer(
+              isDark: isDark,
+              padding: const EdgeInsets.all(14),
+              customColor: isCustomActive ? primaryAccent.withOpacity(isDark ? 0.2 : 0.1) : null,
+              child: Icon(
+                Icons.calendar_month_outlined, // Minimalist icon
+                size: 22,
+                color: isCustomActive ? primaryAccent : textPrimary,
+              ),
             ),
           ),
         ),
@@ -159,107 +213,192 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  // ─── 🔥 UPGRADED TIME FILTER (WITH INTEGRATED CALENDAR) ───────────────────
-  Widget _buildTimeFilter(AnalyticsProvider anaP, bool isDark, Color textPrimary, Color textSecondary, BuildContext context) {
-    const options = ["Day", "Week", "Month", "Year"];
-    final bgColor = isDark ? const Color(0xFF1E1E2C) : Colors.white;
-    
-    final Color gradStart = isDark ? const Color(0xFF2A2D3E) : const Color(0xFF1E293B);
-    final Color gradEnd = isDark ? const Color(0xFF1A1D27) : const Color(0xFF0F172A);
-
-    final bool isCustomActive = anaP.currentTimeframe == 'Custom';
-
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
-        boxShadow: [
-          if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 6))
-        ]
-      ),
-      child: Row(
-        children: [
-          // 1. The Standard Text Options
-          ...options.map((opt) {
-            final isActive = anaP.currentTimeframe == opt;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  anaP.changeTimeframe(opt);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInOut,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: isActive 
-                        ? LinearGradient(colors: [gradStart, gradEnd], begin: Alignment.topLeft, end: Alignment.bottomRight) 
-                        : null,
-                    color: isActive ? null : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: isActive && !isDark
-                        ? [BoxShadow(color: gradEnd.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))]
-                        : null,
-                  ),
-                  child: Center(
-                    child: Text(
-                      opt,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
-                        color: isActive ? Colors.white : textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-          
-          // Tiny Divider
-          Container(
-            width: 1,
-            height: 24,
-            color: isDark ? Colors.white10 : Colors.grey.shade300,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-          ),
-
-          // 2. The Integrated Master Date Selector (Calendar Icon)
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              _showMonthPicker(context, anaP, isDark, textPrimary, textSecondary);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-              decoration: BoxDecoration(
-                gradient: isCustomActive 
-                    ? LinearGradient(colors: [gradStart, gradEnd], begin: Alignment.topLeft, end: Alignment.bottomRight) 
-                    : null,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: isCustomActive && !isDark
-                    ? [BoxShadow(color: gradEnd.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))]
-                    : null,
-              ),
-              child: Icon(
-                Icons.calendar_month_rounded,
-                size: 20,
-                color: isCustomActive ? Colors.white : textSecondary,
+  Widget _buildSelectorButton({
+    required String label,
+    required bool isDark,
+    required Color textPrimary,
+    required Color textSecondary,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: _glassContainer(
+        isDark: isDark,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textPrimary),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            Icon(Icons.unfold_more_rounded, color: textSecondary, size: 18), // Cleaner dropdown indicator
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── BOTTOM SHEETS ─────────────────────────────────────────────────────────
+  void _showAccountPicker(BuildContext context, AnalyticsProvider anaP, AccountProvider accP, bool isDark, Color textPrimary, Color textSecondary) {
+    final accounts = [...accP.cashAccounts, ...accP.bankAccounts];
+    
+    _showCustomModal(context, isDark, textPrimary, "Select Account", [
+      _buildSheetOption(
+        label: "All Assets",
+        icon: Icons.account_balance_wallet_outlined,
+        isSelected: anaP.currentAccountId == "all",
+        isDark: isDark,
+        textPrimary: textPrimary,
+        textSecondary: textSecondary,
+        onTap: () {
+          anaP.changeAccount("all");
+          Navigator.pop(context);
+        },
+      ),
+      ...accounts.map((a) {
+        IconData accIcon = Icons.account_balance_wallet_outlined;
+        if (a.name.toLowerCase().contains('bank')) accIcon = Icons.account_balance_outlined;
+        if (a.name.toLowerCase().contains('cash')) accIcon = Icons.payments_outlined;
+        if (a.name.toLowerCase().contains('card')) accIcon = Icons.credit_card_outlined;
+
+        return _buildSheetOption(
+          label: a.name,
+          icon: accIcon,
+          isSelected: anaP.currentAccountId == a.id,
+          isDark: isDark,
+          textPrimary: textPrimary,
+          textSecondary: textSecondary,
+          onTap: () {
+            anaP.changeAccount(a.id);
+            Navigator.pop(context);
+          },
+        );
+      }),
+    ]);
+  }
+
+  void _showTimeframePicker(BuildContext context, AnalyticsProvider anaP, bool isDark, Color textPrimary, Color textSecondary) {
+    final options = [
+      {"label": "Day", "icon": Icons.calendar_view_day_outlined},
+      {"label": "Week", "icon": Icons.view_week_outlined},
+      {"label": "Month", "icon": Icons.calendar_view_month_outlined},
+      {"label": "Year", "icon": Icons.calendar_today_outlined},
+    ];
+    
+    _showCustomModal(context, isDark, textPrimary, "Timeframe", options.map((opt) {
+      final label = opt["label"] as String;
+      final icon = opt["icon"] as IconData;
+
+      return _buildSheetOption(
+        label: label,
+        icon: icon,
+        isSelected: anaP.currentTimeframe == label,
+        isDark: isDark,
+        textPrimary: textPrimary,
+        textSecondary: textSecondary,
+        onTap: () {
+          anaP.changeTimeframe(label);
+          Navigator.pop(context);
+        },
+      );
+    }).toList());
+  }
+
+  void _showCustomModal(BuildContext context, bool isDark, Color textPrimary, String title, List<Widget> children) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E2C) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(2)),
+                ),
+                Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary)),
+                const SizedBox(height: 24),
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(children: children),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  // 🔥 CLEAN, MONOCHROME SHEET OPTION
+  Widget _buildSheetOption({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required bool isDark,
+    required Color textPrimary,
+    required Color textSecondary,
+    required VoidCallback onTap,
+  }) {
+    // Only use the primaryAccent color if selected, otherwise neutral
+    final activeColor = isSelected ? primaryAccent : textSecondary;
+    final bgColor = isSelected ? primaryAccent.withOpacity(isDark ? 0.15 : 0.08) : Colors.transparent;
+    final borderColor = isSelected ? primaryAccent.withOpacity(0.3) : Colors.transparent;
+
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: activeColor, size: 22),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected ? primaryAccent : textPrimary,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_rounded, color: primaryAccent, size: 22),
+          ],
+        ),
       ),
     );
   }
 
   // ─── SUMMARY CARDS ─────────────────────────────────────────────────────────
-  Widget _buildSummaryCards(AnalyticsModel data, ColorScheme colorScheme,
-      Color textPrimary, Color textSecondary, bool isDark) {
+  Widget _buildSummaryCards(AnalyticsModel data, ColorScheme colorScheme, Color textPrimary, Color textSecondary, bool isDark) {
     return Row(
       children: [
         Expanded(
@@ -289,16 +428,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  Widget _summaryCard({
-    required String title,
-    required double amount,
-    required IconData icon,
-    required Color accentColor,
-    required Color textPrimary,
-    required Color textSecondary,
-    required bool isDark,
-  }) {
-    return _baseCard(
+  Widget _summaryCard({required String title, required double amount, required IconData icon, required Color accentColor, required Color textPrimary, required Color textSecondary, required bool isDark}) {
+    return _baseGlassCard(
       isDark: isDark,
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -307,10 +438,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(
-              color: isDark ? accentColor.withOpacity(0.15) : accentColor.withOpacity(0.1), 
-              borderRadius: BorderRadius.circular(12)
-            ),
+            decoration: BoxDecoration(color: accentColor.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, size: 24, color: accentColor),
           ),
           const SizedBox(height: 16),
@@ -318,14 +446,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           const SizedBox(height: 4),
           Text(
             "₹${_fmt(amount)}",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: textPrimary,
-              letterSpacing: -0.5,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -0.5),
+            maxLines: 1, overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -337,45 +459,26 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     int touchedIndex = -1;
     final bool hasIncome = data.income > 0;
     final bool hasExpense = data.expense > 0;
-
     final colorGreen = const Color(0xFF10B981);
     final colorRed = const Color(0xFFEF4444);
-    final colorEmpty = isDark ? Colors.white10 : Colors.grey.shade200;
+    final colorEmpty = isDark ? Colors.white10 : Colors.grey.shade300;
 
     return StatefulBuilder(
       builder: (context, setState) {
         List<PieChartSectionData> showingSections() {
-          if (!hasIncome && !hasExpense) {
-            return [
-              PieChartSectionData(value: 1, color: colorEmpty, radius: 25, showTitle: false),
-            ];
-          }
-
+          if (!hasIncome && !hasExpense) return [PieChartSectionData(value: 1, color: colorEmpty, radius: 25, showTitle: false)];
           final List<PieChartSectionData> list = [];
-          int index = 0;
-
-          if (hasIncome) {
-            final isTouched = index == touchedIndex;
-            list.add(PieChartSectionData(value: data.income, color: colorGreen, radius: isTouched ? 35 : 25, showTitle: false));
-            index++;
-          }
-
-          if (hasExpense) {
-            final isTouched = index == touchedIndex;
-            list.add(PieChartSectionData(value: data.expense, color: colorRed, radius: isTouched ? 35 : 25, showTitle: false));
-          }
+          if (hasIncome) list.add(PieChartSectionData(value: data.income, color: colorGreen, radius: touchedIndex == 0 ? 35 : 25, showTitle: false));
+          if (hasExpense) list.add(PieChartSectionData(value: data.expense, color: colorRed, radius: touchedIndex == 1 ? 35 : 25, showTitle: false));
           return list;
         }
 
-        return _baseCard(
+        return _baseGlassCard(
           isDark: isDark,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Income Vs Expense",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
-              ),
+              Text("Income Vs Expense", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary)),
               const SizedBox(height: 24),
               SizedBox(
                 height: 220,
@@ -384,15 +487,12 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                   children: [
                     PieChart(
                       PieChartData(
-                        centerSpaceRadius: 75,
-                        sectionsSpace: 4,
-                        sections: showingSections(),
+                        centerSpaceRadius: 75, sectionsSpace: 4, sections: showingSections(),
                         pieTouchData: PieTouchData(
                           touchCallback: (event, response) {
                             setState(() {
                               if (!event.isInterestedForInteractions || response == null || response.touchedSection == null) {
-                                touchedIndex = -1;
-                                return;
+                                touchedIndex = -1; return;
                               }
                               touchedIndex = response.touchedSection!.touchedSectionIndex;
                             });
@@ -405,10 +505,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                       children: [
                         Text(
                           touchedIndex == 0 ? "₹${_fmt(data.income)}" : touchedIndex == 1 ? "₹${_fmt(data.expense)}" : data.netSavingsFormatted,
-                          style: TextStyle(
-                            fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5,
-                            color: touchedIndex == 1 ? colorRed : touchedIndex == 0 ? colorGreen : (data.isDeficit ? colorRed : textPrimary),
-                          ),
+                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: touchedIndex == 1 ? colorRed : touchedIndex == 0 ? colorGreen : (data.isDeficit ? colorRed : textPrimary)),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -423,10 +520,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: isDark ? colorScheme.surfaceTint.withOpacity(0.05) : const Color(0xFFF8FAFC), 
-                  borderRadius: BorderRadius.circular(16)
-                ),
+                decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.03), borderRadius: BorderRadius.circular(16)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -434,10 +528,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                       children: [
                         Text("Savings Rate", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)),
                         const SizedBox(height: 4),
-                        Text(
-                          data.savingsRateFormatted,
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: data.isDeficit ? colorRed : colorGreen),
-                        ),
+                        Text(data.savingsRateFormatted, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: data.isDeficit ? colorRed : colorGreen)),
                       ],
                     ),
                   ],
@@ -450,27 +541,22 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  // ─── SPEND GAUGE (HALF PIE CHART) ───────────────────────────────────────────
-  Widget _buildSpendGaugeCard(AnalyticsModel data, ColorScheme colorScheme,
-      Color textPrimary, Color textSecondary, bool isDark) {
+  // ─── SPEND GAUGE ───────────────────────────────────────────────────────────
+  Widget _buildSpendGaugeCard(AnalyticsModel data, ColorScheme colorScheme, Color textPrimary, Color textSecondary, bool isDark) {
     final double pct = data.spendPercentageClamped;
     final Color gaugeColor = _getGaugeColor(pct);
 
-    return _baseCard(
+    return _baseGlassCard(
       isDark: isDark,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Spending Health",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
-          ),
+          Text("Spending Health", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary)),
           const SizedBox(height: 24),
           SizedBox(
             height: 140, 
             child: OverflowBox(
-              maxHeight: 200,
-              alignment: Alignment.topCenter,
+              maxHeight: 200, alignment: Alignment.topCenter,
               child: SizedBox(
                 height: 200,
                 child: Stack(
@@ -478,12 +564,10 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                   children: [
                     PieChart(
                       PieChartData(
-                        startDegreeOffset: 180,
-                        centerSpaceRadius: 60, 
-                        sectionsSpace: 0,
+                        startDegreeOffset: 180, centerSpaceRadius: 60, sectionsSpace: 0,
                         sections: [
                           PieChartSectionData(value: pct, color: gaugeColor, radius: 22, showTitle: false),
-                          PieChartSectionData(value: 100 - pct, color: isDark ? Colors.white10 : Colors.grey.shade200, radius: 22, showTitle: false),
+                          PieChartSectionData(value: 100 - pct, color: isDark ? Colors.white10 : Colors.grey.shade300, radius: 22, showTitle: false),
                           PieChartSectionData(value: 100, color: Colors.transparent, radius: 22, showTitle: false),
                         ],
                       ),
@@ -492,10 +576,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                       top: 75, 
                       child: Column(
                         children: [
-                          Text(
-                            "${pct.toStringAsFixed(1)}%",
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -1.0),
-                          ),
+                          Text("${pct.toStringAsFixed(1)}%", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -1.0)),
                           const SizedBox(height: 2), 
                           Text("of income spent", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)),
                         ],
@@ -511,15 +592,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: gaugeColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              "Status: ${data.healthStatus}",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: gaugeColor, fontWeight: FontWeight.w700, fontSize: 14),
-            ),
+            decoration: BoxDecoration(color: gaugeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+            child: Text("Status: ${data.healthStatus}", textAlign: TextAlign.center, style: TextStyle(color: gaugeColor, fontWeight: FontWeight.w700, fontSize: 14)),
           ),
         ],
       ),
@@ -527,12 +601,11 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   }
 
   // ─── SPENDING INSIGHTS ─────────────────────────────────────────────────────
-  Widget _buildSpendingInsightsCard(AnalyticsModel data, ColorScheme colorScheme,
-      Color textPrimary, Color textSecondary, bool isDark) {
+  Widget _buildSpendingInsightsCard(AnalyticsModel data, ColorScheme colorScheme, Color textPrimary, Color textSecondary, bool isDark) {
     final totalSpend = data.categories.fold(0.0, (sum, c) => sum + c.amount);
 
     if (data.categories.isEmpty) {
-      return _baseCard(
+      return _baseGlassCard(
         isDark: isDark,
         child: Center(
           child: Padding(
@@ -548,25 +621,20 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       builder: (context, setState) {
         List<PieChartSectionData> showingSections() {
           return data.categories.asMap().entries.map((entry) {
-            final index = entry.key;
-            final cat = entry.value;
-            final isTouched = index == touchedIndex;
-            return PieChartSectionData(value: cat.amount, color: cat.color, radius: isTouched ? 35 : 25, showTitle: false);
+            final isTouched = entry.key == touchedIndex;
+            return PieChartSectionData(value: entry.value.amount, color: entry.value.color, radius: isTouched ? 35 : 25, showTitle: false);
           }).toList();
         }
 
         final bool isTouched = touchedIndex != null && touchedIndex! >= 0 && touchedIndex! < data.categories.length;
         final selected = isTouched ? data.categories[touchedIndex!] : null;
         
-        return _baseCard(
+        return _baseGlassCard(
           isDark: isDark,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Top Categories",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
-              ),
+              Text("Top Categories", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary)),
               const SizedBox(height: 24),
               SizedBox(
                 height: 220,
@@ -575,15 +643,12 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                   children: [
                     PieChart(
                       PieChartData(
-                        centerSpaceRadius: 75,
-                        sectionsSpace: 3,
-                        sections: showingSections(),
+                        centerSpaceRadius: 75, sectionsSpace: 3, sections: showingSections(),
                         pieTouchData: PieTouchData(
                           touchCallback: (event, response) {
                             setState(() {
                               if (!event.isInterestedForInteractions || response == null || response.touchedSection == null) {
-                                touchedIndex = -1;
-                                return;
+                                touchedIndex = -1; return;
                               }
                               touchedIndex = response.touchedSection!.touchedSectionIndex;
                             });
@@ -594,15 +659,9 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          isTouched ? "₹${_fmt(selected!.amount)}" : "₹${_fmt(totalSpend)}",
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -0.5),
-                        ),
+                        Text(isTouched ? "₹${_fmt(selected!.amount)}" : "₹${_fmt(totalSpend)}", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -0.5)),
                         const SizedBox(height: 4),
-                        Text(
-                          isTouched ? selected!.name : "Total Spending",
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary),
-                        ),
+                        Text(isTouched ? selected!.name : "Total Spending", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)),
                       ],
                     ),
                   ],
@@ -630,10 +689,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           duration: const Duration(milliseconds: 150),
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isActive ? cat.color.withOpacity(0.08) : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
+          decoration: BoxDecoration(color: isActive ? cat.color.withOpacity(0.08) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
           child: Row(
             children: [
               Container(width: 14, height: 14, decoration: BoxDecoration(color: cat.color, shape: BoxShape.circle)),
@@ -729,19 +785,31 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     );
   }
 
-  // ─── SHARED & HELPERS ──────────────────────────────────────────────────────
-  Widget _baseCard({required Widget child, required bool isDark, EdgeInsets? padding}) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent, width: 1.0),
-        boxShadow: [if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 24, offset: const Offset(0, 8))],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Padding(padding: padding ?? const EdgeInsets.all(24), child: child),
+  // ─── SHARED GLASS HELPERS ──────────────────────────────────────────────────
+  Widget _baseGlassCard({required Widget child, required bool isDark, EdgeInsets? padding}) {
+    return _glassContainer(
+      isDark: isDark,
+      padding: padding ?? const EdgeInsets.all(24),
+      borderRadius: 28,
+      child: child,
+    );
+  }
+
+  Widget _glassContainer({required Widget child, required bool isDark, EdgeInsets padding = EdgeInsets.zero, double borderRadius = 16, Color? customColor}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16), 
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: customColor ?? (isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.4), width: 1.0),
+            boxShadow: [if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 24, offset: const Offset(0, 8))],
+          ),
+          child: child,
+        ),
       ),
     );
   }
