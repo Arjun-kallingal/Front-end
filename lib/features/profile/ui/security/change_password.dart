@@ -126,18 +126,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return Scaffold(
       backgroundColor: color.background,
       appBar: AppBar(
-        backgroundColor: color.surface,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        title: Text(
-          "Change Password",
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: color.onSurface,
-          ),
-        ),
-      ),
+  backgroundColor: color.surface,
+  elevation: 0,
+  surfaceTintColor: Colors.transparent,
+  automaticallyImplyLeading: false,
+  titleSpacing: 0,
+  leading: IconButton(
+    onPressed: () => Navigator.pop(context),
+    padding: EdgeInsets.zero,
+    icon: Icon(
+      Icons.arrow_back_ios_new,
+      size: 18,
+      color: color.onSurface,
+    ),
+  ),
+  title: Text(
+    "Change Password",
+    style: theme.textTheme.titleLarge?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: color.onSurface,
+    ),
+  ),
+),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Form(

@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:front_end/features/profile/services/feedback_service.dart';
 import 'package:front_end/core/services/auth_storage.dart';
 
@@ -22,9 +20,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
   bool _isSubmitting = false;
 
   String? _selectedCategory;
-  File? _selectedImage;
-
-  final ImagePicker _picker = ImagePicker();
 
   late List<AnimationController> _starControllers;
   late List<Animation<double>> _starScales;
@@ -64,15 +59,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
         .toList();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source, imageQuality: 70);
-    if (picked != null) {
-      setState(() {
-        _selectedImage = File(picked.path);
-      });
-    }
-  }
-
   Future<void> _submitFeedback() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -104,16 +90,10 @@ class _FeedbackScreenState extends State<FeedbackScreen>
 
       await FeedbackService.updateRating(_rating, token);
 
-      String? imageUrl;
-      if (_selectedImage != null) {
-        imageUrl = null;
-      }
-
       await FeedbackService.submitFeedback(
         token: token,
         category: _selectedCategory!,
         description: _feedbackController.text.trim(),
-        screenshotUrl: imageUrl,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +106,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
       setState(() {
         _rating = 0;
         _selectedCategory = null;
-        _selectedImage = null;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -169,68 +148,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
             color: isSelected
                 ? const Color(0xFFFFC107)
                 : theme.colorScheme.onSurface.withOpacity(0.2),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showImageOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Wrap(
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Text(
-                  "Add Screenshot",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.camera_alt_outlined,
-                      color: Theme.of(context).colorScheme.primary),
-                ),
-                title: const Text("Take Photo"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.photo_library_outlined,
-                      color: Theme.of(context).colorScheme.secondary),
-                ),
-                title: const Text("Choose from Gallery"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
           ),
         ),
       ),
@@ -287,30 +204,30 @@ class _FeedbackScreenState extends State<FeedbackScreen>
 
     return Scaffold(
       backgroundColor: color.background,
-     appBar: AppBar(
-  elevation: 0,
-  backgroundColor: color.surface,
-  surfaceTintColor: Colors.transparent,
-  automaticallyImplyLeading: false,
-  titleSpacing: 0,
-  leading: IconButton(
-    onPressed: () => Navigator.pop(context),
-    padding: EdgeInsets.zero,
-    icon: Icon(
-      Icons.arrow_back_ios_new,
-      size: 18,
-      color: color.onSurface,
-    ),
-  ),
-  title: Text(
-    "Feedback & Rate Us",
-    style: theme.textTheme.titleLarge?.copyWith(
-      fontWeight: FontWeight.w700,
-      color: color.onSurface,
-    ),
-  ),
-  centerTitle: false,
-),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: color.surface,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: color.onSurface,
+          ),
+        ),
+        title: Text(
+          "Feedback & Rate Us",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
+          ),
+        ),
+        centerTitle: false,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Form(
@@ -319,7 +236,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // ─── Hero Banner ────────────────────────────────────────
+              // ─── Hero Banner ─────────────────────────────────────────
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
@@ -362,7 +279,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
 
               const SizedBox(height: 28),
 
-              // ─── Rating ─────────────────────────────────────────────
+              // ─── Rating ──────────────────────────────────────────────
               _sectionLabel("Rate Your Experience"),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -389,7 +306,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
               Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.2)),
               const SizedBox(height: 24),
 
-              // ─── Category ───────────────────────────────────────────
+              // ─── Category ────────────────────────────────────────────
               _sectionLabel("Category"),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
@@ -446,7 +363,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
               Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.2)),
               const SizedBox(height: 24),
 
-              // ─── Feedback ───────────────────────────────────────────
+              // ─── Feedback ────────────────────────────────────────────
               _sectionLabel("Your Feedback"),
               TextFormField(
                 controller: _feedbackController,
@@ -482,95 +399,9 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                     v == null || v.isEmpty ? "Please enter your feedback" : null,
               ),
 
-              const SizedBox(height: 24),
-              Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.2)),
-              const SizedBox(height: 24),
-
-              // ─── Screenshot ─────────────────────────────────────────
-              _sectionLabel("Screenshot (Optional)"),
-              GestureDetector(
-                onTap: _showImageOptions,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  height: 140,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: _selectedImage == null
-                        ? color.surfaceVariant.withOpacity(0.5)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _selectedImage != null
-                          ? color.primary
-                          : color.outline.withOpacity(0.4),
-                      width: _selectedImage != null ? 2 : 1.5,
-                      strokeAlign: BorderSide.strokeAlignInside,
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: _selectedImage == null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: color.primary.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.add_photo_alternate_outlined,
-                                size: 28,
-                                color: color.primary,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              "Tap to upload screenshot",
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: color.onSurface.withOpacity(0.55),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              "Camera or Gallery",
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: color.onSurface.withOpacity(0.35),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.file(_selectedImage!, fit: BoxFit.cover),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: GestureDetector(
-                                onTap: () =>
-                                    setState(() => _selectedImage = null),
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: color.error,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.close,
-                                      size: 16, color: color.onError),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-
               const SizedBox(height: 32),
 
-              // ─── Submit Button ───────────────────────────────────────
+              // ─── Submit Button ────────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 54,

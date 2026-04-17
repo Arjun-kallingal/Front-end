@@ -25,13 +25,35 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   String getOtp() => controllers.map((e) => e.text).join();
 
-  void pasteOtp(String value) {
-    if (value.length == 6) {
-      for (int i = 0; i < 6; i++) {
-        controllers[i].text = value[i];
-      }
-      FocusScope.of(context).unfocus();
+  @override
+  void initState() {
+    super.initState();
+    // auto-paste when any box gains focus and clipboard has 6 digits
+    for (int i = 0; i < 6; i++) {
+      focusNodes[i].addListener(() => _onFocusChange(i));
     }
+  }
+
+  void _onFocusChange(int index) async {
+    if (!focusNodes[index].hasFocus) return;
+    final data = await Clipboard.getData('text/plain');
+    if (data == null || data.text == null) return;
+    final text = data.text!.trim();
+    if (text.length == 6 && RegExp(r'^\d{6}$').hasMatch(text)) {
+      _pasteOtp(text);
+    }
+  }
+
+  // fill all 6 boxes and auto-verify
+  void _pasteOtp(String otp) {
+    for (int i = 0; i < 6; i++) {
+      controllers[i].text = otp[i];
+    }
+    focusNodes[5].requestFocus();
+    setState(() {});
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) verifyOtp();
+    });
   }
 
   Future<void> verifyOtp() async {
@@ -99,8 +121,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(data["message"] ?? "Unable to resend OTP")),
+          SnackBar(content: Text(data["message"] ?? "Unable to resend OTP")),
         );
       }
     } catch (e) {
@@ -116,59 +137,92 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 5),
-        child: TextFormField(
-          controller: controllers[index],
-          focusNode: focusNodes[index],
-          textAlign: TextAlign.center,
-          keyboardType: TextInputType.number,
-          maxLength: 1,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: color.onSurface,
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(1),
-          ],
-          decoration: InputDecoration(
-            counterText: "",
-            filled: true,
-            fillColor: color.surfaceVariant.withOpacity(0.5),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: color.outline.withOpacity(0.3), width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: color.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: color.error, width: 1.5),
-            ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          validator: (value) {
-            if (getOtp().length < 6) return "Invalid OTP";
-            return null;
-          },
-          onChanged: (value) {
-            if (value.length == 6) {
-              pasteOtp(value);
-              return;
-            }
-            if (value.isNotEmpty && index < 5) {
-              FocusScope.of(context).nextFocus();
-            }
-            if (value.isEmpty && index > 0) {
-              FocusScope.of(context).previousFocus();
+        child: KeyboardListener(
+          focusNode: FocusNode(),
+          onKeyEvent: (event) {
+            // handle physical/hardware backspace key
+            if (event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.backspace) {
+              if (controllers[index].text.isEmpty && index > 0) {
+                controllers[index - 1].clear();
+                focusNodes[index - 1].requestFocus();
+              }
             }
           },
+          child: TextFormField(
+            controller: controllers[index],
+            focusNode: focusNodes[index],
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            maxLength: 1,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color.onSurface,
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(1),
+            ],
+            decoration: InputDecoration(
+              counterText: "",
+              filled: true,
+              fillColor: color.surfaceVariant.withOpacity(0.5),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    BorderSide(color: color.outline.withOpacity(0.3), width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: color.primary, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: color.error, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            validator: (value) {
+              if (getOtp().length < 6) return "Invalid OTP";
+              return null;
+            },
+            onChanged: (value) {
+              // handle paste via onChanged (some Android keyboards deliver full string here)
+              if (value.length == 6 && RegExp(r'^\d{6}$').hasMatch(value)) {
+                _pasteOtp(value);
+                return;
+              }
+
+              // truncate if somehow more than 1 digit slips through
+              if (value.length > 1) {
+                controllers[index].text = value[0];
+                controllers[index].selection = TextSelection.fromPosition(
+                  TextPosition(offset: controllers[index].text.length),
+                );
+              }
+
+              if (value.isNotEmpty && index < 5) {
+                // advance to next box
+                focusNodes[index + 1].requestFocus();
+              }
+
+              if (value.isEmpty && index > 0) {
+                // go back to previous box
+                focusNodes[index - 1].requestFocus();
+              }
+
+              // auto-verify when all 6 filled
+              if (getOtp().length == 6) {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (mounted) verifyOtp();
+                });
+              }
+            },
+          ),
         ),
       ),
     );
