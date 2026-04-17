@@ -94,8 +94,11 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
           builder: (context, accountProvider, child) {
             final accounts = accountProvider.accounts;
             
+            // STABILITY FIX 1: Ensure selectedAccountId is always valid.
             if (selectedAccountId == null && accounts.isNotEmpty) {
               selectedAccountId = accounts.first.id;
+            } else if (selectedAccountId != null && !accounts.any((a) => a.id == selectedAccountId)) {
+              selectedAccountId = accounts.isNotEmpty ? accounts.first.id : null;
             }
 
             return StatefulBuilder(
@@ -153,6 +156,8 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                           : DropdownButtonFormField<String>(
                               value: selectedAccountId,
                               dropdownColor: sheetBg,
+                              isExpanded: true, // STABILITY FIX 2: Prevents text overflow crashes
+                              borderRadius: BorderRadius.circular(16),
                               icon: Icon(Icons.keyboard_arrow_down_rounded, color: textSecondary),
                               decoration: InputDecoration(
                                 filled: true, fillColor: inputFill,
@@ -163,7 +168,24 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                               items: accounts.map((acc) {
                                 return DropdownMenuItem(
                                   value: acc.id,
-                                  child: Text(acc.name, style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600)),
+                                  child: Row(
+                                    children: [
+                                      // UI FIX: Added Icon for accounts
+                                      Icon(
+                                        Icons.account_balance_wallet_outlined, 
+                                        color: textSecondary, 
+                                        size: 20
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          acc.name, 
+                                          style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (val) => setStateSheet(() => selectedAccountId = val),

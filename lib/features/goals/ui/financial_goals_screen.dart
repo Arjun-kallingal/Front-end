@@ -269,24 +269,15 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                 color:
                     isDark ? const Color(0xFF8B90A7) : Colors.grey.shade500)));
   }
-
-  Widget _buildSearchBar(ColorScheme colorScheme, bool isDark) {
+Widget _buildSearchBar(ColorScheme colorScheme, bool isDark) {
     return Container(
       height: 48,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isDark ? colorScheme.surface : Colors.white,
+        color: isDark ? colorScheme.surface : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4))
-        ],
       ),
       child: TextField(
         onChanged: _searchGoals,
@@ -296,19 +287,27 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             color: colorScheme.onSurface),
         decoration: InputDecoration(
           isDense: true,
-          icon: Icon(Icons.search_rounded,
-              size: 20, color: isDark ? Colors.white54 : Colors.grey.shade400),
+          icon: Icon(
+            Icons.search_rounded,
+            size: 20, 
+            color: isDark ? Colors.white54 : Colors.grey.shade600
+          ),
           hintText: "Search goals...",
           hintStyle: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white54 : Colors.grey.shade400),
+              color: isDark ? Colors.white54 : Colors.grey.shade600),
+          
+          // These lines completely disable the global border theme
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
         ),
       ),
     );
   }
-
   Widget _buildGoalsOverviewCard(
       List<GoalModel> goals, ColorScheme colorScheme, bool isDark) {
     final totalGoals = goals.length;
