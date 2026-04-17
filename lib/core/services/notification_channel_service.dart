@@ -7,7 +7,7 @@ class NotificationChannelService {
   static Future<void> initialize() async {
     // [PROD] Initialize local notification plugin for foreground fallback rendering.
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
     await _notificationsPlugin.initialize(
       const InitializationSettings(android: androidSettings),
     );
@@ -15,8 +15,7 @@ class NotificationChannelService {
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
-      description:
-          'This channel is used for important notifications.',
+      description: 'This channel is used for important notifications.',
       importance: Importance.max,
     );
 
@@ -39,7 +38,8 @@ class NotificationChannelService {
         android: AndroidNotificationDetails(
           'high_importance_channel',
           'High Importance Notifications',
-          channelDescription: 'This channel is used for important notifications.',
+          channelDescription:
+              'This channel is used for important notifications.',
           importance: Importance.max,
           priority: Priority.high,
         ),

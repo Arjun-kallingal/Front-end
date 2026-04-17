@@ -20,12 +20,17 @@ class BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Detect if the app is currently in dark mode
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
+    // --- PREMIUM FINTECH BRAND COLORS ---
+    const Color premiumGreen = Color(0xFF0F766E); // Grasshopper Green
+    const Color premiumDarkGreen = Color(0xFF4A6B36); // Earthy Dark Green for gradients
+
     // Dynamic colors based on theme
     final Color textColor = isDark ? Colors.white : AppColors.darkTextPrimary;
-    final Color chartColor = isDark ? const Color(0xFF2DB264) : AppColors.incomeAmount;
-    final Color reservedColor = isDark ? const Color(0xFFEAB308) : AppColors.warning;
-    final Color worthColor = isDark ? const Color(0xFF2DB264) : AppColors.incomeAmount;
+    final Color chartColor = isDark ? premiumGreen : AppColors.incomeAmount;
+    final Color reservedColor =
+        isDark ? const Color(0xFFEAB308) : AppColors.warning;
+    final Color worthColor = isDark ? premiumGreen : AppColors.incomeAmount;
 
     final provider = context.watch<AccountProvider>();
     final AccountModel? account = provider.defaultAccount;
@@ -34,6 +39,8 @@ class BalanceCard extends StatelessWidget {
       return _shell(
         isDark: isDark,
         textColor: textColor,
+        premiumGreen: premiumGreen,
+        premiumDarkGreen: premiumDarkGreen,
         child: SizedBox(
           height: 200,
           child: Center(
@@ -51,25 +58,25 @@ class BalanceCard extends StatelessWidget {
     return _shell(
       isDark: isDark,
       textColor: textColor,
+      premiumGreen: premiumGreen,
+      premiumDarkGreen: premiumDarkGreen,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // ── Row 1: account label + wallet icon ─────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: textColor.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: textColor.withOpacity(0.20),
-                        width: 0.8),
+                        color: textColor.withOpacity(0.20), width: 0.8),
                   ),
                   child: Text(
                     account.name.toUpperCase(),
@@ -81,7 +88,6 @@ class BalanceCard extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 Container(
                   width: 36,
                   height: 36,
@@ -89,8 +95,7 @@ class BalanceCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: textColor.withOpacity(0.10),
                     border: Border.all(
-                        color: textColor.withOpacity(0.20),
-                        width: 0.8),
+                        color: textColor.withOpacity(0.20), width: 0.8),
                   ),
                   child: Icon(
                     Icons.account_balance_wallet_outlined,
@@ -171,9 +176,7 @@ class BalanceCard extends StatelessWidget {
             const SizedBox(height: 16),
 
             // ── Divider ────────────────────────────────────────────────
-            Container(
-                height: 0.6,
-                color: textColor.withOpacity(0.20)),
+            Container(height: 0.6, color: textColor.withOpacity(0.20)),
 
             const SizedBox(height: 16),
 
@@ -222,8 +225,7 @@ class BalanceCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   color: textColor.withOpacity(isDark ? 0.08 : 0.10),
                   border: Border.all(
-                      color: textColor.withOpacity(0.20),
-                      width: 0.8),
+                      color: textColor.withOpacity(0.20), width: 0.8),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -253,13 +255,15 @@ class BalanceCard extends StatelessWidget {
     );
   }
 
-  // ── Dynamic Shell (Handles both Light & Glassy Dark modes) ───────────
+  // ── Dynamic Shell (Handles Light & Dark modes) ───────────
   Widget _shell({
     required Widget child,
     required bool isDark,
     required Color textColor,
+    required Color premiumGreen,
+    required Color premiumDarkGreen,
   }) {
-    // 1. Decorative Circles (Shared between themes, opacity adjusts based on text color)
+    // 1. Decorative Circles
     final decorativeCircles = Stack(
       children: [
         Positioned(
@@ -302,22 +306,22 @@ class BalanceCard extends StatelessWidget {
       ],
     );
 
-    // 2. Light Theme Shell (Solid Gradient)
+    // 2. Light Theme Shell
     if (!isDark) {
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             colors: [
-              Color(0xFF2DB264), // Vibrant Jade
-              Color(0xFF146A36), // Rich Forest Green
+              premiumGreen, 
+              premiumDarkGreen, 
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2DB264).withOpacity(0.50),
+              color: premiumGreen.withOpacity(0.50), 
               blurRadius: 36,
               offset: const Offset(0, 16),
             ),
@@ -330,41 +334,34 @@ class BalanceCard extends StatelessWidget {
       );
     }
 
-    // 3. Dark Theme Shell (Glassmorphism)
+    // 3. Dark Theme Shell (Rich Dark Green Gradient)
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
+        // A deep, premium dark green gradient for dark mode
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF14452F), // Rich Dark Green
+            Color(0xFF092215), // Very Dark Forest Green
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2DB264).withOpacity(0.10),
+            color: const Color(0xFF14452F).withOpacity(0.30), // Matching subtle green glow
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
         ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08), // Subtle outline for depth
+          width: 1.0,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.15),
-                width: 1.0,
-              ),
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF2DB264).withOpacity(0.15),
-                  const Color(0xFF071B10).withOpacity(0.70),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: decorativeCircles,
-          ),
-        ),
+        child: decorativeCircles,
       ),
     );
   }
@@ -394,9 +391,8 @@ class BalanceCard extends StatelessWidget {
             const SizedBox(width: 10),
           ],
           Column(
-            crossAxisAlignment: alignRight
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+            crossAxisAlignment:
+                alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               Text(
                 label,

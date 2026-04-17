@@ -348,46 +348,54 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-Widget _buildAppBar(BuildContext context, ThemeData theme,
-      ColorScheme colorScheme, bool isDark) {
+Widget _buildAppBar(BuildContext context, ThemeData theme, ColorScheme colorScheme, bool isDark) {
     
     // Subdued backgrounds for the icons to keep the layout minimal
     final iconBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
     final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06);
     final iconColor = isDark ? Colors.white : Colors.black87;
 
-    // Two distinct shades of green tailored for light/dark modes for better contrast
-    final darkGreen = isDark ? const Color(0xFF66BB6A) : const Color(0xFF2E7D32); // Green 400 / Green 800
-    final lightGreen = isDark ? const Color(0xFFA5D6A7) : const Color(0xFF4CAF50); // Green 200 / Green 500
+    // --- Premium Fintech Brand Colors ---
+    final Color premiumGreen = const Color(0xFF81AF63);
+    final Color premiumText = isDark ? Colors.white : const Color(0xFF0F172A);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Row(
-          children: [
-            // 🟢 UPDATED GRASSHOPPER EMOJI HERE
-            ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                darkGreen, 
-                BlendMode.srcATop,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // ── BRAND LOGO & NAME ──────────────────────────────────────
+          Row(
+            children: [
+              // 🟢 Logo
+              Container(
+                width: 40, 
+                height: 60,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  'assets/images/homeicon.png',
+                  fit: BoxFit.contain, 
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.eco_rounded,
+                    color: premiumGreen,
+                    size: 26,
+                  ),
+                ),
               ),
-              child: const Text(
-                "🦗",
-                style: TextStyle(fontSize: 26),
-              ),
-            ),
-            const SizedBox(width: 8),
+              const SizedBox(width: 0), // 🟢 Gap reduced even further
+              
+              // 🟢 Two-Tone Brand Text
               RichText(
                 text: TextSpan(
                   children: [
                     TextSpan(
                       text: "Green",
                       style: TextStyle(
-                        color: darkGreen,
-                        fontSize: 24,
+                        color: premiumGreen, // 🟢 Restored to the green brand color
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
                       ),
@@ -395,9 +403,9 @@ Widget _buildAppBar(BuildContext context, ThemeData theme,
                     TextSpan(
                       text: "Pouch",
                       style: TextStyle(
-                        color: lightGreen,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w400, // Typographic contrast
+                        color: premiumText, 
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -406,6 +414,8 @@ Widget _buildAppBar(BuildContext context, ThemeData theme,
               ),
             ],
           ),
+
+          // ── ACTION ICONS ───────────────────────────────────────────
           Row(
             children: [
               // ── 🔔 LIVE NOTIFICATION BELL ──
@@ -439,17 +449,17 @@ Widget _buildAppBar(BuildContext context, ThemeData theme,
                         ),
                         if (unreadCount > 0)
                           Positioned(
-                            top: 0,
-                            right: 0,
+                            top: -2,
+                            right: -2,
                             child: Container(
-                              width: 12,
-                              height: 12,
+                              width: 14,
+                              height: 14,
                               decoration: BoxDecoration(
-                                color: AppColors.expenseAmount, 
+                                color: premiumGreen, 
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: theme.scaffoldBackgroundColor,
-                                  width: 2.5, // Thick border for premium cutout effect
+                                  width: 2.5, 
                                 ),
                               ),
                             ),
@@ -460,6 +470,7 @@ Widget _buildAppBar(BuildContext context, ThemeData theme,
                 },
               ),
               const SizedBox(width: 12),
+              
               // ── 👤 PROFILE ICON ──
               GestureDetector(
                 onTap: () => Navigator.push(
@@ -488,21 +499,7 @@ Widget _buildAppBar(BuildContext context, ThemeData theme,
       ),
     );
   }
-  Widget _buildSectionLabel(String label, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.4,
-        ),
-      ),
-    );
-  }
-
+ 
   Widget _buildActionButtons(
       BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Padding(
@@ -570,6 +567,20 @@ Widget _buildAppBar(BuildContext context, ThemeData theme,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
