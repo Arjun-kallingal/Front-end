@@ -49,7 +49,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     ));
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B0F19) : const Color(0xFFF1F5F9), 
+      // 🔥 Deepened the light theme background slightly for better contrast against white cards
+      backgroundColor: isDark ? const Color(0xFF0B0F19) : const Color(0xFFE2E8F0), 
       extendBodyBehindAppBar: true, 
       appBar: _buildAppBar(theme, textPrimary, textSecondary, isDark),
       body: Stack(
@@ -62,7 +63,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
               width: 300,
               height: 300,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02),
+                // 🔥 Slightly darker top orb in light mode
+                color: isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.03),
                 shape: BoxShape.circle,
               ),
             ),
@@ -74,7 +76,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
               width: 350,
               height: 350,
               decoration: BoxDecoration(
-                color: isDark ? primaryAccent.withOpacity(0.03) : primaryAccent.withOpacity(0.04),
+                // 🔥 Boosted the blue accent orb in light mode to add visual interest
+                color: isDark ? primaryAccent.withOpacity(0.03) : primaryAccent.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
             ),
@@ -803,10 +806,23 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: customColor ?? (isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.5)),
+            // 🔥 Higher opacity for light theme so it separates from the background
+            color: customColor ?? (isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.85)),
             borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.4), width: 1.0),
-            boxShadow: [if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 24, offset: const Offset(0, 8))],
+            // 🔥 Subtle dark border instead of white for light theme to create edges
+            border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05), 
+              width: 1.0
+            ),
+            // 🔥 Slightly stronger shadow for depth
+            boxShadow: [
+              if (!isDark) 
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04), 
+                  blurRadius: 24, 
+                  offset: const Offset(0, 8)
+                )
+            ],
           ),
           child: child,
         ),
