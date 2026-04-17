@@ -670,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
+Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
     final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
@@ -720,25 +720,38 @@ class _HomeScreenState extends State<HomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       itemCount: _recentTransactions.length,
-      itemBuilder: (context, index) => _buildTile(
-          context, _recentTransactions[index], colorScheme, theme, isDark),
+      itemBuilder: (context, index) {
+        // Identify the absolute latest transaction
+        bool isLatest = index == 0;
+        
+        return _buildTile(
+          context, 
+          _recentTransactions[index], 
+          colorScheme, 
+          theme, 
+          isDark, 
+          isLatest: isLatest
+        );
+      },
     );
   }
 
   Widget _buildTile(BuildContext context, TransactionModel tx,
-      ColorScheme colorScheme, ThemeData theme, bool isDark) {
+      ColorScheme colorScheme, ThemeData theme, bool isDark, {bool isLatest = false}) {
     final Color moneyColor = _getTransactionColor(tx);
     final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
         tx.accountName.toLowerCase().contains('wallet');
     final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
-    bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
+    // Only allow reversal if it's the newest item and hasn't been voided yet
+    bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED" && isLatest;
 
-    Widget tileContent = Column(
+    return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center, // Keeps things centered
             children: [
               _getTransactionLeading(tx),
               const SizedBox(width: 16),
@@ -798,6 +811,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     "₹${tx.amount.abs().toStringAsFixed(2)}",
@@ -811,6 +825,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
+                  
+                  // 🔥 Date is ALWAYS visible now
                   Text(
                     DateFormat('dd MMM, yyyy').format(tx.date),
                     style: TextStyle(
@@ -819,6 +835,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+
+                  // 🔥 Undo button gracefully drops down below the date if applicable
+                  if (canReverse) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _handleReversal(tx),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.colorScheme.error.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.undo_rounded, size: 12, color: theme.colorScheme.error),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Undo",
+                              style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -827,17 +874,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Divider(color: theme.dividerColor, height: 1),
       ],
     );
-
-    if (canReverse) {
-      tileContent = SwipeToCancelTile(
-        onCancelTap: () => _handleReversal(tx),
-        child: tileContent,
-      );
-    }
-
-    return tileContent;
   }
-
   String _greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return "Good morning ☀️";

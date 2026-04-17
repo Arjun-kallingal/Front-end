@@ -6,14 +6,8 @@ import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
 import 'filter_screen.dart';
 import 'package:front_end/core/constants/app_colors.dart';
-import 'package:provider/provider.dart';
-import 'package:front_end/core/providers/transaction_provider.dart';
-import 'package:front_end/core/providers/account_provider.dart';
-import '../../analytics/provider/analytics_provider.dart';
-import '../../goals/provider/goal_provider.dart';
 
 class TransactionListScreen extends StatefulWidget {
-  // ✅ Changed to accountId to sync perfectly with AccountsOverviewScreen
   final String? accountId;
 
   const TransactionListScreen({super.key, this.accountId});
@@ -25,14 +19,14 @@ class TransactionListScreen extends StatefulWidget {
 class _TransactionListScreenState extends State<TransactionListScreen> {
   String selectedType = "All Type";
   String selectedCategory = "All";
-  String selectedAccountName = "All Accounts"; // Defaults to All Accounts initially
+  String selectedAccountName = "All Accounts";
   DateTime? startDate;
   DateTime? endDate;
   String searchQuery = "";
 
   bool _isLoading = true;
   bool _isFetchingMore = false;
-  bool _isFirstLoad = true; // ✅ Tracks initial load for setting the filter name
+  bool _isFirstLoad = true;
   String? _nextCursor;
   List<TransactionModel> _transactions = [];
   List<AccountModel> _accounts = [];
@@ -74,7 +68,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
               [];
 
-      // ✅ Map the incoming accountId to the actual account name for the filter UI
       if (_isFirstLoad && widget.accountId != null && fetchedAccounts.isNotEmpty) {
         try {
           selectedAccountName = fetchedAccounts.firstWhere((a) => a.id == widget.accountId).name;
@@ -164,193 +157,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  void _showErrorDialog(String title, String message) {
-    showDialog(
-        context: context,
-        builder: (ctx) {
-          final theme = Theme.of(ctx);
-          final colorScheme = theme.colorScheme;
-          final isDark = theme.brightness == Brightness.dark;
-
-          return Dialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            backgroundColor: colorScheme.surface,
-            elevation: 8,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: AppColors.errorBg,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.error_outline_rounded,
-                        color: AppColors.error, size: 36),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.primary),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        elevation: 0,
-                      ),
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text("Okay",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
-  }
-
-  Future<void> _handleReversal(TransactionModel tx) async {
-    final bool? confirm = await showDialog<bool>(
-        context: context,
-        builder: (ctx) {
-          final theme = Theme.of(ctx);
-          final colorScheme = theme.colorScheme;
-          final isDark = theme.brightness == Brightness.dark;
-
-          return Dialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            backgroundColor: colorScheme.surface,
-            elevation: 8,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "Cancel Transaction?",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        icon: Icon(
-                          Icons.close_rounded,
-                          color: isDark
-                              ? AppColors.darkTextMuted
-                              : AppColors.lightTextMuted,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
-                      height: 1.4,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.expenseAmount,
-                        foregroundColor: AppColors.darkTextPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text(
-                        "Confirm Cancel",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
-
-    if (confirm == true) {
-      setState(() => _isLoading = true);
-
-      final result =
-          await TransactionService.reverseTransaction(originalTx: tx);
-
-      if (result['success']) {
-        await Future.wait([
-          context.read<TransactionProvider>().fetchTransactions(),
-          context.read<AccountProvider>().loadAccounts(),
-          context.read<GoalProvider>().fetchGoals(),
-          context.read<AnalyticsProvider>().reload(),
-        ]);
-
-        await _fetchData();
-
-        _showSnackBar("Transaction cancelled successfully!");
-      } else {
-        setState(() => _isLoading = false);
-
-        _showErrorDialog(
-          "Cancellation Failed",
-          result['message'] ??
-              "An error occurred while cancelling the transaction.",
-        );
-      }
-    }
-  }
-
   void _openFilters() async {
     final result = await Navigator.push(
       context,
@@ -378,8 +184,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-Color _getTransactionColor(TransactionModel tx) {
-    // 1. Check specific directions first (These override general types)
+  Color _getTransactionColor(TransactionModel tx) {
     switch (tx.direction) {
       case "GOAL_ALLOCATION":
         return AppColors.savingsPrimary;
@@ -392,55 +197,52 @@ Color _getTransactionColor(TransactionModel tx) {
       case "ACCOUNT_TRANSFER_OUT":
         return AppColors.dateLabel;
       case "RESERVED_IN":
-        return AppColors.warning; // Orange/Warning color for locked reserves
+        return AppColors.warning;
       case "RESERVED_OUT":
-        return AppColors.incomeAmount; // Green for freeing up funds back to available
+        return AppColors.incomeAmount;
       case "REVERSAL":
         return AppColors.warning;
     }
 
-    // 2. Fallback to basic types for STANDARD direction
     if (tx.type == "INCOME") return AppColors.incomeAmount;
     if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
     if (tx.type == "TRANSFER") return AppColors.dateLabel;
     
-    return AppColors.expenseAmount; // Default fallback
+    return AppColors.expenseAmount;
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    // 1. Check specific directions first for precise icons
     switch (tx.direction) {
       case "GOAL_ALLOCATION":
-        return Icons.savings_rounded; // Piggy bank for saving
+        return Icons.savings_rounded;
       case "GOAL_DEALLOCATION":
-        return Icons.savings_outlined; // Empty piggy bank for withdrawing
+        return Icons.savings_outlined;
       case "GOAL_COMPLETION":
-        return Icons.task_alt_rounded; // Checkmark for achieved goals
+        return Icons.task_alt_rounded;
       case "ACCOUNT_TRANSFER_IN":
-        return Icons.call_received_rounded; // Arrow pointing in
+        return Icons.call_received_rounded;
       case "ACCOUNT_TRANSFER_OUT":
-        return Icons.call_made_rounded; // Arrow pointing out
+        return Icons.call_made_rounded;
       case "RESERVED_IN":
-        return Icons.lock_outline_rounded; // Lock icon for moving to reserves
+        return Icons.lock_outline_rounded;
       case "RESERVED_OUT":
-        return Icons.lock_open_rounded; // Unlock icon for moving back to available
+        return Icons.lock_open_rounded;
       case "REVERSAL":
-        return Icons.undo_rounded; // Undo arrow for canceled transactions
+        return Icons.undo_rounded;
     }
 
-    // 2. Fallback to general types for STANDARD direction
     switch (tx.type) {
       case "INCOME":
-        return Icons.trending_up_rounded; // Standard green up arrow
+        return Icons.trending_up_rounded;
       case "EXPENSE":
-        return Icons.trending_down_rounded; // Standard red down arrow
+        return Icons.trending_down_rounded;
       case "TRANSFER":
-        return Icons.swap_horiz_rounded; // Standard side-to-side arrows
+        return Icons.swap_horiz_rounded;
       case "REVERSAL":
         return Icons.undo_rounded;
       default:
-        return Icons.receipt_long_rounded; // Safe fallback
+        return Icons.receipt_long_rounded;
     }
   }
 
@@ -542,11 +344,8 @@ Color _getTransactionColor(TransactionModel tx) {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. Left: Transaction Icon
           _getTransactionLeading(tx),
           const SizedBox(width: 16),
-          
-          // 2. Middle: Title and Subtitle ONLY
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,7 +363,6 @@ Color _getTransactionColor(TransactionModel tx) {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                // Only show subtitle if it exists
                 if (tx.subtitle.isNotEmpty) ...[
                   const SizedBox(height: 5),
                   Text(
@@ -582,8 +380,6 @@ Color _getTransactionColor(TransactionModel tx) {
             ),
           ),
           const SizedBox(width: 12),
-          
-          // 3. Right: Amount on top, Account Name underneath
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -730,21 +526,12 @@ Color _getTransactionColor(TransactionModel tx) {
           if (currentDay != prevDay) showHeader = true;
         }
 
-        bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
-
         Widget tileContent = Column(
           children: [
             _buildTransactionTile(tx, theme, colorScheme, textSec, isCash),
             Divider(color: theme.dividerColor, height: 1),
           ],
         );
-
-        if (canReverse) {
-          tileContent = SwipeToCancelTile(
-            onCancelTap: () => _handleReversal(tx),
-            child: tileContent,
-          );
-        }
 
         if (showHeader) {
           String headerText;
@@ -886,105 +673,6 @@ Color _getTransactionColor(TransactionModel tx) {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class SwipeToCancelTile extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onCancelTap;
-
-  const SwipeToCancelTile(
-      {super.key, required this.child, required this.onCancelTap});
-
-  @override
-  State<SwipeToCancelTile> createState() => _SwipeToCancelTileState();
-}
-
-class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
-  double _dragExtent = 0.0;
-  final double _maxDrag = 100.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragUpdate: (details) {
-        setState(() {
-          _dragExtent += details.primaryDelta!;
-          if (_dragExtent > 0) _dragExtent = 0;
-          if (_dragExtent < -_maxDrag - 20) _dragExtent = -_maxDrag - 20;
-        });
-      },
-      onHorizontalDragEnd: (details) {
-        setState(() {
-          if (_dragExtent < -_maxDrag / 2) {
-            _dragExtent = -_maxDrag;
-          } else {
-            _dragExtent = 0.0;
-          }
-        });
-      },
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _dragExtent < -30 ? 1.0 : 0.0,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    setState(() => _dragExtent = 0.0);
-                    widget.onCancelTap();
-                  },
-                  child: Container(
-                    width: _maxDrag,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.errorBg,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        bottomLeft: Radius.circular(16),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.expenseIconBg,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.close_rounded,
-                              color: AppColors.expenseAmount, size: 14),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text("Cancel",
-                            style: TextStyle(
-                                color: AppColors.expenseAmount,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            transform: Matrix4.translationValues(_dragExtent, 0, 0),
-            child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: widget.child,
-            ),
-          ),
-        ],
       ),
     );
   }
