@@ -348,54 +348,67 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, ThemeData theme,
+Widget _buildAppBar(BuildContext context, ThemeData theme,
       ColorScheme colorScheme, bool isDark) {
-    final surfaceAlt =
-        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
-    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    
+    // Subdued backgrounds for the icons to keep the layout minimal
+    final iconBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
+    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06);
+    final iconColor = isDark ? Colors.white : Colors.black87;
+
+    // Two distinct shades of green tailored for light/dark modes for better contrast
+    final darkGreen = isDark ? const Color(0xFF66BB6A) : const Color(0xFF2E7D32); // Green 400 / Green 800
+    final lightGreen = isDark ? const Color(0xFFA5D6A7) : const Color(0xFF4CAF50); // Green 200 / Green 500
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Row(
+          children: [
+            // 🟢 UPDATED GRASSHOPPER EMOJI HERE
+            ColorFiltered(
+              colorFilter: ColorFilter.mode(
+                darkGreen, 
+                BlendMode.srcATop,
+              ),
+              child: const Text(
+                "🦗",
+                style: TextStyle(fontSize: 26),
+              ),
+            ),
+            const SizedBox(width: 8),
               RichText(
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: "Wallet",
+                      text: "Green",
                       style: TextStyle(
-                        color: colorScheme.primary,
+                        color: darkGreen,
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     TextSpan(
-                      text: "Care",
+                      text: "Pouch",
                       style: TextStyle(
-                        color: colorScheme.secondary,
+                        color: lightGreen,
                         fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
+                        fontWeight: FontWeight.w400, // Typographic contrast
+                        letterSpacing: -0.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                _greeting(),
-                style: TextStyle(color: textSec, fontSize: 13),
-              ),
             ],
           ),
           Row(
             children: [
-              // ── 🔔 LIVE NOTIFICATION BELL (CONSUMER PATTERN) ──
+              // ── 🔔 LIVE NOTIFICATION BELL ──
               Consumer<NotificationProvider>(
                 builder: (context, notifProvider, child) {
                   final unreadCount = notifProvider.unreadCount;
@@ -410,28 +423,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        SizedBox(
-                          width: 46,
-                          height: 46,
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: iconBg,
+                            border: Border.all(color: borderColor, width: 1),
+                          ),
                           child: Icon(
-                            Icons.notifications_none_rounded,
-                            color: colorScheme.primary,
-                            size: 26,
+                            Icons.notifications_outlined,
+                            color: iconColor,
+                            size: 22,
                           ),
                         ),
                         if (unreadCount > 0)
                           Positioned(
-                            top: 10,
-                            right: 10,
+                            top: 0,
+                            right: 0,
                             child: Container(
-                              width: 10,
-                              height: 10,
+                              width: 12,
+                              height: 12,
                               decoration: BoxDecoration(
-                                color: Colors.redAccent,
+                                color: AppColors.expenseAmount, 
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                    color: theme.scaffoldBackgroundColor,
-                                    width: 1.5),
+                                  color: theme.scaffoldBackgroundColor,
+                                  width: 2.5, // Thick border for premium cutout effect
+                                ),
                               ),
                             ),
                           ),
@@ -441,6 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               const SizedBox(width: 12),
+              // ── 👤 PROFILE ICON ──
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
@@ -448,19 +468,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (_) => const ProfileSettingsScreen()),
                 ),
                 child: Container(
-                  width: 46,
-                  height: 46,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: surfaceAlt,
-                    border: Border.all(
-                      color: colorScheme.secondary.withValues(alpha: 0.40),
-                      width: 1.5,
-                    ),
+                    color: iconBg,
+                    border: Border.all(color: borderColor, width: 1),
                   ),
                   child: Icon(
                     Icons.person_outline_rounded,
-                    color: colorScheme.primary,
+                    color: iconColor,
                     size: 22,
                   ),
                 ),
@@ -471,7 +488,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
   Widget _buildSectionLabel(String label, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
