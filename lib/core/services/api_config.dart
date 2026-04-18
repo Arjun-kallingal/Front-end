@@ -2,20 +2,23 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class ApiConfig {
-  
-static const String _localIp = "192.168.137.1";  // FIXED
-  static const String _port = "5000";
+  // 1. Production URL
+  static const String _prodUrl = "https://walletcare-backend.onrender.com";
 
-  static String get baseUrl {
-
-    if (kIsWeb) {
-      return "http://$_localIp:$_port";   // FIXED
-    }
-
+  // 2. Localhost Logic
+  static String get _localUrl {
+    if (kIsWeb) return "http://localhost:5000"; 
+    
     if (Platform.isAndroid) {
-      return "http://$_localIp:$_port";
+      // ⚠️ EMULATOR: Use "http://10.0.2.2:5000"
+      // ✅ PHYSICAL DEVICE: Use your computer's IPv4 address below!
+      return "http://10.202.207.88:5000";
     }
-
-    return "http://$_localIp:$_port";
+    
+    return "http://localhost:5000"; // iOS Simulator
   }
+
+  // 3. Environment Switch
+  static String get baseUrl => kDebugMode ? _localUrl : _prodUrl;
+  static String get socketUrl => kDebugMode ? _localUrl : _prodUrl;
 }

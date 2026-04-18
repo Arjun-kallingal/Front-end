@@ -286,7 +286,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
      appBar: AppBar(
   elevation: 0,
   backgroundColor: color.surface,
@@ -392,7 +392,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
               // ─── Category ───────────────────────────────────────────
               _sectionLabel("Category"),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 hint: Text(
                   "Select a category",
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -401,7 +401,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: color.surfaceVariant.withOpacity(0.5),
+                  fillColor: color.surfaceContainerHighest.withOpacity(0.5),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
@@ -458,7 +458,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                     color: color.onSurface.withOpacity(0.4),
                   ),
                   filled: true,
-                  fillColor: color.surfaceVariant.withOpacity(0.5),
+                  fillColor: color.surfaceContainerHighest.withOpacity(0.5),
                   contentPadding: const EdgeInsets.all(16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -496,7 +496,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: _selectedImage == null
-                        ? color.surfaceVariant.withOpacity(0.5)
+                        ? color.surfaceContainerHighest.withOpacity(0.5)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(

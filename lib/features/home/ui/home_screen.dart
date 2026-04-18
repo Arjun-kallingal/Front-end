@@ -29,7 +29,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isProcessing = false;
 
-
   List<TransactionModel> _recentTransactions = [];
   bool _isLoadingRecent = true;
   String? _recentError;
@@ -88,12 +87,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message,
             style: const TextStyle(
-                color: AppColors.darkTextPrimary, // From Snippet 2
-                fontWeight: FontWeight.w600)),
+                color: AppColors.darkTextPrimary, fontWeight: FontWeight.w600)),
         backgroundColor:
             isError ? AppColors.expenseAmount : AppColors.incomeAmount,
         behavior: SnackBarBehavior.floating,
@@ -339,7 +338,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             if (_isProcessing)
               Container(
                 color: AppColors.darkBgPrimary.withOpacity(0.3), // From Snippet 2
@@ -353,56 +351,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, ThemeData theme,
-      ColorScheme colorScheme, bool isDark) {
-    final surfaceAlt =
-        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
-    final textSec = isDark
-        ? AppColors.darkTextMuted
-        : AppColors.lightTextMuted; // From Snippet 2
+Widget _buildAppBar(BuildContext context, ThemeData theme, ColorScheme colorScheme, bool isDark) {
+    
+    // Subdued backgrounds for the icons to keep the layout minimal
+    final iconBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
+    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06);
+    final iconColor = isDark ? Colors.white : Colors.black87;
+
+    // --- Premium Fintech Brand Colors ---
+    final Color premiumGreen = const Color(0xFF81AF63);
+    final Color premiumText = isDark ? Colors.white : const Color(0xFF0F172A);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // ── BRAND LOGO & NAME ──────────────────────────────────────
+          Row(
             children: [
+              // 🟢 Logo
+              Container(
+                width: 40, 
+                height: 60,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  'assets/images/homeicon.png',
+                  fit: BoxFit.contain, 
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.eco_rounded,
+                    color: premiumGreen,
+                    size: 26,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 0), // 🟢 Gap reduced even further
+              
+              // 🟢 Two-Tone Brand Text
               RichText(
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: "Wallet",
+                      text: "Green",
                       style: TextStyle(
-                        color: colorScheme.primary,
-                        fontSize: 24,
+                        color: premiumGreen, // 🟢 Restored to the green brand color
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     TextSpan(
-                      text: "Care",
+                      text: "Pouch",
                       style: TextStyle(
-                        color: colorScheme.secondary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
+                        color: premiumText, 
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                _greeting(),
-                style: TextStyle(color: textSec, fontSize: 13),
-              ),
             ],
           ),
+
+          // ── ACTION ICONS ───────────────────────────────────────────
           Row(
             children: [
-              // ── 🔔 LIVE NOTIFICATION BELL (CONSUMER PATTERN) ── From Snippet 1
+              // ── 🔔 LIVE NOTIFICATION BELL ──
               Consumer<NotificationProvider>(
                 builder: (context, notifProvider, child) {
                   final unreadCount = notifProvider.unreadCount;
@@ -417,28 +436,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        SizedBox(
-                          width: 46,
-                          height: 46,
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: iconBg,
+                            border: Border.all(color: borderColor, width: 1),
+                          ),
                           child: Icon(
-                            Icons.notifications_none_rounded,
-                            color: colorScheme.primary,
-                            size: 26,
+                            Icons.notifications_outlined,
+                            color: iconColor,
+                            size: 22,
                           ),
                         ),
                         if (unreadCount > 0)
                           Positioned(
-                            top: 10,
-                            right: 10,
+                            top: -2,
+                            right: -2,
                             child: Container(
-                              width: 10,
-                              height: 10,
+                              width: 14,
+                              height: 14,
                               decoration: BoxDecoration(
-                                color: Colors.redAccent,
+                                color: premiumGreen, 
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                    color: theme.scaffoldBackgroundColor,
-                                    width: 1.5),
+                                  color: theme.scaffoldBackgroundColor,
+                                  width: 2.5, 
+                                ),
                               ),
                             ),
                           ),
@@ -447,7 +472,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
+              
+              // ── 👤 PROFILE ICON ──
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
@@ -455,19 +482,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (_) => const ProfileSettingsScreen()),
                 ),
                 child: Container(
-                  width: 46,
-                  height: 46,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: surfaceAlt,
-                    border: Border.all(
-                      color: colorScheme.secondary.withOpacity(0.40),
-                      width: 1.5,
-                    ),
+                    color: iconBg,
+                    border: Border.all(color: borderColor, width: 1),
                   ),
                   child: Icon(
                     Icons.person_outline_rounded,
-                    color: colorScheme.primary,
+                    color: iconColor,
                     size: 22,
                   ),
                 ),
@@ -478,22 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  Widget _buildSectionLabel(String label, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted, // From Snippet 2
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.4,
-        ),
-      ),
-    );
-  }
-
+ 
   Widget _buildActionButtons(
       BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Padding(
@@ -512,7 +521,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                     builder: (_) =>
                         const AddTransactionScreen(initialIsExpense: false)),
-              ).then((_) {
+              ).then((result) {
+                if (result is String) {
+                  _showSnackBar(result);
+                }
                 context.read<TransactionProvider>().fetchTransactions();
                 _loadRecentTransactions();
               }),
@@ -531,7 +543,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                     builder: (_) =>
                         const AddTransactionScreen(initialIsExpense: true)),
-              ).then((_) {
+              ).then((result) {
+                if (result is String) {
+                  _showSnackBar(result);
+                }
                 context.read<TransactionProvider>().fetchTransactions();
                 _loadRecentTransactions();
               }),
@@ -555,6 +570,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -671,10 +700,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
+Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
-    final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted; // From Snippet 2
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     if (_isLoadingRecent) {
       return Padding(
@@ -722,26 +750,38 @@ class _HomeScreenState extends State<HomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
       itemCount: _recentTransactions.length,
-      itemBuilder: (context, index) => _buildTile(
-          context, _recentTransactions[index], colorScheme, theme, isDark),
+      itemBuilder: (context, index) {
+        // Identify the absolute latest transaction
+        bool isLatest = index == 0;
+        
+        return _buildTile(
+          context, 
+          _recentTransactions[index], 
+          colorScheme, 
+          theme, 
+          isDark, 
+          isLatest: isLatest
+        );
+      },
     );
   }
 
   Widget _buildTile(BuildContext context, TransactionModel tx,
-      ColorScheme colorScheme, ThemeData theme, bool isDark) {
+      ColorScheme colorScheme, ThemeData theme, bool isDark, {bool isLatest = false}) {
     final Color moneyColor = _getTransactionColor(tx);
     final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
         tx.accountName.toLowerCase().contains('wallet');
-    final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted; // From Snippet 2
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
-    bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED";
+    // Only allow reversal if it's the newest item and hasn't been voided yet
+    bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED" && isLatest;
 
-    Widget tileContent = Column(
+    return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center, // Keeps things centered
             children: [
               _getTransactionLeading(tx),
               const SizedBox(width: 16),
@@ -801,6 +841,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     "₹${tx.amount.abs().toStringAsFixed(2)}",
@@ -814,6 +855,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
+                  
+                  // 🔥 Date is ALWAYS visible now
                   Text(
                     DateFormat('dd MMM, yyyy').format(tx.date),
                     style: TextStyle(
@@ -822,6 +865,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+
+                  // 🔥 Undo button gracefully drops down below the date if applicable
+                  if (canReverse) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _handleReversal(tx),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.colorScheme.error.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.undo_rounded, size: 12, color: theme.colorScheme.error),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Undo",
+                              style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -830,17 +904,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Divider(color: theme.dividerColor, height: 1),
       ],
     );
-
-    if (canReverse) {
-      tileContent = SwipeToCancelTile(
-        onCancelTap: () => _handleReversal(tx),
-        child: tileContent,
-      );
-    }
-
-    return tileContent;
   }
-
   String _greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return "Good morning ☀️";
@@ -849,37 +913,70 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Color _getTransactionColor(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
-      return AppColors.savingsPrimary;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
-      return AppColors.progressGreen;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
-      return AppColors.chartIncome;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
-      return AppColors.incomeAmount;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return AppColors.dateLabel; // From Snippet 2
+    // 1. Check specific directions first (These override general types)
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return AppColors.savingsPrimary;
+      case "GOAL_DEALLOCATION":
+        return AppColors.progressGreen;
+      case "GOAL_COMPLETION":
+        return AppColors.chartIncome;
+      case "ACCOUNT_TRANSFER_IN":
+        return AppColors.incomeAmount;
+      case "ACCOUNT_TRANSFER_OUT":
+        return AppColors.dateLabel;
+      case "RESERVED_IN":
+        return AppColors.warning; // Orange/Warning color for locked reserves
+      case "RESERVED_OUT":
+        return AppColors.incomeAmount; // Green for freeing up funds back to available
+      case "REVERSAL":
+        return AppColors.warning;
+    }
+
+    // 2. Fallback to basic types for STANDARD direction
     if (tx.type == "INCOME") return AppColors.incomeAmount;
+    if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
-    return AppColors.expenseAmount;
+    if (tx.type == "TRANSFER") return AppColors.dateLabel;
+    
+    return AppColors.expenseAmount; // Default fallback
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION")
-      return Icons.savings_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION")
-      return Icons.savings_outlined;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION")
-      return Icons.task_alt_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN")
-      return Icons.call_received_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT")
-      return Icons.call_made_rounded;
-    if (tx.type == "INCOME") return Icons.trending_up_rounded;
-    if (tx.type == "REVERSAL") return Icons.undo_rounded;
-    return Icons.trending_down_rounded;
-  }
+    // 1. Check specific directions first for precise icons
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return Icons.savings_rounded; // Piggy bank for saving
+      case "GOAL_DEALLOCATION":
+        return Icons.savings_outlined; // Empty piggy bank for withdrawing
+      case "GOAL_COMPLETION":
+        return Icons.task_alt_rounded; // Checkmark for achieved goals
+      case "ACCOUNT_TRANSFER_IN":
+        return Icons.call_received_rounded; // Arrow pointing in
+      case "ACCOUNT_TRANSFER_OUT":
+        return Icons.call_made_rounded; // Arrow pointing out
+      case "RESERVED_IN":
+        return Icons.lock_outline_rounded; // Lock icon for moving to reserves
+      case "RESERVED_OUT":
+        return Icons.lock_open_rounded; // Unlock icon for moving back to available
+      case "REVERSAL":
+        return Icons.undo_rounded; // Undo arrow for canceled transactions
+    }
 
+    // 2. Fallback to general types for STANDARD direction
+    switch (tx.type) {
+      case "INCOME":
+        return Icons.trending_up_rounded; // Standard green up arrow
+      case "EXPENSE":
+        return Icons.trending_down_rounded; // Standard red down arrow
+      case "TRANSFER":
+        return Icons.swap_horiz_rounded; // Standard side-to-side arrows
+      case "REVERSAL":
+        return Icons.undo_rounded;
+      default:
+        return Icons.receipt_long_rounded; // Safe fallback
+    }
+  }
   Widget _getTransactionLeading(TransactionModel tx) {
     final Color iconColor = _getTransactionColor(tx);
     return Container(
@@ -899,8 +996,7 @@ class SwipeToCancelTile extends StatefulWidget {
   final VoidCallback onCancelTap;
 
   const SwipeToCancelTile(
-      {Key? key, required this.child, required this.onCancelTap})
-      : super(key: key);
+      {super.key, required this.child, required this.onCancelTap});
 
   @override
   State<SwipeToCancelTile> createState() => _SwipeToCancelTileState();

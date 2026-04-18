@@ -124,7 +124,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       appBar: AppBar(
         backgroundColor: color.surface,
         elevation: 0,
@@ -337,7 +337,7 @@ Widget _passwordField({
         ),
         errorText: errorText,
         filled: true,
-        fillColor: color.surfaceVariant.withOpacity(0.5),
+        fillColor: color.surfaceContainerHighest.withOpacity(0.5),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(

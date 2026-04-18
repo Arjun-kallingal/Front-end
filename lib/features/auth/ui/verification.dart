@@ -33,8 +33,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   void dispose() {
-    for (var c in _controllers) c.dispose();
-    for (var f in _focusNodes) f.dispose();
+    for (var c in _controllers) {
+      c.dispose();
+    }
+    for (var f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -128,7 +132,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
       if (!mounted) return;
 
       if (data["success"] == true) {
-        for (var c in _controllers) c.clear();
+        for (var c in _controllers) {
+          c.clear();
+        }
         _focusNodes.first.requestFocus();
 
         ScaffoldMessenger.of(context).showSnackBar(

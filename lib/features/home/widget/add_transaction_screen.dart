@@ -38,29 +38,65 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final TextEditingController descriptionController = TextEditingController();
 
   final List<Map<String, dynamic>> _incomeCategories = [
-    {"name": "Salary",    "icon": Icons.payments,          "color": AppColors.catSalary},
-    {"name": "Freelance", "icon": Icons.laptop_mac,         "color": AppColors.catFreelance},
-    {"name": "Invest",    "icon": Icons.trending_up,        "color": AppColors.catInvest},
-    {"name": "Business",  "icon": Icons.storefront,         "color": AppColors.catBusiness},
-    {"name": "Rental",    "icon": Icons.home,               "color": AppColors.catRental},
-    {"name": "Grants",    "icon": Icons.card_giftcard,      "color": AppColors.catGrants},
-    {"name": "Refunds",   "icon": Icons.assignment_return,  "color": AppColors.catHealth},
-    {"name": "Other",     "icon": Icons.more_horiz,         "color": AppColors.catOther},
+    {"name": "Salary", "icon": Icons.payments, "color": AppColors.catSalary},
+    {
+      "name": "Freelance",
+      "icon": Icons.laptop_mac,
+      "color": AppColors.catFreelance
+    },
+    {"name": "Invest", "icon": Icons.trending_up, "color": AppColors.catInvest},
+    {
+      "name": "Business",
+      "icon": Icons.storefront,
+      "color": AppColors.catBusiness
+    },
+    {"name": "Rental", "icon": Icons.home, "color": AppColors.catRental},
+    {
+      "name": "Grants",
+      "icon": Icons.card_giftcard,
+      "color": AppColors.catGrants
+    },
+    {
+      "name": "Refunds",
+      "icon": Icons.assignment_return,
+      "color": AppColors.catHealth
+    },
+    {"name": "Other", "icon": Icons.more_horiz, "color": AppColors.catOther},
   ];
 
   final List<Map<String, dynamic>> _expenseCategories = [
-    {"name": "Food",      "icon": Icons.restaurant,           "color": AppColors.catFood},
-    {"name": "Transport", "icon": Icons.directions_bus,       "color": AppColors.catTransport},
-    {"name": "Shopping",  "icon": Icons.shopping_bag,         "color": AppColors.catShopping},
-    {"name": "Bills",     "icon": Icons.bolt,                 "color": AppColors.catBills},
-    {"name": "Health",    "icon": Icons.medical_services,     "color": AppColors.catHealth},
-    {"name": "Travel",    "icon": Icons.flight,               "color": AppColors.catTravel},
-    {"name": "Edu",       "icon": Icons.school,               "color": AppColors.catRental},
-    {"name": "Fun",       "icon": Icons.movie,                "color": AppColors.catShopping},
-    {"name": "Groceries", "icon": Icons.local_grocery_store,  "color": AppColors.catSalary},
-    {"name": "Gifts",     "icon": Icons.card_giftcard,        "color": AppColors.catGrants},
-    {"name": "Rent",      "icon": Icons.home_work,            "color": AppColors.catOther},
-    {"name": "Other",     "icon": Icons.more_horiz,           "color": AppColors.catOther},
+    {"name": "Food", "icon": Icons.restaurant, "color": AppColors.catFood},
+    {
+      "name": "Transport",
+      "icon": Icons.directions_bus,
+      "color": AppColors.catTransport
+    },
+    {
+      "name": "Shopping",
+      "icon": Icons.shopping_bag,
+      "color": AppColors.catShopping
+    },
+    {"name": "Bills", "icon": Icons.bolt, "color": AppColors.catBills},
+    {
+      "name": "Health",
+      "icon": Icons.medical_services,
+      "color": AppColors.catHealth
+    },
+    {"name": "Travel", "icon": Icons.flight, "color": AppColors.catTravel},
+    {"name": "Edu", "icon": Icons.school, "color": AppColors.catRental},
+    {"name": "Fun", "icon": Icons.movie, "color": AppColors.catShopping},
+    {
+      "name": "Groceries",
+      "icon": Icons.local_grocery_store,
+      "color": AppColors.catSalary
+    },
+    {
+      "name": "Gifts",
+      "icon": Icons.card_giftcard,
+      "color": AppColors.catGrants
+    },
+    {"name": "Rent", "icon": Icons.home_work, "color": AppColors.catOther},
+    {"name": "Other", "icon": Icons.more_horiz, "color": AppColors.catOther},
   ];
 
   @override
@@ -130,14 +166,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         await context.read<TransactionProvider>().fetchTransactions();
         await context.read<AnalyticsProvider>().reload();
 
-        _showSnackBar(
-          "${_isExpense ? 'Expense' : 'Income'} saved successfully!",
-          isError: false,
-        );
-
-        Navigator.pop(context, true);
+        Navigator.pop(context,
+            "${_isExpense ? 'Expense' : 'Income'} saved successfully!");
       } else {
-        _showSnackBar(result['error'] ?? "Failed to save");
+        _showSnackBar(result['message'] ?? "Failed to save");
       }
     } catch (e) {
       if (mounted) _showSnackBar("Transaction failed: $e");
@@ -147,6 +179,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = true}) {
+    if (!mounted) return;
     final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -260,8 +293,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _toggleBtn(
-      String label, bool active, Color borderColor, bool isDark) {
+  Widget _toggleBtn(String label, bool active, Color borderColor, bool isDark) {
     return Expanded(
       child: GestureDetector(
         onTap: () => _toggleType(label == "Expense"),
@@ -273,9 +305,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ? (isDark ? AppColors.darkBgCard : AppColors.lightBgPrimary)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: active
-                ? Border.all(color: borderColor, width: 2.5)
-                : null,
+            border: active ? Border.all(color: borderColor, width: 2.5) : null,
           ),
           child: Text(
             label,
@@ -373,8 +403,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return InkWell(
-      onTap: () =>
-          setState(() => _showAccountOptions = !_showAccountOptions),
+      onTap: () => setState(() => _showAccountOptions = !_showAccountOptions),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -411,8 +440,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         color: isDark ? AppColors.darkBgCard : AppColors.lightBgPrimary,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color:
-                isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
       ),
       child: ListView(
         shrinkWrap: true,
@@ -457,28 +485,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           final isSel = _selectedCategory == item['name'];
 
           return GestureDetector(
-            onTap: () =>
-                setState(() => _selectedCategory = item['name']),
+            onTap: () => setState(() => _selectedCategory = item['name']),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.darkBgCard
-                    : AppColors.lightBgPrimary,
+                color: isDark ? AppColors.darkBgCard : AppColors.lightBgPrimary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSel
                       ? theme.colorScheme.primary
-                      : (isDark
-                          ? AppColors.darkBorder
-                          : AppColors.lightBorder),
+                      : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
                   width: 2,
                 ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(item['icon'],
-                      color: item['color'] as Color, size: 28),
+                  Icon(item['icon'], color: item['color'] as Color, size: 28),
                   const SizedBox(height: 4),
                   Text(
                     item['name'],
@@ -501,51 +523,52 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
- Widget _buildStickySaveButton() {
-  final theme = Theme.of(context);
-  final isDark = theme.brightness == Brightness.dark;
+  Widget _buildStickySaveButton() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgPrimary,
-      border: Border.all(
-        color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
-      ),
-    ),
-    child: SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary, // ✅ FIX
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgPrimary,
+        border: Border.all(
+          color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
         ),
-        onPressed: _isLoading ? null : _handleSave,
-        child: _isLoading
-            ? SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  color: theme.colorScheme.onPrimary, // ✅ FIX
-                  strokeWidth: 2,
-                ),
-              )
-            : Text(
-                "Save ${_isExpense ? 'Expense' : 'Income'}",
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimary, // ✅ FIX
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
       ),
-    ),
-  );
-}
+      child: SizedBox(
+        width: double.infinity,
+        height: 54,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: theme.colorScheme.primary,
+            foregroundColor: theme.colorScheme.onPrimary, // ✅ FIX
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          onPressed: _isLoading ? null : _handleSave,
+          child: _isLoading
+              ? SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: theme.colorScheme.onPrimary, // ✅ FIX
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  "Save ${_isExpense ? 'Expense' : 'Income'}",
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary, // ✅ FIX
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLabel(String text) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(

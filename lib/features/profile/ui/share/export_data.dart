@@ -63,7 +63,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       appBar: AppBar(
         backgroundColor: color.surface,
         elevation: 0,
@@ -100,7 +100,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 15),
                 decoration: BoxDecoration(
-                  color: color.surfaceVariant.withOpacity(0.5),
+                  color: color.surfaceContainerHighest.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: selectedRange != null
@@ -162,7 +162,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? color.primary.withOpacity(0.07)
-                        : color.surfaceVariant.withOpacity(0.5),
+                        : color.surfaceContainerHighest.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected

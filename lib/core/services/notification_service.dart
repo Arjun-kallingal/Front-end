@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'api_client.dart';
 import 'api_config.dart';
@@ -78,13 +79,22 @@ class NotificationService {
   static Future<void> updateFcmToken(String fcmToken) async {
     try {
       final headers = await ApiClient.getHeaders();
-      await http.patch(
+      // [PROD] Use dedicated user endpoint for token registration.
+      final response = await http.patch(
         Uri.parse('${ApiConfig.baseUrl}/api/user/fcm-token'),
         headers: headers,
         body: json.encode({'fcmToken': fcmToken}),
       );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint("✅ FCM token registered — HTTP ${response.statusCode}");
+      } else {
+        debugPrint(
+            "❌ FCM token registration failed — HTTP ${response.statusCode}");
+        debugPrint("Response body: ${response.body}");
+      }
     } catch (e) {
-      print("Error uploading FCM token: $e");
+      debugPrint("❌ FCM token registration threw an error: $e");
     }
   }
 }

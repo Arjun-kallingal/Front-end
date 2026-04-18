@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/notification_service.dart';
+import '../services/notification_channel_service.dart';
 import '../services/socket_service.dart';
 
 class NotificationProvider extends ChangeNotifier {
@@ -16,7 +17,6 @@ class NotificationProvider extends ChangeNotifier {
     // Using Future.microtask so the constructor finishes before async work begins.
     Future.microtask(() {
       initializeSocketListeners();
-      initializeFcm();
     });
   }
 
@@ -42,11 +42,6 @@ class NotificationProvider extends ChangeNotifier {
       NotificationSettings settings = await fcm.requestPermission();
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        String? token = await fcm.getToken();
-        if (token != null) {
-          await NotificationService.updateFcmToken(token);
-        }
-
         if (!_fcmInitialized) {
           fcm.onTokenRefresh.listen((newToken) {
             NotificationService.updateFcmToken(newToken);
@@ -66,6 +61,13 @@ class NotificationProvider extends ChangeNotifier {
                 'isRead': false,
               };
               addRealTimeNotification(mockEvent);
+              // [PROD] Show local foreground push only when socket stream is inactive.
+              if (!SocketService.isConnected) {
+                NotificationChannelService.showForegroundNotification(
+                  title: mockEvent['title']?.toString() ?? 'New Notification',
+                  body: mockEvent['message']?.toString() ?? '',
+                );
+              }
             }
           });
 
@@ -74,6 +76,29 @@ class NotificationProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint("FCM init skipped or failed: $e");
+    }
+  }
+
+  Future<void> registerFcmToken() async {
+    try {
+      final FirebaseMessaging fcm = FirebaseMessaging.instance;
+      NotificationSettings settings = await fcm.requestPermission();
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Add timeout to prevent hang on emulators without Google Play Services
+        String? token = await fcm.getToken().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint("FCM getToken() timed out.");
+            return null;
+          },
+        );
+        if (token != null) {
+          await NotificationService.updateFcmToken(token);
+        }
+      }
+    } catch (e) {
+      debugPrint("FCM token registration failed: $e");
     }
   }
 
@@ -93,7 +118,8 @@ class NotificationProvider extends ChangeNotifier {
       // Ensure isRead is present and set to false for unread-count accuracy
       newNotif.putIfAbsent('isRead', () => false);
 
-      if (_notifications.any((n) => n['_id'] != null && n['_id'] == newNotif['_id'])) {
+      if (_notifications
+          .any((n) => n['_id'] != null && n['_id'] == newNotif['_id'])) {
         debugPrint("⏳ Duplicate notification skipped based on _id.");
         return;
       }

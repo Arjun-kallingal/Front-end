@@ -32,7 +32,9 @@ class TransactionModel {
     return TransactionModel(
       id: json['_id']?.toString() ?? '',
       // Safely extract accountId whether it's populated or just a string
-      accountId: json['accountId']?['_id']?.toString() ?? json['accountId']?.toString() ?? '',
+      accountId: (json['accountId'] is Map)
+          ? json['accountId']['_id']?.toString() ?? ''
+          : json['accountId']?.toString() ?? '',
       title: json['category'] ?? 'General',
       subtitle: json['description'] ?? '',
       amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
@@ -73,7 +75,8 @@ class TransactionHistoryResponse {
     return TransactionHistoryResponse(
       count: json['count'] ?? 0,
       nextCursor: json['nextCursor']?.toString(),
-      transactions: dataList.map((item) => TransactionModel.fromJson(item)).toList(),
+      transactions:
+          dataList.map((item) => TransactionModel.fromJson(item)).toList(),
     );
   }
 }

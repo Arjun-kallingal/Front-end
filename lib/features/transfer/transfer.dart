@@ -74,7 +74,7 @@ class _TransferScreenState extends State<TransferScreen> {
                     _buildLabel(isDark),
 
                     DropdownButtonFormField<AccountModel>(
-                      value: provider.fromAccount,
+                      initialValue: provider.fromAccount,
                       hint: Text(
                         "Select account",
                         style: TextStyle(
@@ -101,7 +101,7 @@ class _TransferScreenState extends State<TransferScreen> {
                     _buildLabel(isDark, "To Account"),
 
                     DropdownButtonFormField<AccountModel>(
-                      value: provider.toAccount,
+                      initialValue: provider.toAccount,
                       hint: Text(
                         "Select account",
                         style: TextStyle(

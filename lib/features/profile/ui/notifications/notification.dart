@@ -21,7 +21,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final isLight = theme.brightness == Brightness.light;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       appBar: AppBar(
         backgroundColor: color.surface,
         elevation: 0,
