@@ -175,6 +175,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
               onPressed: () => NavigationService.bottomIndex.value = 0),
         ),
         floatingActionButton: FloatingActionButton.extended(
+          heroTag: "financial_goals_fab",
           onPressed: () async {
             final refresh = await Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const CreateNewGoalScreen()));
