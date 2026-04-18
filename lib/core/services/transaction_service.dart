@@ -35,7 +35,7 @@ class TransactionService {
         final Map<String, dynamic> body = jsonDecode(response.body);
         return TransactionHistoryResponse.fromJson(body);
       } else if (response.statusCode == 401) {
-        throw Exception("Unauthorized - Please login again");
+        throw Exception("Unauthorized - Please login again");      
       } else {
         throw Exception("Server error: ${response.statusCode}");
       }

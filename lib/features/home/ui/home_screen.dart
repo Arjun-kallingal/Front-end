@@ -29,7 +29,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isProcessing = false;
 
-  // State for Latest Transactions
+
   List<TransactionModel> _recentTransactions = [];
   bool _isLoadingRecent = true;
   String? _recentError;
@@ -39,11 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     Future.microtask(() async {
       await context.read<TransactionProvider>().fetchTransactions();
-      
-      // 🔥 Listener added from Snippet 2
       context.read<TransactionProvider>().addListener(_onTransactionUpdate);
 
-      // 🔥 INITIALIZE NOTIFICATIONS & SOCKET from Snippet 1
+      // 🔥 INITIALIZE NOTIFICATIONS & SOCKET
       final notifProvider = context.read<NotificationProvider>();
       notifProvider.loadNotifications();
       notifProvider.initializeSocketListeners();
@@ -51,7 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadRecentTransactions();
   }
 
-  // 🔥 Listener logic from Snippet 2
   void _onTransactionUpdate() {
     print("🔥 TransactionProvider updated - reloading recent");
     if (mounted && !_isLoadingRecent) {
@@ -127,8 +124,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(18),
-                    decoration: const BoxDecoration(
-                      color: AppColors.errorBg, // From Snippet 2
+                    decoration: BoxDecoration(
+                      color: AppColors.errorBg,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.error_outline_rounded,
@@ -342,6 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+
             if (_isProcessing)
               Container(
                 color: AppColors.darkBgPrimary.withOpacity(0.3), // From Snippet 2
@@ -544,7 +542,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.swap_horiz_rounded,
               label: "Transfer",
-              color: AppColors.transferColor, // From Snippet 2
+              color: AppColors.transferColor,
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(

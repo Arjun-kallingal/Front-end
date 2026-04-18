@@ -41,7 +41,7 @@ class NotificationScreen extends StatelessWidget {
     final unreadCount = notifications.where((n) => n["isRead"] == false).length;
 
     final textSec = isDark ? const Color(0xFF8B90A7) : const Color(0xFF9098B1);
-    final surfaceAlt =
+    // final surfaceAlt =
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
     final cardBg = isDark ? const Color(0xFF1E2235) : Colors.white;
     final scaffoldBg =
