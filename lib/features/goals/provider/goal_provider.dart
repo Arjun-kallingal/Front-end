@@ -1,33 +1,41 @@
 import 'package:flutter/material.dart';
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
-import 'package:front_end/core/services/api_config.dart'; // ✅
+import 'package:front_end/core/services/api_config.dart';
 
 class GoalProvider extends ChangeNotifier {
-  // ✅ Use ApiConfig.baseUrl instead of hardcoded localhost
-  final GoalService _goalService =
-      GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
+  final GoalService _goalService;
+
+  // Dependency Injection allows for easier testing
+  GoalProvider({GoalService? goalService})
+      : _goalService = goalService ?? GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
 
   List<GoalModel> _goals = [];
   List<GoalModel> _filteredGoals = [];
+  
   bool _isLoading = false;
+  String? _error; // Exposes errors to the UI
 
   List<GoalModel> get goals => _goals;
   List<GoalModel> get filteredGoals => _filteredGoals;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> fetchGoals() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
       final data = await _goalService.getGoals();
       _goals = data;
       _filteredGoals = data;
-    } catch (_) {}
-
-    _isLoading = false;
-    notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   void searchGoals(String value) {
@@ -61,20 +69,26 @@ class GoalProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteGoal(String id) async {
-    await _goalService.deleteGoal(id);
-    await fetchGoals();
-    return true;
-  }
+    // 1. Cache the goal in case the server fails
+    final goalIndex = _goals.indexWhere((g) => g.id == id);
+    if (goalIndex == -1) return false;
+    final cachedGoal = _goals[goalIndex];
 
-  Future<bool> deposit(String goalId, double amount) async {
-    final success = await _goalService.depositToGoal(goalId, amount);
-    if (success) await fetchGoals();
-    return success;
-  }
+    // 2. Optimistic UI update
+    _goals.removeAt(goalIndex);
+    _filteredGoals.removeWhere((g) => g.id == id);
+    notifyListeners();
 
-  Future<bool> withdraw(String goalId, double amount) async {
-    final success = await _goalService.withdrawFromGoal(goalId, amount);
-    if (success) await fetchGoals();
+    // 3. Network call
+    final success = await _goalService.deleteGoal(id);
+    
+    // 4. Rollback on failure
+    if (!success) {
+      _goals.insert(goalIndex, cachedGoal);
+      _filteredGoals = List.from(_goals); 
+      notifyListeners();
+    }
+    
     return success;
   }
 

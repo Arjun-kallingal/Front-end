@@ -1,11 +1,13 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../data/goal_model.dart';
-import '../services/goal_service.dart';
 import 'create_new_goal.dart';
 import 'goal_details_screen.dart';
 import 'package:front_end/navigation/navigation_service.dart';
-import 'package:front_end/core/services/api_config.dart';
+import 'package:provider/provider.dart';
+import '../provider/goal_provider.dart';
 
 class FinancialGoalsScreen extends StatefulWidget {
   const FinancialGoalsScreen({super.key});
@@ -15,94 +17,102 @@ class FinancialGoalsScreen extends StatefulWidget {
 }
 
 class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
-  late final GoalService _goalService =
-      GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
-
-  List<GoalModel> goals = [];
-  List<GoalModel> filteredGoals = [];
-  bool _isLoading = true;
   String searchQuery = '';
-  String selectedAccount = 'All';
   String selectedStatus = 'All';
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
-      _fetchGoals();
-    });
-  }
-
-  Future<void> _fetchGoals() async {
-    setState(() => _isLoading = true);
-    try {
-      final data = await _goalService.getGoals();
-      if (mounted) {
-        setState(() {
-          goals = data;
-          filteredGoals = data;
-          _isLoading = false;
-        });
-        _applyFilters();
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _applyFilters() {
-    setState(() {
-      filteredGoals = goals.where((g) {
-        final matchesSearch =
-            g.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                g.category.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                (g.accountName ?? '')
-                    .toLowerCase()
-                    .contains(searchQuery.toLowerCase());
-
-        final matchesAccount =
-            selectedAccount == 'All' || g.accountName == selectedAccount;
-
-        final matchesStatus = selectedStatus == 'All' ||
-            (selectedStatus == 'Active' && g.progress < 1) ||
-            (selectedStatus == 'Completed' && g.progress >= 1);
-
-        return matchesSearch && matchesAccount && matchesStatus;
-      }).toList();
+      context.read<GoalProvider>().fetchGoals();
     });
   }
 
   void _searchGoals(String value) {
     searchQuery = value;
-    _applyFilters();
+    context.read<GoalProvider>().searchGoals(value);
   }
 
-  Future<void> _confirmDelete(String id) async {
+  // 🛠️ Dynamic Delete Confirmation with Premium UI
+  Future<void> _confirmDelete(GoalModel goal) async {
+    final bool isCompleted = goal.status == 'completed';
+    final bool hasFunds = goal.currentAmount > 0;
+
+    String dialogTitle;
+    String dialogMessage;
+
+    if (isCompleted) {
+      dialogTitle = "Delete Completed Goal";
+      dialogMessage = "You've already conquered this goal! 🏆\n\nAre you sure you want to remove it from your history? This action cannot be undone.";
+    } else if (hasFunds) {
+      dialogTitle = "Delete Active Goal";
+      dialogMessage = "This goal currently holds ₹${goal.currentAmount.toInt()}.\n\nIf these funds are still in your possession, remember to withdraw them to your main account to keep your tracking accurate.\n\nAre you sure you want to proceed?";
+    } else {
+      dialogTitle = "Delete Active Goal";
+      dialogMessage = "You are currently working towards this goal.\n\nDeleting it will erase your progress tracking. Are you sure you want to proceed?";
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
         return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Delete Goal", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A))),
-          content: const Text(
-            "Are you sure you want to delete this goal? This action cannot be undone.",
-            style: TextStyle(color: Colors.black54, height: 1.4, fontSize: 15),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          title: Text(
+            dialogTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          content: Text(
+            dialogMessage,
+            style: TextStyle(
+              height: 1.5, 
+              fontSize: 15,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel", style: TextStyle(color: Colors.grey, fontSize: 15)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Delete", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      "Cancel", 
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.grey.shade700, 
+                        fontSize: 15, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text("Delete", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -110,19 +120,21 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     );
 
     if (confirm == true) {
-      try {
-        await _goalService.deleteGoal(id);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Goal deleted successfully", style: TextStyle(fontSize: 15)), behavior: SnackBarBehavior.floating),
-        );
-        _fetchGoals();
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Delete failed", style: TextStyle(fontSize: 15)), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating),
-        );
-      }
+      if (!mounted) return;
+      final provider = context.read<GoalProvider>();
+      final success = await provider.deleteGoal(goal.id);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? "Goal deleted successfully." : "Delete failed. Please try again.",
+            style: const TextStyle(fontSize: 15),
+          ),
+          backgroundColor: success ? null : Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -132,155 +144,186 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-    ));
+    final provider = context.watch<GoalProvider>();
+    final goals = provider.goals;
+    final filteredGoals = provider.filteredGoals;
+    final isLoading = provider.isLoading;
 
-    final ongoingGoals = filteredGoals.where((g) => g.progress < 1).toList();
-    final completedGoals = filteredGoals.where((g) => g.progress >= 1).toList();
+    final ongoingGoals = filteredGoals.where((g) => g.status != 'completed').toList();
+    final completedGoals = filteredGoals.where((g) => g.status == 'completed').toList();
 
-    return Scaffold(
-      backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        centerTitle: false,
-        titleSpacing: 0,
-        title: Text("Financial Goals", style: TextStyle(color: colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colorScheme.onSurface, size: 22),
-          onPressed: () => NavigationService.bottomIndex.value = 0
-        ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final refresh = await Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateNewGoalScreen()));
-          if (refresh == true) _fetchGoals();
-        },
-        backgroundColor: const Color(0xFF3B82F6), // Vibrant Blue
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-        label: const Text(
-          "New Goal", 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.5)
+      child: Scaffold(
+        backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          centerTitle: false,
+          titleSpacing: 0,
+          title: Text("Financial Goals",
+              style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new_rounded,
+                  color: colorScheme.onSurface, size: 22),
+              onPressed: () => NavigationService.bottomIndex.value = 0),
         ),
-      ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
-          : RefreshIndicator(
-              onRefresh: () async => _fetchGoals(),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                padding: const EdgeInsets.only(bottom: 120), 
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (goals.isNotEmpty)
-                      _buildGoalsOverviewCard(colorScheme, isDark),
-                    
-                    const SizedBox(height: 8),
-                    
-                    _buildSearchBar(colorScheme, isDark),
-                    const SizedBox(height: 12),
-
-                    if (ongoingGoals.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildSectionHeader("ACTIVE GOALS", isDark),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: ongoingGoals.map((goal) => _buildSleekGoalCard(goal, colorScheme, isDark)).toList(),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            final refresh = await Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const CreateNewGoalScreen()));
+            if (refresh == true && mounted) context.read<GoalProvider>().fetchGoals();
+          },
+          backgroundColor: const Color(0xFF3B82F6),
+          elevation: 4,
+          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+          label: const Text("New Goal",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  letterSpacing: 0.5)),
+        ),
+        body: isLoading
+            ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
+            : RefreshIndicator(
+                onRefresh: () async => context.read<GoalProvider>().fetchGoals(),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  padding: const EdgeInsets.only(bottom: 120),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (provider.error != null)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(provider.error!, style: const TextStyle(color: Colors.red)),
                         ),
-                      ),
-                    ],
-
-                    if (filteredGoals.isEmpty && !_isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 30),
-                        child: Center(
-                          child: Text(
-                            "No goals found. Start planning today!", 
-                            style: TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500)
-                          )
-                        ),
-                      ),
-
-                    if (completedGoals.isNotEmpty) ...[
+                      if (goals.isNotEmpty)
+                        GoalsOverviewCard(goals: goals, isDark: isDark),
                       const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildSectionHeader("COMPLETED GOALS", isDark),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: completedGoals.map((goal) => _buildSleekGoalCard(goal, colorScheme, isDark)).toList(),
+                      _buildSearchBar(colorScheme, isDark),
+                      const SizedBox(height: 12),
+                      if (ongoingGoals.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _buildSectionHeader("ACTIVE GOALS", isDark),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: ongoingGoals
+                                .map((goal) => SleekGoalCard(
+                                    goal: goal, 
+                                    isDark: isDark, 
+                                    onDelete: () => _confirmDelete(goal)))
+                                .toList(),
+                          ),
+                        ),
+                      ],
+                      if (filteredGoals.isEmpty && !isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 30),
+                          child: Center(
+                              child: Text("No goals found. Start planning today!",
+                                  style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500))),
+                        ),
+                      if (completedGoals.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _buildSectionHeader("COMPLETED GOALS", isDark),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: completedGoals
+                                .map((goal) => SleekGoalCard(
+                                    goal: goal, 
+                                    isDark: isDark, 
+                                    onDelete: () => _confirmDelete(goal)))
+                                .toList(),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
-  // ==================== UI COMPONENTS ====================
-
   Widget _buildSectionHeader(String title, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10, top: 4),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 12, 
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.0,
-          color: isDark ? const Color(0xFF8B90A7) : Colors.grey.shade500
-        )
-      )
-    );
+        padding: const EdgeInsets.only(bottom: 10, top: 4),
+        child: Text(title,
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
+                color: isDark ? const Color(0xFF8B90A7) : Colors.grey.shade500)));
   }
 
   Widget _buildSearchBar(ColorScheme colorScheme, bool isDark) {
     return Container(
-      height: 48, 
+      height: 48,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isDark ? colorScheme.surface : Colors.white,
+        color: isDark ? colorScheme.surface : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03), 
-              blurRadius: 10, 
-              offset: const Offset(0, 4)
-            )
-        ],
       ),
       child: TextField(
         onChanged: _searchGoals,
-        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colorScheme.onSurface), 
+        style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface),
         decoration: InputDecoration(
           isDense: true,
-          icon: Icon(Icons.search_rounded, size: 20, color: isDark ? Colors.white54 : Colors.grey.shade400),
+          icon: Icon(
+            Icons.search_rounded,
+            size: 20, 
+            color: isDark ? Colors.white54 : Colors.grey.shade600
+          ),
           hintText: "Search goals...",
-          hintStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDark ? Colors.white54 : Colors.grey.shade400), 
+          hintStyle: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white54 : Colors.grey.shade600),
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
         ),
       ),
     );
   }
+}
 
-  Widget _buildGoalsOverviewCard(ColorScheme colorScheme, bool isDark) {
+// Extracted for performance caching
+class GoalsOverviewCard extends StatelessWidget {
+  final List<GoalModel> goals;
+  final bool isDark;
+
+  const GoalsOverviewCard({super.key, required this.goals, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
     final totalGoals = goals.length;
-    final completed = goals.where((g) => g.progress >= 1).length;
+    final completed = goals.where((g) => g.status == 'completed').length;
     final active = totalGoals - completed;
 
     double completedPercent = totalGoals == 0 ? 0.0 : completed / totalGoals;
@@ -288,32 +331,36 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      padding: const EdgeInsets.all(20), 
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E2C) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade100, width: 1.5),
+        border: Border.all(
+            color: isDark ? Colors.white10 : Colors.grey.shade100, width: 1.5),
         boxShadow: [
           if (!isDark)
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, offset: const Offset(0, 8)),
+            BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 24,
+                offset: const Offset(0, 8)),
         ],
       ),
       child: Row(
         children: [
           SizedBox(
-            height: 90, 
-            width: 90, 
+            height: 90,
+            width: 90,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 CustomPaint(
                   size: const Size(90, 90),
                   painter: _DonutPainter(
-                    completedPercent: completedPercent, 
+                    completedPercent: completedPercent,
                     activePercent: activePercent,
                     bgColor: isDark ? Colors.white10 : Colors.grey.shade100,
-                    completedColor: const Color(0xFF10B981), 
-                    activeColor: const Color(0xFF3B82F6), 
+                    completedColor: const Color(0xFF10B981),
+                    activeColor: const Color(0xFF3B82F6),
                   ),
                 ),
                 Column(
@@ -321,12 +368,19 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   children: [
                     Text(
                       totalGoals.toString(),
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A), height: 1.0), 
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          height: 1.0),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "Goals",
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600), 
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -338,9 +392,17 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildCompactLegend(color: const Color(0xFF10B981), label: "Completed", value: completed, isDark: isDark),
+                _buildCompactLegend(
+                    color: const Color(0xFF10B981),
+                    label: "Completed",
+                    value: completed,
+                    isDark: isDark),
                 const SizedBox(height: 14),
-                _buildCompactLegend(color: const Color(0xFF3B82F6), label: "Active", value: active, isDark: isDark),
+                _buildCompactLegend(
+                    color: const Color(0xFF3B82F6),
+                    label: "Active",
+                    value: active,
+                    isDark: isDark),
               ],
             ),
           ),
@@ -355,47 +417,56 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       children: [
         Row(
           children: [
-            Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), 
+            Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
             const SizedBox(width: 10),
-            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.grey.shade600)), 
+            Text(label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : Colors.grey.shade600)),
           ],
         ),
-        Text(value.toString(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: isDark ? Colors.white : const Color(0xFF0F172A))), 
+        Text(value.toString(),
+            style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                color: isDark ? Colors.white : const Color(0xFF0F172A))),
       ],
     );
   }
+}
 
-  // 🔥 ULTRA-LIGHT PREMIUM GOAL CARDS WITH DARK TEXT
-  Widget _buildSleekGoalCard(GoalModel goal, ColorScheme colorScheme, bool isDark) {
-    final bool isCompleted = goal.progress >= 1;
+// Extracted for performance caching
+class SleekGoalCard extends StatelessWidget {
+  final GoalModel goal;
+  final bool isDark;
+  final VoidCallback onDelete;
+
+  const SleekGoalCard({super.key, required this.goal, required this.isDark, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isCompleted = goal.status == 'completed';
+    final double progress = (goal.currentAmount / goal.targetAmount).clamp(0.0, 1.0);
+    
     final int daysRemaining = goal.daysLeft ?? goal.targetDate.difference(DateTime.now()).inDays;
-    final double progress = goal.progress;
 
-    // Light Pastel Backgrounds for cards
-    final Color cardBgColor = isCompleted ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF); // Emerald 50 / Blue 50
-    final Color cardBorderColor = isCompleted ? const Color(0xFFA7F3D0) : const Color(0xFFBFDBFE); // Emerald 200 / Blue 200
-    final Color watermarkColor = isCompleted ? const Color(0xFFD1FAE5) : const Color(0xFFDBEAFE); // Emerald 100 / Blue 100
+    final Color accentColor = isCompleted ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+    final Color iconBgColor = isCompleted ? const Color(0xFFD1FAE5) : const Color(0xFFDBEAFE);
+    final Color badgeTextColor = isCompleted ? const Color(0xFF065F46) : const Color(0xFF1E40AF);
 
-    // Vibrant Accents for icons and progress bars
-    final Color accentColor = isCompleted ? const Color(0xFF10B981) : const Color(0xFF3B82F6); // Emerald 500 / Blue 500
-    final Color iconBgColor = isCompleted ? const Color(0xFFD1FAE5) : const Color(0xFFDBEAFE); // Emerald 100 / Blue 100
-    final Color badgeTextColor = isCompleted ? const Color(0xFF065F46) : const Color(0xFF1E40AF); // Emerald 800 / Blue 800
+    final Color textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+    final Color textSecondary = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final Color textTertiary = isDark ? Colors.white54 : const Color(0xFF94A3B8);
 
-    // Deep Text Colors for readable contrast against the light background
-    final Color textPrimary = isDark ? Colors.white : const Color(0xFF0F172A); // Slate 900
-    final Color textSecondary = isDark ? Colors.white70 : const Color(0xFF64748B); // Slate 500
-    final Color textTertiary = isDark ? Colors.white54 : const Color(0xFF94A3B8); // Slate 400
-
-    // Dark Mode Overrides
-    final Color finalCardBgColor = isDark ? const Color(0xFF1E1E2C) : cardBgColor;
-    final Color finalBorderColor = isDark ? Colors.white10 : cardBorderColor;
-    final Color finalWatermarkColor = isDark ? Colors.white.withOpacity(0.02) : watermarkColor;
+    final Color finalCardBgColor = isDark ? const Color(0xFF1E1E2C) : (isCompleted ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF));
+    final Color finalBorderColor = isDark ? Colors.white10 : (isCompleted ? const Color(0xFFA7F3D0) : const Color(0xFFBFDBFE));
+    final Color finalWatermarkColor = isDark ? Colors.white.withOpacity(0.02) : (isCompleted ? const Color(0xFFD1FAE5) : const Color(0xFFDBEAFE));
     final Color finalIconBgColor = isDark ? accentColor.withOpacity(0.15) : iconBgColor;
 
-    final String accountName = (goal.accountName == null || goal.accountName == 'Unknown' || goal.accountName!.isEmpty)
-        ? "Main Account"
-        : goal.accountName!;
-        
     String predictionText;
     if (isCompleted) {
       predictionText = "Goal Reached 🎉";
@@ -413,7 +484,10 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
         border: Border.all(color: finalBorderColor, width: 1.0),
         boxShadow: [
           if (!isDark)
-            BoxShadow(color: accentColor.withOpacity(0.1), blurRadius: 16, offset: const Offset(0, 6)),
+            BoxShadow(
+                color: accentColor.withOpacity(0.1),
+                blurRadius: 16,
+                offset: const Offset(0, 6)),
         ],
       ),
       child: Material(
@@ -421,25 +495,24 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
           onTap: () async {
-            final refresh = await Navigator.push(context, MaterialPageRoute(builder: (_) => GoalDetailsScreen(goal: goal)));
-            if (refresh == true) _fetchGoals();
+            final refresh = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => GoalDetailsScreen(goal: goal)));
+            if (refresh == true && context.mounted) context.read<GoalProvider>().fetchGoals();
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: Stack(
               children: [
-                // === PREMIUM WATERMARK (Faded Background Icon) ===
                 Positioned(
                   right: -20,
                   bottom: -20,
                   child: Icon(
-                    isCompleted ? Icons.military_tech_rounded : Icons.radar_rounded, 
-                    size: 140, 
+                    isCompleted ? Icons.military_tech_rounded : Icons.radar_rounded,
+                    size: 140,
                     color: finalWatermarkColor,
                   ),
                 ),
-                
-                // === ACTUAL CARD CONTENT ===
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -447,9 +520,15 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                       Row(
                         children: [
                           Container(
-                            width: 46, height: 46, 
-                            decoration: BoxDecoration(color: finalIconBgColor, borderRadius: BorderRadius.circular(14)),
-                            child: Icon(isCompleted ? Icons.emoji_events_rounded : Icons.track_changes_rounded, color: accentColor, size: 22),
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                                color: finalIconBgColor,
+                                borderRadius: BorderRadius.circular(14)),
+                            child: Icon(
+                                isCompleted ? Icons.emoji_events_rounded : Icons.track_changes_rounded,
+                                color: accentColor,
+                                size: 22),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -458,19 +537,25 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                               children: [
                                 Text(
                                   goal.title,
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: textPrimary), 
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                      color: textPrimary),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(Icons.account_balance_wallet_rounded, size: 14, color: textSecondary),
+                                    Icon(Icons.category_rounded, size: 14, color: textSecondary),
                                     const SizedBox(width: 4),
                                     Flexible(
                                       child: Text(
-                                        accountName,
-                                        style: TextStyle(fontSize: 13, color: textSecondary, fontWeight: FontWeight.w500), 
+                                        goal.category,
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: textSecondary,
+                                            fontWeight: FontWeight.w500),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -478,17 +563,20 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                                     const SizedBox(width: 6),
                                     Text("•", style: TextStyle(color: textTertiary, fontSize: 13)),
                                     const SizedBox(width: 6),
-                                    Text(goal.category, style: TextStyle(fontSize: 13, color: textSecondary, fontWeight: FontWeight.w500)), 
+                                    Text(DateFormat('MMM dd, yyyy').format(goal.targetDate),
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: textSecondary,
+                                            fontWeight: FontWeight.w500)),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                          _buildGoalMenu(goal, isCompleted, isDark, textTertiary),
+                          _buildGoalMenu(context, isCompleted, textTertiary),
                         ],
                       ),
-                      const SizedBox(height: 20), 
-                      
+                      const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -496,29 +584,43 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Saved", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)), 
+                              Text("Saved",
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: textSecondary)),
                               const SizedBox(height: 4),
                               Text(
                                 "₹${goal.currentAmount.toInt()}",
-                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -0.5), 
+                                style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    color: textPrimary,
+                                    letterSpacing: -0.5),
                               ),
                             ],
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text("Target", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary)), 
+                              Text("Target",
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: textSecondary)),
                               const SizedBox(height: 4),
                               Text(
                                 "₹${goal.targetAmount.toInt()}",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textPrimary), 
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: textPrimary),
                               ),
                             ],
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
                       Row(
                         children: [
                           Expanded(
@@ -526,7 +628,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                               borderRadius: BorderRadius.circular(10),
                               child: LinearProgressIndicator(
                                 value: progress,
-                                minHeight: 8, 
+                                minHeight: 8,
                                 backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
                                 valueColor: AlwaysStoppedAnimation(accentColor),
                               ),
@@ -536,30 +638,33 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                           SizedBox(
                             width: 45,
                             child: Text(
-                              "${(progress * 100).clamp(0, 100).toInt()}%",
+                              "${(progress * 100).toInt()}%",
                               textAlign: TextAlign.right,
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: accentColor), 
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: accentColor),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 18),
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), 
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: finalIconBgColor, // Matching badge bg
-                              borderRadius: BorderRadius.circular(8)
-                            ),
+                                color: finalIconBgColor,
+                                borderRadius: BorderRadius.circular(8)),
                             child: Text(
                               predictionText,
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? accentColor : badgeTextColor), 
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? accentColor : badgeTextColor),
                             ),
                           ),
-                          // 🔥 ONLY RENDER DAYS LEFT IF NOT COMPLETED
                           if (!isCompleted)
                             Row(
                               children: [
@@ -567,7 +672,10 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   "${daysRemaining > 0 ? daysRemaining : 0} days left",
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSecondary), 
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: textSecondary),
                                 ),
                               ],
                             ),
@@ -584,31 +692,28 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     );
   }
 
-  Widget _buildGoalMenu(GoalModel goal, bool isCompleted, bool isDark, Color iconColor) {
+  Widget _buildGoalMenu(BuildContext context, bool isCompleted, Color iconColor) {
     return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert_rounded, color: iconColor, size: 22), 
+      icon: Icon(Icons.more_vert_rounded, color: iconColor, size: 22),
       padding: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: isDark ? const Color(0xFF2A2D3E) : Colors.white,
       onSelected: (value) async {
-        if (value == "delete") _confirmDelete(goal.id);
+        if (value == "delete") {
+          onDelete();
+        }
+        
         if (value == "edit") {
-          final refresh = await Navigator.push(context, MaterialPageRoute(builder: (_) => CreateNewGoalScreen(existingGoal: goal)));
-          if (refresh == true) _fetchGoals();
+          final refresh = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => CreateNewGoalScreen(existingGoal: goal)));
+          if (refresh == true && context.mounted) context.read<GoalProvider>().fetchGoals();
         }
       },
-      itemBuilder: (context) {
-        if (isCompleted) {
-          return const [
-            PopupMenuItem(value: "delete", child: Text("Delete Goal", style: TextStyle(color: Colors.red, fontSize: 15))),
-          ];
-        } else {
-          return const [
-            PopupMenuItem(value: "edit", child: Text("Edit Goal", style: TextStyle(fontSize: 15))),
-            PopupMenuItem(value: "delete", child: Text("Delete Goal", style: TextStyle(color: Colors.red, fontSize: 15))),
-          ];
-        }
-      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: "edit", child: Text("Edit Goal", style: TextStyle(fontSize: 15))),
+        PopupMenuItem(value: "delete", child: Text("Delete Goal", style: TextStyle(color: Colors.red, fontSize: 15))),
+      ],
     );
   }
 }
@@ -621,7 +726,7 @@ class _DonutPainter extends CustomPainter {
   final Color activeColor;
 
   _DonutPainter({
-    required this.completedPercent, 
+    required this.completedPercent,
     required this.activePercent,
     required this.bgColor,
     required this.completedColor,
@@ -632,39 +737,39 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    const strokeWidth = 12.0; 
+    const strokeWidth = 12.0;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
     final bgPaint = Paint()
       ..color = bgColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
-    canvas.drawArc(rect, 0, 2 * 3.1416, false, bgPaint);
+    canvas.drawArc(rect, 0, 2 * math.pi, false, bgPaint);
 
-    double startAngle = -3.1416 / 2;
+    double startAngle = -math.pi / 2;
 
     if (completedPercent > 0) {
       final completedPaint = Paint()
         ..color = completedColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round; 
+        ..strokeCap = StrokeCap.round;
 
-      final sweep = 2 * 3.1416 * completedPercent;
+      final sweep = 2 * math.pi * completedPercent;
       canvas.drawArc(rect, startAngle, sweep, false, completedPaint);
       startAngle += sweep;
     }
 
     if (activePercent > 0) {
-      if (completedPercent > 0 && activePercent < 1.0) startAngle += 0.05; 
-      
+      if (completedPercent > 0 && activePercent < 1.0) startAngle += 0.05;
+
       final activePaint = Paint()
         ..color = activeColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round; 
+        ..strokeCap = StrokeCap.round;
 
-      final sweep = (2 * 3.1416 * activePercent) - (completedPercent > 0 && activePercent < 1.0 ? 0.05 : 0);
+      final sweep = (2 * math.pi * activePercent) - (completedPercent > 0 && activePercent < 1.0 ? 0.05 : 0);
       if (sweep > 0) {
         canvas.drawArc(rect, startAngle, sweep, false, activePaint);
       }

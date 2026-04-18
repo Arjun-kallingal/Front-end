@@ -1,6 +1,7 @@
 // 1. THE INDIVIDUAL TRANSACTION OBJECT
 class TransactionModel {
   final String id;
+  final String accountId; // Needed for Reversal API
   final String title;
   final String subtitle;
   final double amount;
@@ -10,9 +11,11 @@ class TransactionModel {
   final String direction;
   final String accountName;
   final String? idempotencyKey;
+  final String status; // Needed to check if already voided/reversed
 
   TransactionModel({
     required this.id,
+    required this.accountId,
     required this.title,
     required this.subtitle,
     required this.amount,
@@ -21,12 +24,17 @@ class TransactionModel {
     required this.category,
     required this.direction,
     required this.accountName,
-    required this.idempotencyKey,
+    this.idempotencyKey,
+    required this.status,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['_id']?.toString() ?? '',
+      // Safely extract accountId whether it's populated or just a string
+      accountId: (json['accountId'] is Map)
+          ? json['accountId']['_id']?.toString() ?? ''
+          : json['accountId']?.toString() ?? '',
       title: json['category'] ?? 'General',
       subtitle: json['description'] ?? '',
       amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
@@ -44,6 +52,7 @@ class TransactionModel {
       direction: (json['direction'] ?? 'STANDARD').toString().toUpperCase(),
       accountName: (json['accountName'] ?? 'Unknown Account').toString(),
       idempotencyKey: json['idempotencyKey']?.toString(),
+      status: (json['status'] ?? 'COMPLETED').toString().toUpperCase(),
     );
   }
 }

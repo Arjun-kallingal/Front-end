@@ -6,74 +6,65 @@ class DarkTheme {
     return ThemeData(
       brightness: Brightness.dark,
       fontFamily: 'Inter',
-      scaffoldBackgroundColor: AppColors.bgPrimary,
-      
+      scaffoldBackgroundColor: AppColors.darkBgPrimary,
+
       colorScheme: const ColorScheme.dark(
-        primary: Colors.white, 
+        primary: AppColors.darkTextPrimary,
         secondary: AppColors.accentOrange,
-        // Note: 'background' is deprecated in Flutter 3.22+. Use 'surface' instead.
-        // background: AppColors.bgPrimary, 
-        surface: AppColors.bgSecondary,
-        error: Colors.white, // Completely removes default red for errors
+        surface: AppColors.darkBgSecondary,
+        error: AppColors.darkTextPrimary,
       ),
 
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.bgPrimary,
+        backgroundColor: AppColors.darkBgPrimary,
         elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
+        titleTextStyle: TextStyle(
+          color: AppColors.darkTextPrimary,
+          fontFamily: 'Inter',
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
       ),
 
-      /// ✅ TEXT FIELD THEME (NO RED ANYWHERE)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.bgSecondary,
-        hintStyle: const TextStyle(color: AppColors.textHint),
+        fillColor: AppColors.darkBgSecondary,
+        hintStyle: const TextStyle(color: AppColors.darkTextHint),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-
-        /// NORMAL BORDER
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white),
+          borderSide: const BorderSide(color: AppColors.darkTextPrimary),
         ),
-
-        /// ENABLED
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white),
+          borderSide: const BorderSide(color: AppColors.darkTextPrimary),
         ),
-
-        /// FOCUSED
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.darkTextPrimary, width: 1.5),
         ),
-
-        /// 🔥 ERROR (NO RED)
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white),
+          borderSide: const BorderSide(color: AppColors.darkTextPrimary),
         ),
-
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.white, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.darkTextPrimary, width: 1.5),
         ),
-
-        /// Error text style
-        errorStyle: const TextStyle(color: Colors.white),
+        errorStyle: const TextStyle(color: AppColors.darkTextPrimary),
       ),
 
-      /// ✅ CURSOR + TEXT SELECTION (NO RED)
       textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: Colors.white,
-        selectionColor: Colors.white24,
-        selectionHandleColor: Colors.white,
+        cursorColor: AppColors.darkTextPrimary,
+        selectionColor: AppColors.darkBgElevated,
+        selectionHandleColor: AppColors.darkTextPrimary,
       ),
 
-      /// ✅ ELEVATED BUTTON
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white, 
-          foregroundColor: Colors.black,
+          backgroundColor: AppColors.darkTextPrimary,
+          foregroundColor: AppColors.darkBgPrimary,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -82,7 +73,46 @@ class DarkTheme {
         ),
       ),
 
-      dividerColor: AppColors.divider,
+      dividerColor: AppColors.darkDivider,
+
+      cardColor: AppColors.darkBgCard,
+
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.all(AppColors.switchThumb),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.switchActive;
+          return AppColors.darkSwitchInactive;
+        }),
+      ),
+
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.darkTextPrimary;
+          return AppColors.darkTextMuted;
+        }),
+      ),
+
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.darkNavBg,
+        selectedItemColor: AppColors.navActive,
+        unselectedItemColor: AppColors.darkNavInactive,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.darkFilterBg,
+        selectedColor: AppColors.filterSelectedBg,
+        labelStyle: const TextStyle(color: AppColors.darkFilterText),
+        secondaryLabelStyle: const TextStyle(color: AppColors.filterSelectedText),
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        linearTrackColor: AppColors.darkProgressBg,
+      ),
     );
   }
 }

@@ -1,10 +1,6 @@
 class GoalModel {
   final String id;
 
-  /// Account
-  final String accountId;
-  final String? accountName;
-
   /// Basic Info
   String title;
   String category;
@@ -33,8 +29,6 @@ class GoalModel {
 
   GoalModel({
     required this.id,
-    required this.accountId,
-    this.accountName,
     required this.title,
     required this.category,
     required this.targetAmount,
@@ -51,27 +45,10 @@ class GoalModel {
     this.isOverdue = false,
   });
 
-  /// ✅ FIXED FROM JSON (IMPORTANT 🔥)
+  /// ✅ FROM JSON
   factory GoalModel.fromJson(Map<String, dynamic> json) {
-    // Safely extract from Mongoose populated object
-    final accountData = json['accountId'];
-    final parsedAccountId = accountData is Map
-        ? (accountData['_id']?.toString() ?? '')
-        : (accountData?.toString() ?? '');
-
-    // Safely extract Account Name whether it is nested in accountId or at the root
-    String parsedAccountName = 'Main Account'; // Default fallback
-    if (json['accountId'] is Map && json['accountId']['name'] != null) {
-      parsedAccountName = json['accountId']['name'].toString();
-    } else if (json['accountName'] != null &&
-        json['accountName'].toString().isNotEmpty) {
-      parsedAccountName = json['accountName'].toString();
-    }
-
     return GoalModel(
       id: json['_id']?.toString() ?? '',
-      accountId: parsedAccountId,
-      accountName: parsedAccountName,
       title: json['title'] ?? '',
       category: json['category'] ?? '',
 
@@ -112,23 +89,20 @@ class GoalModel {
   Map<String, dynamic> toJson({bool isCreate = false}) {
     return {
       if (!isCreate && id.isNotEmpty) "_id": id,
-
-      "accountId": accountId,
       "title": title,
       "category": category,
       "targetAmount": targetAmount,
       "currentAmount": currentAmount,
       "status": status,
       "targetDate": targetDate.toIso8601String(),
-
       if (description != null && description!.isNotEmpty)
         "description": description,
-
       "reminderFrequency": reminderFrequency,
       "transactionType": transactionType,
     };
   }
 
+  // ✅ Helper method to calculate progress dynamically if the backend doesn't send it
   double get progress => progressPercentage != null && progressPercentage! > 0
       ? (progressPercentage! / 100).clamp(0.0, 1.0)
       : (targetAmount == 0

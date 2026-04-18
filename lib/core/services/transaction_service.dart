@@ -2,43 +2,142 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import 'package:front_end/core/services/api_client.dart';
-import 'package:front_end/core/services/api_config.dart'; // ✅ centralized base URL
+import 'package:front_end/core/services/api_config.dart';
 import 'package:front_end/core/models/transaction_model.dart';
+import 'package:flutter/foundation.dart';
 
 class TransactionService {
   static String get _baseUrl => "${ApiConfig.baseUrl}/api/transaction";
 
   /// --- 1. FETCH HISTORY ---
-  static Future<TransactionHistoryResponse> getHistory({
-    String? accountId,
-    String? category,
-    String? lastId,
+ static Future<TransactionHistoryResponse> getHistory({
+  String? accountId,
+  String? category,
+  String? lastId,
+}) async {
+  try {
+    final Map<String, String> queryParams = {};
+    if (accountId != null && accountId != "All Accounts") {
+      queryParams['accountId'] = accountId;
+    }
+    if (category != null && category != "All Categories") {
+      queryParams['category'] = category;
+    }
+    if (lastId != null) {
+      queryParams['lastId'] = lastId;
+    }
+
+    final uri = Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
+    final headers = await ApiClient.getHeaders();
+    
+    debugPrint("HISTORY URL: $uri");          // ← ADD THIS
+    
+    final response = await http.get(uri, headers: headers);
+    
+    debugPrint("HISTORY STATUS: ${response.statusCode}");   // ← ADD THIS
+    debugPrint("HISTORY BODY: ${response.body.substring(0, 200)}");  // ← ADD THIS
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> body = jsonDecode(response.body);
+      return TransactionHistoryResponse.fromJson(body);
+    } else if (response.statusCode == 401) {
+      throw Exception("Unauthorized - Please login again");
+    } else {
+      throw Exception("Server error: ${response.statusCode}");
+    }
+  } catch (e) {
+    throw Exception("Connection Error: $e");
+  }
+}
+
+  /// --- 2. PROCESS TRANSACTION ---
+  static Future<Map<String, dynamic>> processTransaction({
+    required String accountId,
+    required String amount,
+    required String type,
+    required String category,
+    String? description,
+    String direction = "STANDARD",
+    String? idempotencyKey,
+    String? transactedAt,
   }) async {
     try {
-      final Map<String, String> queryParams = {};
+      final headers = await ApiClient.getHeaders();
+      final effectiveKey = idempotencyKey ?? const Uuid().v4();
 
-      if (accountId != null && accountId != "All Accounts") {
-        queryParams['accountId'] = accountId;
-      }
+      final response = await http.post(
+        Uri.parse('$_baseUrl/process'),
+        headers: headers,
+        body: jsonEncode({
+          "accountId": accountId,
+          "amount": amount,
+          "transactionType": type.toUpperCase(),
+          "direction": direction,
+          "category": category,
+          "description": description ?? "",
+          "idempotencyKey": effectiveKey,
+          "transactedAt": transactedAt,
+        }),
+      );
 
-      if (category != null && category != "All Categories") {
-        queryParams['category'] = category;
-      }
+      final data = jsonDecode(response.body);
+      return {
+        "success": response.statusCode == 201,
+        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        "data": data,
+      };
+    } catch (e) {
+      return {"success": false, "message": "Network Failure: $e"};
+    }
+  }
 
-      if (lastId != null) {
-        queryParams['lastId'] = lastId;
-      }
+  /// --- 3. REVERSE TRANSACTION ---
+  static Future<Map<String, dynamic>> reverseTransaction({
+    required TransactionModel originalTx,
+    String? reason,
+  }) async {
+    try {
+      final headers = await ApiClient.getHeaders();
+      
+      final body = jsonEncode({
+        "accountId": originalTx.accountId,
+        "amount": originalTx.amount.abs().toString(),
+        "transactionType": "REVERSAL",
+        "direction": "REVERSAL",
+        "category": originalTx.category,
+        "description": reason ?? "Reversing ${originalTx.title}",
+        "idempotencyKey": "rev-${originalTx.id}-${DateTime.now().millisecondsSinceEpoch}",
+        "parentTransactionId": originalTx.id,
+      });
 
-      // ✅ No userId in URL — backend reads from JWT
-      final uri =
-          Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
+      final response = await http.post(
+        Uri.parse('$_baseUrl/process'),
+        headers: headers,
+        body: body,
+      );
 
+      final data = jsonDecode(response.body);
+      return {
+        "success": response.statusCode == 201,
+        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+      };
+    } catch (e) {
+      return {"success": false, "message": "Network Failure: $e"};
+    }
+  }
+
+  /// --- 4. FETCH LATEST TRANSACTIONS ---
+  static Future<List<TransactionModel>> getLatestTransactions() async {
+    try {
+      final uri = Uri.parse('$_baseUrl/latest');
       final headers = await ApiClient.getHeaders();
       final response = await http.get(uri, headers: headers);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
-        return TransactionHistoryResponse.fromJson(body);
+        final List dataList = body['data'] ?? [];
+        
+        return dataList.map((item) => TransactionModel.fromJson(item)).toList();
       } else if (response.statusCode == 401) {
         throw Exception("Unauthorized - Please login again");
       } else {
@@ -48,43 +147,37 @@ class TransactionService {
       throw Exception("Connection Error: $e");
     }
   }
-
-  /// --- 2. PROCESS TRANSACTION ---
-  static Future<Map<String, dynamic>> processTransaction({
+static Future<Map<String, dynamic>> reserveFunds({
     required String accountId,
     required String amount,
-    required String type,
+    required String action, // "RESERVE" or "RELEASE"
     required String category,
     String? description,
-    String direction = "NORMAL",
-    required String idempotencyKey,
-    String? transactedAt,
+    String? idempotencyKey,
   }) async {
     try {
       final headers = await ApiClient.getHeaders();
+      // Ensure we always have a unique key to prevent double-reserving funds
+      final effectiveKey = idempotencyKey ?? const Uuid().v4();
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/process'),
+        Uri.parse('$_baseUrl/reserve'),
         headers: headers,
         body: jsonEncode({
-          // ✅ No userId in body — backend extracts from JWT
           "accountId": accountId,
           "amount": amount,
-          "transactionType": type.toUpperCase(),
-          "direction": direction,
+          "action": action.toUpperCase(),
           "category": category,
           "description": description ?? "",
-          "idempotencyKey": const Uuid().v4(),
-          "transactedAt": transactedAt,
+          "idempotencyKey": effectiveKey,
         }),
       );
 
       final data = jsonDecode(response.body);
-
       return {
+        // Backend returns 201 Created on success
         "success": response.statusCode == 201,
-        "message": data['error'] ??
-            (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
         "data": data,
       };
     } catch (e) {

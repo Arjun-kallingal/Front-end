@@ -10,7 +10,13 @@ import 'package:front_end/features/home/widget/add_transaction_screen.dart';
 import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/core/models/transaction_model.dart';
+import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/features/transfer/transfer.dart';
+import 'package:front_end/core/providers/account_provider.dart';
+import '../../analytics/provider/analytics_provider.dart';
+import '../../goals/provider/goal_provider.dart';
+import 'package:front_end/features/notifications/notification_screen.dart';
+import 'package:front_end/core/providers/notification_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,12 +26,264 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isProcessing = false;
+
+  List<TransactionModel> _recentTransactions = [];
+  bool _isLoadingRecent = true;
+  String? _recentError;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      context.read<TransactionProvider>().fetchTransactions();
+    Future.microtask(() async {
+      await context.read<TransactionProvider>().fetchTransactions();
+      context.read<TransactionProvider>().addListener(_onTransactionUpdate);
+
+      // 🔥 INITIALIZE NOTIFICATIONS & SOCKET
+      final notifProvider = context.read<NotificationProvider>();
+      notifProvider.loadNotifications();
+      notifProvider.initializeSocketListeners();
     });
+    _loadRecentTransactions();
+  }
+
+  void _onTransactionUpdate() {
+    print("🔥 TransactionProvider updated - reloading recent");
+    if (mounted && !_isLoadingRecent) {
+      _loadRecentTransactions();
+    }
+  }
+
+  @override
+  void dispose() {
+    context.read<TransactionProvider>().removeListener(_onTransactionUpdate);
+    super.dispose();
+  }
+
+  Future<void> _loadRecentTransactions() async {
+    setState(() {
+      _isLoadingRecent = true;
+      _recentError = null;
+    });
+
+    try {
+      final latest = await TransactionService.getLatestTransactions();
+      if (mounted) {
+        setState(() {
+          _recentTransactions = latest;
+          _isLoadingRecent = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _recentError = e.toString().replaceAll("Exception: ", "");
+          _isLoadingRecent = false;
+        });
+      }
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message,
+            style: const TextStyle(
+                color: AppColors.darkTextPrimary, fontWeight: FontWeight.w600)),
+        backgroundColor:
+            isError ? AppColors.expenseAmount : AppColors.incomeAmount,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        elevation: 4,
+      ),
+    );
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+        context: context,
+        builder: (ctx) {
+          final theme = Theme.of(ctx);
+          final colorScheme = theme.colorScheme;
+          final isDark = theme.brightness == Brightness.dark;
+
+          return Dialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: colorScheme.surface,
+            elevation: 8,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppColors.errorBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.error_outline_rounded,
+                        color: AppColors.error, size: 36),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.primary),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text("Okay",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _handleReversal(TransactionModel tx) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final colorScheme = theme.colorScheme;
+        final isDark = theme.brightness == Brightness.dark;
+
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: colorScheme.surface,
+          elevation: 8,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Cancel Transaction?",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: isDark
+                            ? AppColors.darkTextMuted
+                            : AppColors.lightTextMuted,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "This will safely cancel the ₹${tx.amount.abs().toStringAsFixed(2)} transaction and instantly update your account balance.",
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.expenseAmount,
+                      foregroundColor: AppColors.darkTextPrimary,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text(
+                      "Confirm Cancel",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirm == true) {
+      setState(() => _isProcessing = true);
+
+      final result =
+          await TransactionService.reverseTransaction(originalTx: tx);
+
+      if (result['success']) {
+        await Future.wait([
+          context.read<TransactionProvider>().fetchTransactions(),
+          context.read<AccountProvider>().loadAccounts(),
+          context.read<GoalProvider>().fetchGoals(),
+          context.read<AnalyticsProvider>().reload(),
+        ]);
+
+        await _loadRecentTransactions();
+
+        setState(() => _isProcessing = false);
+
+        _showSnackBar("Transaction cancelled successfully!");
+      } else {
+        setState(() => _isProcessing = false);
+
+        _showErrorDialog(
+          "Cancellation Failed",
+          result['message'] ??
+              "An error occurred while cancelling the transaction.",
+        );
+      }
+    }
   }
 
   @override
@@ -43,124 +301,194 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await context.read<TransactionProvider>().fetchTransactions();
-          },
-          color: colorScheme.secondary,
-          backgroundColor: colorScheme.surface,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildAppBar(context, theme, colorScheme, isDark),
-                const SizedBox(height: 4),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: BalanceCard(),
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () async {
+                await context.read<TransactionProvider>().fetchTransactions();
+                await _loadRecentTransactions();
+                await context.read<NotificationProvider>().loadNotifications();
+              },
+              color: colorScheme.secondary,
+              backgroundColor: colorScheme.surface,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildAppBar(context, theme, colorScheme, isDark),
+                    const SizedBox(height: 4),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: BalanceCard(),
+                    ),
+                    const SizedBox(height: 28),
+                    _buildSectionLabel("Quick Actions", isDark),
+                    const SizedBox(height: 12),
+                    _buildActionButtons(context, colorScheme, theme),
+                    const SizedBox(height: 28),
+                    _buildRecentHeader(context, colorScheme, theme, isDark),
+                    const SizedBox(height: 8),
+                    _buildTransactionList(context, colorScheme, theme, isDark),
+                    const SizedBox(height: 48),
+                  ],
                 ),
-
-                const SizedBox(height: 28),
-
-                _buildSectionLabel("Quick Actions", isDark),
-                const SizedBox(height: 12),
-                _buildActionButtons(context, colorScheme, theme),
-
-                const SizedBox(height: 28),
-
-                _buildRecentHeader(context, colorScheme, theme, isDark),
-                const SizedBox(height: 8),
-                _buildTransactionList(context, colorScheme, theme, isDark),
-
-                const SizedBox(height: 48),
-              ],
+              ),
             ),
-          ),
+            if (_isProcessing)
+              Container(
+                color: AppColors.darkBgPrimary.withOpacity(0.3),
+                child: Center(
+                  child: CircularProgressIndicator(color: colorScheme.primary),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  // ── APP BAR ───────────────────────────────────────────────────────────────
+Widget _buildAppBar(BuildContext context, ThemeData theme, ColorScheme colorScheme, bool isDark) {
+    
+    // Subdued backgrounds for the icons to keep the layout minimal
+    final iconBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
+    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06);
+    final iconColor = isDark ? Colors.white : Colors.black87;
 
-  Widget _buildAppBar(BuildContext context, ThemeData theme, ColorScheme colorScheme, bool isDark) {
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600];
+    // --- Premium Fintech Brand Colors ---
+    final Color premiumGreen = const Color(0xFF81AF63);
+    final Color premiumText = isDark ? Colors.white : const Color(0xFF0F172A);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // ── BRAND LOGO & NAME ──────────────────────────────────────
+          Row(
             children: [
+              // 🟢 Logo
+              Container(
+                width: 40, 
+                height: 60,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  'assets/images/homeicon.png',
+                  fit: BoxFit.contain, 
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.eco_rounded,
+                    color: premiumGreen,
+                    size: 26,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 0), // 🟢 Gap reduced even further
+              
+              // 🟢 Two-Tone Brand Text
               RichText(
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: "Wallet",
+                      text: "Green",
                       style: TextStyle(
-                        color: colorScheme.primary,
-                        fontSize: 24,
+                        color: premiumGreen, // 🟢 Restored to the green brand color
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     TextSpan(
-                      text: "Care",
+                      text: "Pouch",
                       style: TextStyle(
-                        color: colorScheme.secondary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
+                        color: premiumText, 
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                _greeting(),
-                style: TextStyle(color: textSec, fontSize: 13),
-              ),
             ],
           ),
 
+          // ── ACTION ICONS ───────────────────────────────────────────
           Row(
             children: [
-              // IconButton(
-              //   icon: Icon(
-              //     isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-              //     color: colorScheme.primary,
-              //   ),
-              //   onPressed: () {
-              //     // final provider = context.read<ThemeProvider>();
-              //     // provider.toggleTheme(!provider.isDark);
-              //   },
-              // ),
-              const SizedBox(width: 8),
+              // ── 🔔 LIVE NOTIFICATION BELL ──
+              Consumer<NotificationProvider>(
+                builder: (context, notifProvider, child) {
+                  final unreadCount = notifProvider.unreadCount;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const NotificationScreen()),
+                      );
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: iconBg,
+                            border: Border.all(color: borderColor, width: 1),
+                          ),
+                          child: Icon(
+                            Icons.notifications_outlined,
+                            color: iconColor,
+                            size: 22,
+                          ),
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: -2,
+                            right: -2,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: premiumGreen, 
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.scaffoldBackgroundColor,
+                                  width: 2.5, 
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              
+              // ── 👤 PROFILE ICON ──
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const ProfileSettingsScreen()),
                 ),
                 child: Container(
-                  width: 46,
-                  height: 46,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: surfaceAlt,
-                    border: Border.all(
-                      color: colorScheme.secondary.withOpacity(0.40),
-                      width: 1.5,
-                    ),
+                    color: iconBg,
+                    border: Border.all(color: borderColor, width: 1),
                   ),
                   child: Icon(
                     Icons.person_outline_rounded,
-                    color: colorScheme.primary,
+                    color: iconColor,
                     size: 22,
                   ),
                 ),
@@ -171,27 +499,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  // ── SECTION LABEL ─────────────────────────────────────────────────────────
-
-  Widget _buildSectionLabel(String label, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: isDark ? const Color(0xFF8B90A7) : Colors.grey[600],
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.4,
-        ),
-      ),
-    );
-  }
-
-  // ── QUICK ACTION BUTTONS ──────────────────────────────────────────────────
-
-  Widget _buildActionButtons(BuildContext context, ColorScheme colorScheme, ThemeData theme) {
+ 
+  Widget _buildActionButtons(
+      BuildContext context, ColorScheme colorScheme, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -200,13 +510,21 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.trending_up,
               label: "Income",
-              color: AppColors.incomeAmount, 
+              color: AppColors.incomeAmount,
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialIsExpense: false)),
-              ),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const AddTransactionScreen(initialIsExpense: false)),
+              ).then((result) {
+                if (result is String) {
+                  _showSnackBar(result);
+                }
+                context.read<TransactionProvider>().fetchTransactions();
+                _loadRecentTransactions();
+              }),
             ),
           ),
           const SizedBox(width: 12),
@@ -214,13 +532,21 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.trending_down,
               label: "Expense",
-              color: AppColors.expenseAmount, 
+              color: AppColors.expenseAmount,
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialIsExpense: true)),
-              ),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const AddTransactionScreen(initialIsExpense: true)),
+              ).then((result) {
+                if (result is String) {
+                  _showSnackBar(result);
+                }
+                context.read<TransactionProvider>().fetchTransactions();
+                _loadRecentTransactions();
+              }),
             ),
           ),
           const SizedBox(width: 12),
@@ -228,16 +554,33 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _actionButton(
               icon: Icons.swap_horiz_rounded,
               label: "Transfer",
-              color: const Color.fromARGB(255, 238, 254, 3), 
+              color: AppColors.transferColor,
               surfaceColor: colorScheme.surface,
               textColor: colorScheme.primary,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TransferScreen()),
-              ),
+              ).then((_) {
+                context.read<TransactionProvider>().fetchTransactions();
+                _loadRecentTransactions();
+              }),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -261,7 +604,7 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: color.withOpacity(0.20), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: AppColors.darkBgPrimary.withOpacity(0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -294,10 +637,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── RECENT HEADER ─────────────────────────────────────────────────────────
-
-  Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+  Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
+    final surfaceAlt =
+        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -316,7 +659,10 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const TransactionListScreen()),
-            ),
+            ).then((_) {
+              context.read<TransactionProvider>().fetchTransactions();
+              _loadRecentTransactions();
+            }),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
@@ -329,14 +675,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     "See all",
                     style: TextStyle(
-                      color: colorScheme.secondary,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(Icons.arrow_forward_ios_rounded,
-                      size: 10, color: colorScheme.secondary),
+                      size: 10,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted),
                 ],
               ),
             ),
@@ -346,27 +697,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── TRANSACTION LIST ──────────────────────────────────────────────────────
+Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
-  Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
-    final provider = context.watch<TransactionProvider>();
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600];
-
-    if (provider.isLoading) {
+    if (_isLoadingRecent) {
       return Padding(
         padding: const EdgeInsets.all(48),
         child: Center(
-          child: CircularProgressIndicator(color: colorScheme.secondary, strokeWidth: 2),
+          child: CircularProgressIndicator(
+              color: colorScheme.secondary, strokeWidth: 2),
         ),
       );
     }
 
-    if (provider.error != null) {
+    if (_recentError != null) {
       return Padding(
         padding: const EdgeInsets.all(32),
         child: Center(
           child: Text(
-            provider.error!,
+            _recentError!,
             style: TextStyle(color: textSec, fontSize: 14),
             textAlign: TextAlign.center,
           ),
@@ -374,7 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (provider.transactions.isEmpty) {
+    if (_recentTransactions.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 48),
         child: Center(
@@ -392,38 +742,46 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final transactions = provider.transactions;
-    final count = transactions.length > 5 ? 5 : transactions.length;
-
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-      itemCount: count,
-      itemBuilder: (context, index) =>
-          _buildTile(context, transactions[index], colorScheme, theme, isDark),
+      itemCount: _recentTransactions.length,
+      itemBuilder: (context, index) {
+        // Identify the absolute latest transaction
+        bool isLatest = index == 0;
+        
+        return _buildTile(
+          context, 
+          _recentTransactions[index], 
+          colorScheme, 
+          theme, 
+          isDark, 
+          isLatest: isLatest
+        );
+      },
     );
   }
 
-  // 🔥 UPDATED _buildTile TO MATCH TRANSACTION LIST SCREEN
-  Widget _buildTile(BuildContext context, TransactionModel tx, ColorScheme colorScheme, ThemeData theme, bool isDark) {
+  Widget _buildTile(BuildContext context, TransactionModel tx,
+      ColorScheme colorScheme, ThemeData theme, bool isDark, {bool isLatest = false}) {
     final Color moneyColor = _getTransactionColor(tx);
     final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
-                        tx.accountName.toLowerCase().contains('wallet');
-                        
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600]!;
+        tx.accountName.toLowerCase().contains('wallet');
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+
+    // Only allow reversal if it's the newest item and hasn't been voided yet
+    bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED" && isLatest;
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center, // Keeps things centered
             children: [
-              // Circular leading icon
               _getTransactionLeading(tx),
               const SizedBox(width: 16),
-              
-              // Title and subtitle area
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,6 +792,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: colorScheme.primary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        decoration: tx.status == "VOIDED"
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -441,14 +802,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 5),
                     Row(
                       children: [
-                        // Keeping the date inline since Home Screen has no date headers
-                        Text(
-                          DateFormat('dd MMM').format(tx.date),
-                          style: TextStyle(color: textSec, fontSize: 12),
-                        ),
-                        const SizedBox(width: 6),
-                        Text('·', style: TextStyle(color: textSec)),
-                        const SizedBox(width: 6),
                         Icon(
                           isCash ? Icons.wallet : Icons.account_balance,
                           size: 11,
@@ -483,27 +836,72 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              
-              // Amount
-              Text(
-                "₹${tx.amount.abs().toStringAsFixed(2)}",
-                style: TextStyle(
-                  color: moneyColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "₹${tx.amount.abs().toStringAsFixed(2)}",
+                    style: TextStyle(
+                      color: tx.status == "VOIDED" ? textSec : moneyColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      decoration: tx.status == "VOIDED"
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  
+                  // 🔥 Date is ALWAYS visible now
+                  Text(
+                    DateFormat('dd MMM, yyyy').format(tx.date),
+                    style: TextStyle(
+                      color: textSec,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+
+                  // 🔥 Undo button gracefully drops down below the date if applicable
+                  if (canReverse) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _handleReversal(tx),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.colorScheme.error.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.undo_rounded, size: 12, color: theme.colorScheme.error),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Undo",
+                              style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
         ),
-        // Divider instead of a box border
         Divider(color: theme.dividerColor, height: 1),
       ],
     );
   }
-
-  // ── HELPERS ───────────────────────────────────────────────────────────────
-
   String _greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return "Good morning ☀️";
@@ -512,28 +910,70 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Color _getTransactionColor(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") return AppColors.savingsPrimary;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") return AppColors.progressGreen;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") return AppColors.chartIncome;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") return AppColors.incomeAmount;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") return AppColors.textSecondary;
+    // 1. Check specific directions first (These override general types)
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return AppColors.savingsPrimary;
+      case "GOAL_DEALLOCATION":
+        return AppColors.progressGreen;
+      case "GOAL_COMPLETION":
+        return AppColors.chartIncome;
+      case "ACCOUNT_TRANSFER_IN":
+        return AppColors.incomeAmount;
+      case "ACCOUNT_TRANSFER_OUT":
+        return AppColors.dateLabel;
+      case "RESERVED_IN":
+        return AppColors.warning; // Orange/Warning color for locked reserves
+      case "RESERVED_OUT":
+        return AppColors.incomeAmount; // Green for freeing up funds back to available
+      case "REVERSAL":
+        return AppColors.warning;
+    }
+
+    // 2. Fallback to basic types for STANDARD direction
     if (tx.type == "INCOME") return AppColors.incomeAmount;
+    if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
-    return AppColors.expenseAmount;
+    if (tx.type == "TRANSFER") return AppColors.dateLabel;
+    
+    return AppColors.expenseAmount; // Default fallback
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") return Icons.savings_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") return Icons.savings_outlined;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") return Icons.task_alt_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") return Icons.call_received_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") return Icons.call_made_rounded;
-    if (tx.type == "INCOME") return Icons.trending_up_rounded;
-    if (tx.type == "REVERSAL") return Icons.undo_rounded;
-    return Icons.trending_down_rounded;
-  }
+    // 1. Check specific directions first for precise icons
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return Icons.savings_rounded; // Piggy bank for saving
+      case "GOAL_DEALLOCATION":
+        return Icons.savings_outlined; // Empty piggy bank for withdrawing
+      case "GOAL_COMPLETION":
+        return Icons.task_alt_rounded; // Checkmark for achieved goals
+      case "ACCOUNT_TRANSFER_IN":
+        return Icons.call_received_rounded; // Arrow pointing in
+      case "ACCOUNT_TRANSFER_OUT":
+        return Icons.call_made_rounded; // Arrow pointing out
+      case "RESERVED_IN":
+        return Icons.lock_outline_rounded; // Lock icon for moving to reserves
+      case "RESERVED_OUT":
+        return Icons.lock_open_rounded; // Unlock icon for moving back to available
+      case "REVERSAL":
+        return Icons.undo_rounded; // Undo arrow for canceled transactions
+    }
 
-  // 🔥 ADDED LEADING WIDGET HELPER
+    // 2. Fallback to general types for STANDARD direction
+    switch (tx.type) {
+      case "INCOME":
+        return Icons.trending_up_rounded; // Standard green up arrow
+      case "EXPENSE":
+        return Icons.trending_down_rounded; // Standard red down arrow
+      case "TRANSFER":
+        return Icons.swap_horiz_rounded; // Standard side-to-side arrows
+      case "REVERSAL":
+        return Icons.undo_rounded;
+      default:
+        return Icons.receipt_long_rounded; // Safe fallback
+    }
+  }
   Widget _getTransactionLeading(TransactionModel tx) {
     final Color iconColor = _getTransactionColor(tx);
     return Container(
@@ -544,6 +984,105 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: BoxShape.circle,
       ),
       child: Icon(_getTransactionIcon(tx), color: iconColor, size: 20),
+    );
+  }
+}
+
+class SwipeToCancelTile extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onCancelTap;
+
+  const SwipeToCancelTile(
+      {super.key, required this.child, required this.onCancelTap});
+
+  @override
+  State<SwipeToCancelTile> createState() => _SwipeToCancelTileState();
+}
+
+class _SwipeToCancelTileState extends State<SwipeToCancelTile> {
+  double _dragExtent = 0.0;
+  final double _maxDrag = 100.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          _dragExtent += details.primaryDelta!;
+          if (_dragExtent > 0) _dragExtent = 0;
+          if (_dragExtent < -_maxDrag - 20) _dragExtent = -_maxDrag - 20;
+        });
+      },
+      onHorizontalDragEnd: (details) {
+        setState(() {
+          if (_dragExtent < -_maxDrag / 2) {
+            _dragExtent = -_maxDrag;
+          } else {
+            _dragExtent = 0.0;
+          }
+        });
+      },
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _dragExtent < -30 ? 1.0 : 0.0,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    setState(() => _dragExtent = 0.0);
+                    widget.onCancelTap();
+                  },
+                  child: Container(
+                    width: _maxDrag,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.errorBg,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.expenseIconBg,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close_rounded,
+                              color: AppColors.expenseAmount, size: 14),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text("Cancel",
+                            style: TextStyle(
+                                color: AppColors.expenseAmount,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(_dragExtent, 0, 0),
+            child: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: widget.child,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

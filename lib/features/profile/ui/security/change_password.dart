@@ -36,16 +36,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         backgroundColor: color.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           "Success",
-          style: TextStyle(
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
             color: color.primary,
           ),
         ),
         content: Text(
           message,
-          style: TextStyle(
-            color: color.primary,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: color.onSurface.withOpacity(0.7),
           ),
         ),
         actions: [
@@ -58,9 +60,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               "OK",
               style: TextStyle(
                 color: color.primary,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -79,7 +82,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         newPasswordController.text.trim(),
       );
 
-      /// ✅ SAVE NEW TOKENS (IMPORTANT)
       if (result["accessToken"] != null && result["refreshToken"] != null) {
         final name = await AuthStorage.getName();
         final email = await AuthStorage.getEmail();
@@ -122,210 +124,202 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            /// ================= HEADER =================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              decoration: BoxDecoration(
-                color: color.background,
+      backgroundColor: color.surface,
+      appBar: AppBar(
+        backgroundColor: color.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        title: Text(
+          "Change Password",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              // ─── Intro ────────────────────────────────────────────
+              Text(
+                "Update your credentials",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: color.onSurface.withOpacity(0.45),
+                ),
               ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: color.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Change Password",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: color.primary,
-                    ),
-                  ),
-                ],
+
+              const SizedBox(height: 20),
+
+              // ─── Current Password ─────────────────────────────────
+              _passwordField(
+                controller: currentPasswordController,
+                label: "Current Password",
+                obscure: obscureCurrent,
+                errorText: currentPasswordError,
+                toggle: () => setState(() => obscureCurrent = !obscureCurrent),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Enter current password";
+                  }
+                  return currentPasswordError;
+                },
               ),
-            ),
 
-            /// ================= FORM =================
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: color.surface,
-                    borderRadius: BorderRadius.circular(16),
+              // ─── Forgot Password ──────────────────────────────────
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () async {
+                    String? token = await AuthStorage.getToken();
+
+                    http.Response response = await http.post(
+                      Uri.parse(
+                          "${ApiConfig.baseUrl}/api/user/forgot-password"),
+                      headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer $token",
+                      },
+                    );
+
+                    if (response.statusCode == 401) {
+                      final newToken =
+                          await AuthService.refreshAccessToken();
+
+                      if (newToken == null) {
+                        await AuthStorage.logout();
+                        return;
+                      }
+
+                      response = await http.post(
+                        Uri.parse(
+                            "${ApiConfig.baseUrl}/api/user/forgot-password"),
+                        headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": "Bearer $newToken",
+                        },
+                      );
+                    }
+
+                    if (response.statusCode == 200) {
+                      Navigator.pushNamed(context, "/otpVerification");
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Failed to send OTP")),
+                      );
+                    }
+                  },
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        /// CURRENT PASSWORD
-                        _passwordField(
-                          controller: currentPasswordController,
-                          label: "Current Password",
-                          obscure: obscureCurrent,
-                          errorText: currentPasswordError,
-                          toggle: () {
-                            setState(() {
-                              obscureCurrent = !obscureCurrent;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Enter current password";
-                            }
-                            return currentPasswordError;
-                          },
-                        ),
-
-                        /// FORGOT PASSWORD
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () async {
-                              String? token = await AuthStorage.getToken();
-
-                              http.Response response = await http.post(
-                                Uri.parse(
-                                    "${ApiConfig.baseUrl}/api/user/forgot-password"),
-                                headers: {
-                                  "Content-Type": "application/json",
-                                  "Authorization": "Bearer $token"
-                                },
-                              );
-
-                              if (response.statusCode == 401) {
-                                final newToken =
-                                    await AuthService.refreshAccessToken();
-
-                                if (newToken == null) {
-                                  await AuthStorage.logout();
-                                  return;
-                                }
-
-                                response = await http.post(
-                                  Uri.parse(
-                                      "${ApiConfig.baseUrl}/api/user/forgot-password"),
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                    "Authorization": "Bearer $newToken"
-                                  },
-                                );
-                              }
-
-                              if (response.statusCode == 200) {
-                                Navigator.pushNamed(
-                                    context, "/otpVerification");
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text("Failed to send OTP")),
-                                );
-                              }
-                            },
-                            child: Text(
-                              "Forgot Password?",
-                              style: TextStyle(
-                                color: color.primary,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        /// NEW PASSWORD
-                        _passwordField(
-                          controller: newPasswordController,
-                          label: "New Password",
-                          obscure: obscureNew,
-                          toggle: () {
-                            setState(() {
-                              obscureNew = !obscureNew;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Enter new password";
-                            }
-                            if (value.length < 8) {
-                              return "Password must be at least 8 characters";
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        /// CONFIRM PASSWORD
-                        _passwordField(
-                          controller: confirmPasswordController,
-                          label: "Confirm Password",
-                          obscure: obscureConfirm,
-                          toggle: () {
-                            setState(() {
-                              obscureConfirm = !obscureConfirm;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Confirm your password";
-                            }
-                            if (value != newPasswordController.text) {
-                              return "Passwords do not match";
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        /// BUTTON
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _changePassword,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: color.primary,
-                            ),
-                            child: Text(
-                              "Update Password",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: color.onPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                  child: Text(
+                    "Forgot Password?",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 16),
+              Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.2)),
+              const SizedBox(height: 20),
+
+              // ─── New Password ─────────────────────────────────────
+              _passwordField(
+                controller: newPasswordController,
+                label: "New Password",
+                obscure: obscureNew,
+                toggle: () => setState(() => obscureNew = !obscureNew),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Enter new password";
+                  }
+                  if (value.length < 8) {
+                    return "Password must be at least 8 characters";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // ─── Confirm Password ─────────────────────────────────
+             _passwordField(
+                controller: confirmPasswordController,
+                label: "Confirm Password",
+                obscure: obscureConfirm,
+                showToggle: false,
+                toggle: () =>
+                    setState(() => obscureConfirm = !obscureConfirm),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Confirm your password";
+                  }
+                  if (value != newPasswordController.text) {
+                    return "Passwords do not match";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 32),
+
+              // ─── Submit Button ────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _changePassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color.primary,
+                    foregroundColor: color.onPrimary,
+                    elevation: 2,
+                    shadowColor: color.primary.withOpacity(0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.lock_reset_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Update Password",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: color.onPrimary,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-
-  Widget _passwordField({
+Widget _passwordField({
     required TextEditingController controller,
     required String label,
     required bool obscure,
     String? errorText,
     required VoidCallback toggle,
+    bool showToggle = true,
     required String? Function(String?) validator,
   }) {
     final theme = Theme.of(context);
@@ -335,28 +329,50 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       controller: controller,
       obscureText: obscure,
       validator: validator,
-      style: TextStyle(
-        color: color.primary,
-      ),
+      style: theme.textTheme.bodyMedium?.copyWith(color: color.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
-          color: color.primary,
+        labelStyle: theme.textTheme.bodyMedium?.copyWith(
+          color: color.onSurface.withOpacity(0.55),
         ),
         errorText: errorText,
         filled: true,
-        fillColor: color.background,
+        fillColor: color.surfaceContainerHighest.withOpacity(0.5),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        suffixIcon: IconButton(
-          icon: Icon(
-            obscure ? Icons.visibility_off : Icons.visibility,
-            color: color.primary,
-          ),
-          onPressed: toggle,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide:
+              BorderSide(color: color.outline.withOpacity(0.3), width: 1),
         ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: color.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: color.error, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: color.error, width: 1.5),
+        ),
+        suffixIcon: showToggle
+            ? IconButton(
+                icon: Icon(
+                  obscure
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 20,
+                  color: color.onSurface.withOpacity(0.45),
+                ),
+                onPressed: toggle,
+              )
+            : null,
       ),
     );
   }

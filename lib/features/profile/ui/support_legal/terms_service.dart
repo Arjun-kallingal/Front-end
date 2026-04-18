@@ -9,88 +9,219 @@ class TermsOfServiceScreen extends StatelessWidget {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
+     appBar: AppBar(
+  backgroundColor: color.surface,
+  elevation: 0,
+  surfaceTintColor: Colors.transparent,
+  automaticallyImplyLeading: false,
+  titleSpacing: 0,                          // ← removes gap between leading & title
+  leading: IconButton(
+    onPressed: () => Navigator.pop(context),
+    padding: EdgeInsets.zero,               // ← tightens icon padding
+    icon: Icon(
+      Icons.arrow_back_ios_new,
+      size: 18,
+      color: color.onSurface,
+    ),
+  ),
+  title: Text(
+    "Terms of Service",
+    style: theme.textTheme.titleLarge?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: color.onSurface,
+    ),
+  ),
+),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-      /// ✅ Use AppBar instead of custom header
-      appBar: AppBar(
-        title: const Text("Terms of Service"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
+            Text(
+              "Effective Date: February 26, 2026",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: color.onSurface.withOpacity(0.45),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Welcome to Wallet Care, a financial tracking and money management app. By using the app, you agree to these Terms.",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.65,
+                color: color.onSurface.withOpacity(0.7),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            _section(context, "1. Eligibility", [
+              _prose(context, "You must be at least 18 years old to use Wallet Care."),
+            ]),
+
+            _section(context, "2. Description of Service", [
+              _bulletList(context, [
+                "Expense and income tracking",
+                "Budget management tools",
+                "Financial insights and reports",
+                "Data visualization and analytics",
+              ]),
+              const SizedBox(height: 6),
+              _prose(context,
+                  "Wallet Care does not provide banking, investment, tax, or financial advisory services."),
+            ]),
+
+            _section(context, "3. User Accounts", [
+              _prose(context, "You agree to:"),
+              const SizedBox(height: 6),
+              _bulletList(context, [
+                "Provide accurate information",
+                "Keep credentials secure",
+                "Notify us of unauthorized access",
+              ]),
+            ]),
+
+            _section(context, "4. Financial Disclaimer", [
+              _prose(context,
+                  "Wallet Care is a tracking tool only. Use at your own risk."),
+            ]),
+
+            _section(context, "5. Data & Privacy", [
+              _prose(context,
+                  "See our Privacy Policy for full details on how we handle your data."),
+            ]),
+
+            _section(context, "6. User Responsibilities", [
+              _prose(context,
+                  "Do not hack, misuse, or upload harmful code to the app or its infrastructure."),
+            ]),
+
+            _section(context, "7. Subscription & Payments", [
+              _prose(context,
+                  "Premium subscriptions may auto-renew unless cancelled before the renewal date."),
+            ]),
+
+            _section(context, "8. Intellectual Property", [
+              _prose(context,
+                  "All rights, content, and trademarks belong to Wallet Care."),
+            ]),
+
+            _section(context, "9. Termination", [
+              _prose(context,
+                  "We may suspend or terminate access if these Terms are violated."),
+            ]),
+
+            _section(context, "10. Limitation of Liability", [
+              _prose(context,
+                  "We are not liable for any financial losses incurred through use of the app."),
+            ]),
+
+            _section(context, "11. Third-Party Services", [
+              _prose(context,
+                  "We are not responsible for the content or practices of third-party services."),
+            ]),
+
+            _section(context, "12. Changes to Terms", [
+              _prose(context,
+                  "These Terms may be updated at any time. Continued use constitutes acceptance."),
+            ]),
+
+            _section(context, "13. Governing Law", [
+              _prose(context,
+                  "These Terms are governed by applicable local laws in your jurisdiction."),
+            ]),
+
+            _section(context, "14. Contact", [
+              _prose(context, "support@walletcare.com"),
+            ]),
+
+            const SizedBox(height: 16),
+          ],
         ),
       ),
+    );
+  }
 
-      /// ================= CONTENT =================
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 20,
-        ),
-        child: SelectableText(
-          '''
-Effective Date: [Insert Date]
+  Widget _section(BuildContext context, String title, List<Widget> children) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
-App Name: Wallet Care
-
-Welcome to Wallet Care, a financial tracking and money management application designed to help users monitor expenses, income, and budgeting.
-
-By downloading, accessing, or using Wallet Care (“App,” “Service”), you agree to be bound by these Terms of Service (“Terms”). If you do not agree, please do not use the App.
-
-1. Eligibility
-You must be at least 18 years old to use Wallet Care.
-
-2. Description of Service
-• Expense and income tracking
-• Budget management tools
-• Financial insights and reports
-• Data visualization and analytics
-
-Wallet Care does not provide banking, investment, tax, or financial advisory services.
-
-3. User Accounts
-You agree to:
-• Provide accurate information
-• Keep credentials secure
-• Notify unauthorized access
-
-4. Financial Disclaimer
-Wallet Care is a tracking tool only. Use at your own risk.
-
-5. Data & Privacy
-See Privacy Policy for details.
-
-6. User Responsibilities
-Do not hack, misuse, or upload harmful code.
-
-7. Subscription & Payments
-Subscriptions may auto-renew.
-
-8. Intellectual Property
-All rights belong to Wallet Care.
-
-9. Termination
-We may suspend access if Terms are violated.
-
-10. Limitation of Liability
-We are not liable for financial losses.
-
-11. Third-Party Services
-We are not responsible for third-party services.
-
-12. Changes to Terms
-Terms may change anytime.
-
-13. Governing Law
-Applicable under your local laws.
-
-14. Contact
-support@walletcare.com
-''',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            height: 1.6,
-            fontSize: 14,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color.onSurface,
+            ),
           ),
-        ),
+          const SizedBox(height: 10),
+          ...children,
+          const SizedBox(height: 12),
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: color.outline.withOpacity(0.2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bulletList(BuildContext context, List<String> points) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: points.map((p) => _bulletRow(context, p)).toList(),
+    );
+  }
+
+  Widget _bulletRow(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6, right: 8),
+            child: Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: color.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.6,
+                color: color.onSurface.withOpacity(0.75),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _prose(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
+
+    return Text(
+      text,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        height: 1.7,
+        color: color.onSurface.withOpacity(0.75),
       ),
     );
   }

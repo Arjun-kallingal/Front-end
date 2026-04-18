@@ -5,31 +5,28 @@ import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:front_end/core/services/account_service.dart';
 import 'filter_screen.dart';
-
-// Make sure your AppColors are imported!
 import 'package:front_end/core/constants/app_colors.dart';
 
 class TransactionListScreen extends StatefulWidget {
-  final String? initialAccountName;
+  final String? accountId;
 
-  const TransactionListScreen({super.key, this.initialAccountName});
+  const TransactionListScreen({super.key, this.accountId});
 
   @override
   State<TransactionListScreen> createState() => _TransactionListScreenState();
 }
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
-  // ── Filter state ──────────────────────────────────────────────────────────
   String selectedType = "All Type";
   String selectedCategory = "All";
-  late String selectedAccountName;
+  String selectedAccountName = "All Accounts";
   DateTime? startDate;
   DateTime? endDate;
   String searchQuery = "";
 
-  // ── Data state ────────────────────────────────────────────────────────────
   bool _isLoading = true;
   bool _isFetchingMore = false;
+  bool _isFirstLoad = true;
   String? _nextCursor;
   List<TransactionModel> _transactions = [];
   List<AccountModel> _accounts = [];
@@ -39,7 +36,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void initState() {
     super.initState();
-    selectedAccountName = widget.initialAccountName ?? "All Accounts";
     _fetchData();
 
     _scrollController.addListener(() {
@@ -58,7 +54,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     super.dispose();
   }
 
-  // ── Full reload ───────────────────────────────────────────────────────────
   Future<void> _fetchData() async {
     setState(() {
       _isLoading = true;
@@ -69,10 +64,18 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     try {
       final Map<String, dynamic> accountData =
           await AccountService.getAccountDashboard();
-
       final List<AccountModel> fetchedAccounts =
           (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
               [];
+
+      if (_isFirstLoad && widget.accountId != null && fetchedAccounts.isNotEmpty) {
+        try {
+          selectedAccountName = fetchedAccounts.firstWhere((a) => a.id == widget.accountId).name;
+        } catch (e) {
+          debugPrint("Account ID not found in list: $e");
+        }
+        _isFirstLoad = false;
+      }
 
       String? resolvedAccountId;
       if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
@@ -102,15 +105,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       debugPrint("HISTORY FETCH ERROR: $e");
       if (mounted) {
         setState(() => _isLoading = false);
-        _showSnackBar("Failed to load history: $e", isError: true);
+        _showSnackBar("Failed to load history.", isError: true);
       }
     }
   }
 
-  // ── Load next page ────────────────────────────────────────────────────────
   Future<void> _fetchMore() async {
     if (_isFetchingMore || _nextCursor == null) return;
-
     setState(() => _isFetchingMore = true);
 
     try {
@@ -140,19 +141,22 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message, 
-          style: TextStyle(color: theme.colorScheme.surface)
-        ),
-        backgroundColor: isError ? AppColors.expenseAmount : AppColors.incomeAmount,
+        content: Text(message,
+            style: const TextStyle(
+                color: AppColors.darkTextPrimary,
+                fontWeight: FontWeight.w600)),
+        backgroundColor:
+            isError ? AppColors.expenseAmount : AppColors.incomeAmount,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        elevation: 4,
       ),
     );
   }
 
-  // ── Filter screen ─────────────────────────────────────────────────────────
   void _openFilters() async {
     final result = await Navigator.push(
       context,
@@ -180,54 +184,111 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     }
   }
 
-  // ── Helpers for Colors & Icons (Synced with HomeScreen) ───────────────────
   Color _getTransactionColor(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") return AppColors.savingsPrimary;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") return AppColors.progressGreen;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") return AppColors.chartIncome;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") return AppColors.incomeAmount;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") return AppColors.textSecondary;
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return AppColors.savingsPrimary;
+      case "GOAL_DEALLOCATION":
+        return AppColors.progressGreen;
+      case "GOAL_COMPLETION":
+        return AppColors.chartIncome;
+      case "ACCOUNT_TRANSFER_IN":
+        return AppColors.incomeAmount;
+      case "ACCOUNT_TRANSFER_OUT":
+        return AppColors.dateLabel;
+      case "RESERVED_IN":
+        return AppColors.warning;
+      case "RESERVED_OUT":
+        return AppColors.incomeAmount;
+      case "REVERSAL":
+        return AppColors.warning;
+    }
+
     if (tx.type == "INCOME") return AppColors.incomeAmount;
+    if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
+    if (tx.type == "TRANSFER") return AppColors.dateLabel;
+    
     return AppColors.expenseAmount;
   }
 
   IconData _getTransactionIcon(TransactionModel tx) {
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_ALLOCATION") return Icons.savings_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "GOAL_DEALLOCATION") return Icons.savings_outlined;
-    if (tx.type == "EXPENSE" && tx.direction == "GOAL_COMPLETION") return Icons.task_alt_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_IN") return Icons.call_received_rounded;
-    if (tx.type == "TRANSFER" && tx.direction == "ACCOUNT_TRANSFER_OUT") return Icons.call_made_rounded;
-    if (tx.type == "INCOME") return Icons.trending_up_rounded;
-    if (tx.type == "REVERSAL") return Icons.undo_rounded;
-    return Icons.trending_down_rounded;
+    switch (tx.direction) {
+      case "GOAL_ALLOCATION":
+        return Icons.savings_rounded;
+      case "GOAL_DEALLOCATION":
+        return Icons.savings_outlined;
+      case "GOAL_COMPLETION":
+        return Icons.task_alt_rounded;
+      case "ACCOUNT_TRANSFER_IN":
+        return Icons.call_received_rounded;
+      case "ACCOUNT_TRANSFER_OUT":
+        return Icons.call_made_rounded;
+      case "RESERVED_IN":
+        return Icons.lock_outline_rounded;
+      case "RESERVED_OUT":
+        return Icons.lock_open_rounded;
+      case "REVERSAL":
+        return Icons.undo_rounded;
+    }
+
+    switch (tx.type) {
+      case "INCOME":
+        return Icons.trending_up_rounded;
+      case "EXPENSE":
+        return Icons.trending_down_rounded;
+      case "TRANSFER":
+        return Icons.swap_horiz_rounded;
+      case "REVERSAL":
+        return Icons.undo_rounded;
+      default:
+        return Icons.receipt_long_rounded;
+    }
   }
 
   Widget _getTransactionLeading(TransactionModel tx) {
-    final Color iconColor = _getTransactionColor(tx);
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(_getTransactionIcon(tx), color: iconColor, size: 20),
+    final color = _getTransactionColor(tx);
+    final icon = _getTransactionIcon(tx);
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.8, end: 1),
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+        );
+      },
     );
   }
 
-  // ── Active filter chips ───────────────────────────────────────────────────
-  Widget _buildActiveFilters(ThemeData theme, ColorScheme colorScheme, bool isDark) {
+  Widget _buildActiveFilters(
+      ThemeData theme, ColorScheme colorScheme, bool isDark) {
     final List<Widget> chips = [];
-    
-    // Use the input fill color for chips to match the search bar
-    final chipBgColor = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+    final chipBgColor =
+        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
     if (selectedType != "All Type") {
-      chips.add(_buildChip(selectedType, () => setState(() => selectedType = "All Type"), chipBgColor, colorScheme.primary));
+      chips.add(_buildChip(
+          selectedType,
+          () => setState(() => selectedType = "All Type"),
+          chipBgColor,
+          colorScheme.primary));
     }
     if (selectedCategory != "All") {
-      chips.add(_buildChip(selectedCategory, () => setState(() => selectedCategory = "All"), chipBgColor, colorScheme.primary));
+      chips.add(_buildChip(
+          selectedCategory,
+          () => setState(() => selectedCategory = "All"),
+          chipBgColor,
+          colorScheme.primary));
     }
     if (selectedAccountName != "All Accounts") {
       chips.add(_buildChip(selectedAccountName, () {
@@ -243,7 +304,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           () => setState(() {
                 startDate = null;
                 endDate = null;
-              }), chipBgColor, colorScheme.primary));
+              }),
+          chipBgColor,
+          colorScheme.primary));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -257,7 +320,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  Widget _buildChip(String label, VoidCallback onRemove, Color bgColor, Color textColor) {
+  Widget _buildChip(
+      String label, VoidCallback onRemove, Color bgColor, Color textColor) {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: Chip(
@@ -266,23 +330,106 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         onDeleted: onRemove,
         backgroundColor: bgColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide.none,
-        ),
+            borderRadius: BorderRadius.circular(8), side: BorderSide.none),
       ),
     );
   }
 
-  // ── Transaction list ──────────────────────────────────────────────────────
-  Widget _buildTransactionList(ThemeData theme, ColorScheme colorScheme, bool isDark, Color textSec) {
+  Widget _buildTransactionTile(TransactionModel tx, ThemeData theme,
+      ColorScheme colorScheme, Color textSec, bool isCash) {
+    final Color moneyColor = _getTransactionColor(tx);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _getTransactionLeading(tx),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tx.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: colorScheme.primary,
+                    decoration: tx.status == "VOIDED"
+                        ? TextDecoration.lineThrough
+                        : null,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (tx.subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    tx.subtitle,
+                    style: TextStyle(
+                      color: textSec,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "₹${tx.amount.abs().toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: tx.status == "VOIDED" ? textSec : moneyColor,
+                  decoration: tx.status == "VOIDED"
+                      ? TextDecoration.lineThrough
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isCash ? Icons.account_balance_wallet_rounded : Icons.account_balance_rounded,
+                    size: 11, 
+                    color: textSec.withOpacity(0.8)
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    tx.accountName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: textSec.withOpacity(0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionList(
+      ThemeData theme, ColorScheme colorScheme, bool isDark, Color textSec) {
     final list = _transactions.where((tx) {
       final mSearch =
           tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
               tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
-
       final mCategory = selectedCategory == "All" ||
           tx.category.toLowerCase() == selectedCategory.toLowerCase();
-
       final mAccount = selectedAccountName == "All Accounts" ||
           tx.accountName == selectedAccountName;
 
@@ -327,14 +474,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           Icon(Icons.receipt_long_outlined, size: 64, color: textSec),
           const SizedBox(height: 16),
           Center(
-            child: Text(
-              "No transactions found",
-              style: TextStyle(
-                fontSize: 16,
-                color: textSec,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: Text("No transactions found",
+                style: TextStyle(
+                    fontSize: 16,
+                    color: textSec,
+                    fontWeight: FontWeight.w500)),
           ),
         ],
       );
@@ -346,122 +490,49 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: list.length + 1,
       itemBuilder: (context, i) {
-        // --- 1. Loading / End State ---
         if (i == list.length) {
           if (_isFetchingMore) {
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Center(
-                child: CircularProgressIndicator(
-                  color: colorScheme.secondary,
-                  strokeWidth: 2,
-                ),
-              ),
+                  child: CircularProgressIndicator(
+                      color: colorScheme.secondary, strokeWidth: 2)),
             );
           }
           if (_nextCursor == null && list.isNotEmpty) {
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Center(
-                child: Text(
-                  "You have reached the end",
-                  style: TextStyle(color: textSec, fontSize: 13),
-                ),
-              ),
+                  child: Text("You have reached the end",
+                      style: TextStyle(color: textSec, fontSize: 13))),
             );
           }
           return const SizedBox.shrink();
         }
 
         final tx = list[i];
-
-        // --- 2. Date Header Logic ---
-        bool showHeader = false;
-        if (i == 0) {
-          showHeader = true; 
-        } else {
-          final prevTx = list[i - 1];
-          final currentDay = DateTime(tx.date.year, tx.date.month, tx.date.day);
-          final prevDay =
-              DateTime(prevTx.date.year, prevTx.date.month, prevTx.date.day);
-
-          if (currentDay != prevDay) {
-            showHeader = true;
-          }
-        }
-
-        // --- 3. Style Logic ---
-        final Color moneyColor = _getTransactionColor(tx);
-        final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
+        final isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
 
-        // --- 4. Tile Construction ---
-        final transactionTile = Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              _getTransactionLeading(tx),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tx.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600, 
-                        fontSize: 15,
-                        color: colorScheme.primary, // Adapts to theme
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Icon(
-                          isCash ? Icons.wallet : Icons.account_balance,
-                          size: 11,
-                          color: textSec,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          tx.accountName,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textSec,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (tx.subtitle.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          Text('·', style: TextStyle(color: textSec)),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              tx.subtitle,
-                              style: TextStyle(color: textSec, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                "₹${tx.amount.abs().toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: moneyColor,
-                ),
-              ),
-            ],
-          ),
+        bool showHeader = false;
+        if (i == 0) {
+          showHeader = true;
+        } else {
+          final prevTx = list[i - 1];
+          final currentDay =
+              DateTime(tx.date.year, tx.date.month, tx.date.day);
+          final prevDay =
+              DateTime(prevTx.date.year, prevTx.date.month, prevTx.date.day);
+          if (currentDay != prevDay) showHeader = true;
+        }
+
+        Widget tileContent = Column(
+          children: [
+            _buildTransactionTile(tx, theme, colorScheme, textSec, isCash),
+            Divider(color: theme.dividerColor, height: 1),
+          ],
         );
 
-        // --- 5. Return with Header (if needed) ---
         if (showHeader) {
           String headerText;
           final today = DateTime.now();
@@ -487,40 +558,30 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 child: Text(
                   headerText,
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: textSec,
-                  ),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: textSec),
                 ),
               ),
-              transactionTile,
-              Divider(color: theme.dividerColor, height: 1),
+              tileContent,
             ],
           );
         }
 
-        return Column(
-          children: [
-            transactionTile,
-            Divider(color: theme.dividerColor, height: 1),
-          ],
-        );
+        return tileContent;
       },
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    // 🔥 Grab Theme Data
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    
-    // Dynamic muted text color
-    final textSec = isDark ? const Color(0xFF8B90A7) : Colors.grey[600]!;
-    // Dynamic surface color for search/buttons
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+    final textSec =
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final surfaceAlt =
+        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -536,7 +597,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.arrow_back_ios_new, size: 18, color: colorScheme.primary),
+                        icon: Icon(Icons.arrow_back_ios_new,
+                            size: 18, color: colorScheme.primary),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -559,20 +621,20 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         child: Container(
                           height: 48,
                           decoration: BoxDecoration(
-                            color: surfaceAlt,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              color: surfaceAlt,
+                              borderRadius: BorderRadius.circular(12)),
                           child: TextField(
                             onChanged: (v) => setState(() => searchQuery = v),
-                            style: TextStyle(color: colorScheme.primary), // Dynamic text input color
+                            style: TextStyle(color: colorScheme.primary),
                             decoration: InputDecoration(
                               hintText: "Search transactions...",
                               hintStyle: TextStyle(color: textSec),
                               prefixIcon: Icon(Icons.search, color: textSec),
                               border: InputBorder.none,
-                              enabledBorder: InputBorder.none, // Removes default red/white outlines
+                              enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ),
@@ -584,10 +646,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           height: 48,
                           width: 48,
                           decoration: BoxDecoration(
-                            color: surfaceAlt,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.tune, color: colorScheme.primary),
+                              color: surfaceAlt,
+                              borderRadius: BorderRadius.circular(12)),
+                          child:
+                              Icon(Icons.tune, color: colorScheme.primary),
                         ),
                       ),
                     ],
@@ -598,12 +660,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             ),
             Expanded(
               child: _isLoading
-                  ? Center(child: CircularProgressIndicator(color: colorScheme.secondary))
+                  ? Center(
+                      child: CircularProgressIndicator(
+                          color: colorScheme.secondary))
                   : RefreshIndicator(
                       color: colorScheme.secondary,
                       backgroundColor: colorScheme.surface,
                       onRefresh: _fetchData,
-                      child: _buildTransactionList(theme, colorScheme, isDark, textSec),
+                      child: _buildTransactionList(
+                          theme, colorScheme, isDark, textSec),
                     ),
             ),
           ],

@@ -15,7 +15,6 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController nameController;
-
   bool isLoading = false;
 
   @override
@@ -45,7 +44,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Profile Updated Successfully")),
       );
-
       Navigator.pop(context, {"name": name});
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -66,145 +64,125 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
+      appBar: AppBar(
+        backgroundColor: color.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
+          icon: Icon(Icons.arrow_back_ios_new,
+              size: 18, color: color.onSurface),
+        ),
+        title: Text(
+          "Edit Profile",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
+            // ─── Section Label ────────────────────────────────────
+            Text(
+              "DISPLAY NAME",
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+                color: color.onSurface.withOpacity(0.45),
+              ),
+            ),
 
-              /// HEADER
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: color.primary,
+            const SizedBox(height: 10),
+
+            // ─── Name Field ───────────────────────────────────────
+            TextField(
+              controller: nameController,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: "Enter your name",
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: color.onSurface.withOpacity(0.4),
                 ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        color: color.onPrimary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Edit Profile",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: color.onPrimary,
-                      ),
-                    ),
-                  ],
+                prefixIcon: Icon(
+                  Icons.person_outline_rounded,
+                  size: 20,
+                  color: color.onSurface.withOpacity(0.45),
+                ),
+                filled: true,
+                fillColor: color.surfaceContainerHighest.withOpacity(0.5),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                      color: color.outline.withOpacity(0.3), width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: color.primary, width: 1.5),
                 ),
               ),
+            ),
 
-              /// CARD
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: color.surface,
-                    borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 32),
+
+            // ─── Save Button ──────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : saveProfile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color.primary,
+                  foregroundColor: color.onPrimary,
+                  elevation: 2,
+                  shadowColor: color.primary.withOpacity(0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Column(
-                    children: [
-
-                      /// USER NAME
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                child: isLoading
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: color.onPrimary,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          const Icon(Icons.check_rounded, size: 18),
+                          const SizedBox(width: 8),
                           Text(
-                            "User Name",
-                            style: TextStyle(
-                              fontSize: 14,
+                            "Save Changes",
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: color.onPrimary,
                               fontWeight: FontWeight.w600,
-                              color: color.onSurface,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          TextField(
-                            controller: nameController,
-                            style: TextStyle(
-                              color: color.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: "Enter your name",
-                              hintStyle: TextStyle(
-                                color: color.onSurface.withOpacity(0.6),
-                              ),
-
-                              filled: true,
-                              fillColor: color.background,
-
-                              /// NORMAL BORDER
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: color.onSurface,
-                                ),
-                              ),
-
-                              /// FOCUS BORDER
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: color.onSurface,
-                                  width: 2,
-                                ),
-                              ),
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 40),
-
-                      /// SAVE BUTTON
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: color.primary,
-                            foregroundColor: color.onPrimary,
-                          ),
-                          onPressed:
-                              isLoading ? null : saveProfile,
-                          child: isLoading
-                              ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child:
-                                      CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: color.onPrimary,
-                                  ),
-                                )
-                              : const Text(
-                                  "Save Changes",
-                                  style:
-                                      TextStyle(fontSize: 16),
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
-
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

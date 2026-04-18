@@ -13,78 +13,135 @@ class SignOutScreen extends StatelessWidget {
     final color = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: color.background,
-
-      /// ✅ AppBar (theme controlled)
+      backgroundColor: color.surface,
       appBar: AppBar(
-        title: const Text("Sign Out"),
-        centerTitle: true,
+        backgroundColor: color.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
+          icon: Icon(Icons.arrow_back_ios_new,
+              size: 18, color: color.onSurface),
+        ),
+        title: Text(
+          "Sign Out",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
+          ),
+        ),
       ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(24),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
 
-            /// ICON
-            Icon(
-              Icons.logout,
-              size: 70,
-              color: color.onSurface,
+            // ─── Icon ──────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.logout_rounded,
+                size: 48,
+                color: Colors.orange,
+              ),
             ),
 
             const SizedBox(height: 20),
 
-            /// TEXT
+            // ─── Title ─────────────────────────────────────────────
             Text(
-              "Are you sure you want to sign out?",
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+              "Sign Out",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color.onSurface,
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
 
-            /// SIGN OUT BUTTON (from theme)
+            // ─── Description ───────────────────────────────────────
+            Text(
+              "Are you sure you want to sign out of your account?",
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color.onSurface.withOpacity(0.55),
+                height: 1.6,
+              ),
+            ),
+
+            const SizedBox(height: 48),
+
+            // ─── Sign Out Button ───────────────────────────────────
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: ElevatedButton(
                 onPressed: () async {
                   await AuthStorage.logout();
-
                   context.read<UserProfileProvider>().clearUser();
-
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const LoginScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
                     (route) => false,
                   );
                 },
-                child: const Text(
-                  "Sign Out",
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: Colors.orange.withOpacity(0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.logout_rounded, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Sign Out",
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
             const SizedBox(height: 12),
 
-            /// CANCEL BUTTON (from theme)
+            // ─── Cancel Button ─────────────────────────────────────
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: OutlinedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: color.onSurface,
+                  side: BorderSide(
+                      color: color.outline.withOpacity(0.4), width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
                   "Cancel",
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: color.onSurface.withOpacity(0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

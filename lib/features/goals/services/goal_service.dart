@@ -1,20 +1,25 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../data/goal_model.dart';
-import 'package:front_end/core/services/api_client.dart'; // ✅ JWT headers
+import 'package:front_end/core/services/api_client.dart';
 
 class GoalService {
   final String baseUrl;
 
   GoalService({required this.baseUrl});
 
-  // ✅ Removed _getHeaders() — ApiClient.getHeaders() handles JWT automatically
+  // Helper method to safely decode JSON and avoid HTML crash pages
+  dynamic _safeJsonDecode(http.Response response) {
+    if (response.headers['content-type']?.contains('application/json') != true) {
+      throw const FormatException("Invalid server response format. Expected JSON.");
+    }
+    return jsonDecode(response.body);
+  }
 
   /// GET ALL GOALS
-  Future<List<GoalModel>> getGoals(
-      {int page = 1, int limit = 20, String? status}) async {
+  Future<List<GoalModel>> getGoals({int page = 1, int limit = 20, String? status}) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
       String query = "?page=$page&limit=$limit";
       if (status != null) query += "&status=$status";
 
@@ -23,7 +28,7 @@ class GoalService {
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final dynamic body = jsonDecode(response.body);
+        final dynamic body = _safeJsonDecode(response);
         List data = [];
         if (body is Map && body.containsKey('data')) {
           data = body['data'];
@@ -42,12 +47,12 @@ class GoalService {
   /// CREATE GOAL
   Future<bool> createGoal(GoalModel goal) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals"),
             headers: headers,
-            body: jsonEncode(goal.toJson()),
+            body: jsonEncode(goal.toJson(isCreate: true)),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -60,7 +65,7 @@ class GoalService {
   /// UPDATE GOAL
   Future<bool> updateGoal(GoalModel goal) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
       final response = await http
           .put(
             Uri.parse("$baseUrl/goals/${goal.id}"),
@@ -76,44 +81,98 @@ class GoalService {
   }
 
   /// DEPOSIT MONEY TO GOAL
-  Future<bool> depositToGoal(String goalId, double amount,
-      {String? transactedAt}) async {
+  Future<Map<String, dynamic>> depositToGoal(
+    String goalId,
+    String accountId,
+    double amount,
+    String idempotencyKey, {
+    String? transactedAt,
+  }) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
+      final Map<String, dynamic> body = {
+        "accountId": accountId,
+        "amount": amount,
+        "idempotencyKey": idempotencyKey,
+        if (transactedAt != null) "transactedAt": transactedAt,
+      };
+
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/deposit"),
             headers: headers,
-            body: jsonEncode({
-              "amount": amount,
-              if (transactedAt != null) "transactedAt": transactedAt,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 200;
+      final decoded = _safeJsonDecode(response);
+
+      if (response.statusCode == 200 || response.statusCode == 409) {
+        return {
+          'success': true,
+          'txid': decoded['txid'],
+          'availableBalance': decoded['availableBalance'],
+          'isDuplicate': response.statusCode == 409
+        };
+      } else {
+        return {'success': false, 'message': decoded['message'] ?? 'Deposit failed'};
+      }
     } catch (e) {
-      return false;
+      return {'success': false, 'message': e.toString()};
     }
   }
 
   /// WITHDRAW MONEY FROM GOAL
-  Future<bool> withdrawFromGoal(String goalId, double amount,
-      {String? transactedAt}) async {
+  Future<Map<String, dynamic>> withdrawFromGoal(
+    String goalId,
+    String accountId,
+    double amount,
+    String idempotencyKey, {
+    String? transactedAt,
+  }) async {
     try {
-      final headers = await ApiClient.getHeaders(); // ✅
+      final headers = await ApiClient.getHeaders();
+      final Map<String, dynamic> body = {
+        "accountId": accountId,
+        "amount": amount,
+        "idempotencyKey": idempotencyKey,
+        if (transactedAt != null) "transactedAt": transactedAt,
+      };
+
       final response = await http
           .post(
             Uri.parse("$baseUrl/goals/$goalId/withdraw"),
             headers: headers,
-            body: jsonEncode({
-              "amount": amount,
-              if (transactedAt != null) "transactedAt": transactedAt,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 200;
+      final decoded = _safeJsonDecode(response);
+
+      if (response.statusCode == 200 || response.statusCode == 409) {
+        return {
+          'success': true,
+          'txid': decoded['txid'],
+          'availableBalance': decoded['availableBalance'],
+          'isDuplicate': response.statusCode == 409
+        };
+      } else {
+        return {'success': false, 'message': decoded['message'] ?? 'Withdrawal failed'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// DELETE GOAL (Updated to return bool for consistency)
+  Future<bool> deleteGoal(String goalId) async {
+    try {
+      final headers = await ApiClient.getHeaders();
+      final response = await http
+          .delete(Uri.parse("$baseUrl/goals/$goalId"), headers: headers)
+          .timeout(const Duration(seconds: 10));
+
+      return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;
     }
@@ -129,33 +188,12 @@ class GoalService {
       );
 
       if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        // Extract the list from the 'data' key
+        final body = _safeJsonDecode(response);
         return body['data'] is List ? body['data'] : [];
       }
       return [];
     } catch (e) {
       return [];
-    }
-  }
-
-  /// DELETE GOAL
-  Future<bool> deleteGoal(String goalId, {String? transactedAt}) async {
-    try {
-      final headers = await ApiClient.getHeaders(); // ✅
-      final response = await http
-          .delete(
-            Uri.parse("$baseUrl/goals/$goalId"),
-            headers: headers,
-            body: transactedAt != null
-                ? jsonEncode({"transactedAt": transactedAt})
-                : null,
-          )
-          .timeout(const Duration(seconds: 10));
-
-      return response.statusCode == 200 || response.statusCode == 204;
-    } catch (e) {
-      return false;
     }
   }
 }

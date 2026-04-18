@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:front_end/core/services/auth_storage.dart';
 import 'package:front_end/core/services/api_config.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
+import 'package:front_end/core/providers/notification_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,14 +15,12 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     super.initState();
     _startApp();
   }
 
-  /// 🔐 CHECK TOKEN VALIDITY (OPTIONAL BUT IMPORTANT)
   Future<bool> isTokenValid(String token) async {
     try {
       final response = await http.get(
@@ -30,7 +29,6 @@ class _SplashScreenState extends State<SplashScreen> {
           "Authorization": "Bearer $token",
         },
       );
-
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -39,47 +37,55 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _startApp() async {
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      // 🔔 POKE THE PROVIDER: This ensures NotificationProvider
+      // is initialized immediately on startup.
+      final notifProvider = context.read<NotificationProvider>();
+      debugPrint("🔔 [SplashScreen] NotificationProvider initialized.");
 
+      await Future.delayed(const Duration(milliseconds: 600));
       final token = await AuthStorage.getToken();
       final name = await AuthStorage.getName();
       final email = await AuthStorage.getEmail();
 
       if (!mounted) return;
 
-      /// ❌ NO TOKEN → LOGIN
       if (token == null || token.isEmpty) {
+        // Run FCM even for guests to ensure device registration.
+        await notifProvider.initializeFcm();
         Navigator.pushReplacementNamed(context, '/login');
         return;
       }
 
-      /// 🔐 CHECK TOKEN VALIDITY
       final isValid = await isTokenValid(token);
-
       if (!mounted) return;
 
       if (!isValid) {
-        /// TOKEN EXPIRED → LOGOUT
         await AuthStorage.logout();
         Navigator.pushReplacementNamed(context, '/login');
         return;
       }
 
-      /// ✅ RESTORE USER DATA
       context.read<UserProfileProvider>().setUser(
-        userName: name ?? "",
-        userEmail: email ?? "",
-      );
+            userName: name ?? "",
+            userEmail: email ?? "",
+          );
 
-      /// ✅ GO TO MAIN
+      // 🔌 INITIALIZE SERVICES: Grab the FCM token and connect
+      // WebSockets before entering the main app.
+      await notifProvider.initializeFcm();
+      await notifProvider.initializeSocketListeners();
+      await notifProvider.registerFcmToken();
+
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/main');
-
     } catch (e) {
+      debugPrint("❌ Splash Error: $e");
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
+  // ✅ ADDED THE MISSING BUILD METHOD: This fixes your error.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,11 +102,9 @@ class _SplashScreenState extends State<SplashScreen> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Column(
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-
-            /// APP NAME
+          children: [
             Text(
               "SproutPay",
               style: TextStyle(
@@ -111,11 +115,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 letterSpacing: 1.2,
               ),
             ),
-
-            SizedBox(height: 30),
-
-            /// LOADER
-            CircularProgressIndicator(color: Colors.white),
           ],
         ),
       ),

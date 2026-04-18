@@ -31,7 +31,6 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     try {
       final token = await AuthStorage.getToken();
 
-      /// 🔴 TOKEN CHECK
       if (token == null) {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -46,9 +45,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
-        body: jsonEncode({
-          "password": passwordController.text.trim(),
-        }),
+        body: jsonEncode({"password": passwordController.text.trim()}),
       );
 
       final data = jsonDecode(response.body);
@@ -81,150 +78,296 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       }
     } catch (e) {
       setState(() => isLoading = false);
-
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Server error")),
       );
     }
   }
 
-  /// ✅ CONFIRMATION DIALOG
   Future<void> confirmDelete() async {
     final confirm = await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirm Deletion"),
-        content: const Text(
-          "Are you sure you want to delete your account?\n\n"
-          "Your account will be permanently deleted after 14 days.\n"
-          "You can restore it anytime by logging in again within this period.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
+      builder: (context) {
+        final theme = Theme.of(context);
+        final color = theme.colorScheme;
+        return AlertDialog(
+          backgroundColor: color.surface,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            "Confirm Deletion",
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color.error,
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete"),
+          content: Text(
+            "Are you sure you want to delete your account?\n\n"
+            "Your account will be permanently deleted after 14 days. "
+            "You can restore it anytime by logging in again within this period.",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: color.onSurface.withOpacity(0.7),
+              height: 1.5,
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: color.onSurface.withOpacity(0.6)),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                "Delete",
+                style: TextStyle(
+                    color: color.error, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirm == true) {
       deleteAccount();
     }
   }
-@override
-Widget build(BuildContext context) {
-  final theme = Theme.of(context);
-  final color = theme.colorScheme;
 
-  return Scaffold(
-    backgroundColor: color.background,
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme;
 
-    appBar: AppBar(
-      title: const Text("Delete Account"),
-      centerTitle: true,
-    ),
-
-    body: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-
-          /// ICON
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color.surface.withOpacity(0.6),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.delete_outline,
-              size: 60,
-              color: color.onSurface,
-            ),
+    return Scaffold(
+      backgroundColor: color.surface,
+      appBar: AppBar(
+        backgroundColor: color.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
+          icon: Icon(Icons.arrow_back_ios_new,
+              size: 18, color: color.onSurface),
+        ),
+        title: Text(
+          "Delete Account",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
           ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
 
-          const SizedBox(height: 20),
-
-          /// TITLE
-          Text(
-            "Delete Your Account",
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          /// DESCRIPTION
-          Text(
-            "This will deactivate your account.\n\n"
-            "It will be permanently deleted after 14 days unless you log in again.",
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium,
-          ),
-
-          const SizedBox(height: 30),
-
-          /// PASSWORD FIELD (THEME CONTROLLED)
-          TextField(
-            controller: passwordController,
-            obscureText: obscurePassword,
-            decoration: InputDecoration(
-              hintText: "Enter your password",
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                ),
-                onPressed: () {
-                  setState(() {
-                    obscurePassword = !obscurePassword;
-                  });
-                },
+            // ─── Icon ──────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: color.error.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                size: 48,
+                color: color.error,
               ),
             ),
-          ),
 
-          const SizedBox(height: 30),
+            const SizedBox(height: 20),
 
-          /// DELETE BUTTON (FROM THEME)
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: isLoading ? null : confirmDelete,
-              child: isLoading
-                  ? CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: theme.colorScheme.onPrimary,
-                    )
-                  : const Text("Delete Account"),
+            // ─── Title ─────────────────────────────────────────────
+            Text(
+              "Delete Your Account",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color.onSurface,
+              ),
             ),
-          ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-          /// CANCEL BUTTON (FROM THEME)
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+            // ─── Description ───────────────────────────────────────
+            Text(
+              "This will deactivate your account. It will be permanently deleted after 14 days unless you log in again.",
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color.onSurface.withOpacity(0.55),
+                height: 1.6,
+              ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 12),
+
+            // ─── Warning Chip ──────────────────────────────────────
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: color.error.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: color.error.withOpacity(0.2), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.warning_amber_rounded,
+                      size: 16, color: color.error),
+                  const SizedBox(width: 8),
+                  Text(
+                    "This action cannot be undone after 14 days",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.error,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // ─── Password Field ────────────────────────────────────
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "CONFIRM PASSWORD",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: color.onSurface.withOpacity(0.45),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: passwordController,
+              obscureText: obscurePassword,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: color.onSurface),
+              decoration: InputDecoration(
+                hintText: "Enter your password",
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: color.onSurface.withOpacity(0.4),
+                ),
+                filled: true,
+                fillColor: color.surfaceContainerHighest.withOpacity(0.5),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                      color: color.outline.withOpacity(0.3), width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: color.primary, width: 1.5),
+                ),
+                prefixIcon: Icon(Icons.lock_outline,
+                    size: 20, color: color.onSurface.withOpacity(0.45)),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                    color: color.onSurface.withOpacity(0.45),
+                  ),
+                  onPressed: () =>
+                      setState(() => obscurePassword = !obscurePassword),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // ─── Delete Button ─────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : confirmDelete,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color.error,
+                  foregroundColor: color.onError,
+                  elevation: 2,
+                  shadowColor: color.error.withOpacity(0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: isLoading
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: color.onError,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.delete_outline_rounded,
+                              size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Delete Account",
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: color.onError,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ─── Cancel Button ─────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: color.onSurface,
+                  side: BorderSide(
+                      color: color.outline.withOpacity(0.4), width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  "Cancel",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: color.onSurface.withOpacity(0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

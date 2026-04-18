@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
+
 import '../data/goal_model.dart';
 import '../services/goal_service.dart';
 import 'package:front_end/core/services/api_config.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
+import '../provider/goal_provider.dart';
+import '../../analytics/provider/analytics_provider.dart';
+import 'package:front_end/core/constants/app_colors.dart';
 
 class GoalDetailsScreen extends StatefulWidget {
   final GoalModel goal;
@@ -25,13 +30,33 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
   List<dynamic> _history = [];
   bool _isLoadingHistory = true;
 
-  static const _blue = Color(0xFF0052D4);
+  late TextEditingController _amountController;
 
   @override
   void initState() {
     super.initState();
     _currentAmount = widget.goal.currentAmount;
+    _amountController = TextEditingController();
     _loadHistory();
+    // Pre-load accounts for the transaction dropdown
+    Future.microtask(() {
+      context.read<AccountProvider>().loadAccounts();
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(GoalDetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.goal.currentAmount != widget.goal.currentAmount || 
+        oldWidget.goal.status != widget.goal.status) {
+      _currentAmount = widget.goal.currentAmount;
+    }
   }
 
   Future<void> _loadHistory() async {
@@ -39,44 +64,220 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
     try {
       final history = await _goalService.getGoalHistory(widget.goal.id);
       if (mounted) setState(() => _history = history);
-    } catch (_) {
+    } catch (e) {
+      debugPrint("History load error: $e");
     } finally {
       if (mounted) setState(() => _isLoadingHistory = false);
     }
   }
 
-  Future<void> _processTransaction(double amount, bool isDeposit) async {
-    setState(() => _isLoading = true);
-    final nowUtc = DateTime.now().toUtc().toIso8601String();
-
-    try {
-      final bool success = isDeposit
-          ? await _goalService.depositToGoal(widget.goal.id, amount,
-              transactedAt: nowUtc)
-          : await _goalService.withdrawFromGoal(widget.goal.id, amount,
-              transactedAt: nowUtc);
-
-      if (!mounted) return;
-
-      if (success) {
-  setState(() => _currentAmount += isDeposit ? amount : -amount);
-
-  if (mounted) {
-    await Future.wait([
+  void _refreshProviders() {
+    if (!mounted) return;
+    Future.wait([
       context.read<AccountProvider>().loadAccounts(),
       context.read<TransactionProvider>().fetchTransactions(),
+      context.read<GoalProvider>().fetchGoals(),
+      context.read<AnalyticsProvider>().reload(),
     ]);
   }
 
-  await _loadHistory();
+  void _showTransactionBottomSheet(BuildContext context, bool isDeposit) {
+    _amountController.clear();
+    String? selectedAccountId;
 
-        _showSnackBar(isDeposit
-            ? "Funds deposited successfully!"
-            : "Withdrawal successful!");
-        Navigator.pop(context, true);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Consumer<AccountProvider>(
+          builder: (context, accountProvider, child) {
+            final accounts = accountProvider.accounts;
+            
+            // STABILITY FIX 1: Ensure selectedAccountId is always valid.
+            if (selectedAccountId == null && accounts.isNotEmpty) {
+              selectedAccountId = accounts.first.id;
+            } else if (selectedAccountId != null && !accounts.any((a) => a.id == selectedAccountId)) {
+              selectedAccountId = accounts.isNotEmpty ? accounts.first.id : null;
+            }
+
+            return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setStateSheet) {
+                final isDark = Theme.of(ctx).brightness == Brightness.dark;
+                final sheetBg = isDark ? AppColors.darkBgCard : AppColors.lightBgPrimary;
+                final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+                final textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+                final inputFill = isDark ? AppColors.darkBgElevated : AppColors.lightBgSecondary;
+                final inputBorder = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+                final handleColor = isDark ? AppColors.darkBgElevated : AppColors.lightBgElevated;
+                final depositColor = AppColors.savingsPrimary;
+                final withdrawColor = AppColors.expenseAmount;
+
+                return Padding(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: sheetBg,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40, height: 4, margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(color: handleColor, borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                        Text(
+                          isDeposit ? "Deposit Funds" : "Withdraw Funds",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          isDeposit ? "Move money into this goal envelope." : "Return money to an account.",
+                          style: TextStyle(color: textSecondary, fontSize: 13),
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        Text(
+                          isDeposit ? "From Account" : "To Account",
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textSecondary),
+                        ),
+                        const SizedBox(height: 8),
+                        
+                        accounts.isEmpty 
+                          ? const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text("Loading accounts...", style: TextStyle(color: Colors.grey)),
+                            )
+                          : DropdownButtonFormField<String>(
+                              value: selectedAccountId,
+                              dropdownColor: sheetBg,
+                              isExpanded: true, // STABILITY FIX 2: Prevents text overflow crashes
+                              borderRadius: BorderRadius.circular(16),
+                              icon: Icon(Icons.keyboard_arrow_down_rounded, color: textSecondary),
+                              decoration: InputDecoration(
+                                filled: true, fillColor: inputFill,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: inputBorder)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: inputBorder)),
+                              ),
+                              items: accounts.map((acc) {
+                                return DropdownMenuItem(
+                                  value: acc.id,
+                                  child: Row(
+                                    children: [
+                                      // UI FIX: Added Icon for accounts
+                                      Icon(
+                                        Icons.account_balance_wallet_outlined, 
+                                        color: textSecondary, 
+                                        size: 20
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          acc.name, 
+                                          style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) => setStateSheet(() => selectedAccountId = val),
+                            ),
+
+                        const SizedBox(height: 20),
+                        Text("Amount", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textSecondary)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _amountController,
+                          autofocus: true,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textPrimary),
+                          decoration: InputDecoration(
+                            prefixText: "₹ ",
+                            prefixStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textSecondary),
+                            hintText: "0.00", hintStyle: TextStyle(color: textSecondary),
+                            filled: true, fillColor: inputFill,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: inputBorder)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: inputBorder)),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: isDeposit ? depositColor : withdrawColor, width: 2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity, height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDeposit ? depositColor : withdrawColor,
+                              foregroundColor: AppColors.darkTextPrimary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0,
+                            ),
+                            onPressed: () {
+                              final amount = double.tryParse(_amountController.text) ?? 0;
+                              if (amount <= 0 || selectedAccountId == null) {
+                                _showSnackBar("Please select an account and enter a valid amount", isError: true);
+                                return;
+                              }
+                              Navigator.pop(ctx);
+
+                              if (isDeposit) {
+                                _performDeposit(amount, selectedAccountId!);
+                              } else {
+                                _performWithdraw(amount, selectedAccountId!);
+                              }
+                            },
+                            child: Text(
+                              isDeposit ? "Confirm Deposit" : "Confirm Withdrawal",
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+            );
+          }
+        );
+      },
+    );
+  }
+
+  Future<void> _performDeposit(double amount, String accountId) async {
+    setState(() => _isLoading = true);
+    final nowUtc = DateTime.now().toUtc().toIso8601String();
+    final idempotencyKey = const Uuid().v4();
+
+    try {
+      final result = await _goalService.depositToGoal(
+        widget.goal.id,
+        accountId,
+        amount,
+        idempotencyKey,
+        transactedAt: nowUtc,
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        setState(() => _currentAmount += amount); 
+        _refreshProviders();
+        await _loadHistory();
+        _showSnackBar("Funds deposited successfully!");
       } else {
-        _showSnackBar(isDeposit ? "Deposit failed" : "Withdrawal failed",
-            isError: true);
+        _showSnackBar(result['message'] ?? 'Deposit failed', isError: true);
       }
     } catch (e) {
       if (mounted) _showSnackBar("Error: $e", isError: true);
@@ -85,156 +286,68 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
     }
   }
 
-  void _showTransactionBottomSheet(BuildContext context, bool isDeposit) {
-    final amountController = TextEditingController();
+  Future<void> _performWithdraw(double amount, String accountId) async {
+    setState(() => _isLoading = true);
+    final nowUtc = DateTime.now().toUtc().toIso8601String();
+    final idempotencyKey = const Uuid().v4();
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Padding(
-          padding:
-              EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-                Text(
-                  isDeposit ? "Deposit Funds" : "Withdraw Funds",
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  isDeposit
-                      ? "Reserve money toward this goal."
-                      : "Return money to your main account.",
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: amountController,
-                  autofocus: true,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
-                  ],
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                  decoration: InputDecoration(
-                    prefixText: "₹ ",
-                    prefixStyle: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade500),
-                    hintText: "0.00",
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: isDeposit ? _blue : Colors.red, width: 2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDeposit ? _blue : Colors.red.shade600,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      final amount =
-                          double.tryParse(amountController.text) ?? 0;
-                      if (amount <= 0) return;
-                      Navigator.pop(ctx);
-                      _processTransaction(amount, isDeposit);
-                    },
-                    child: Text(
-                      isDeposit ? "Confirm Deposit" : "Confirm Withdrawal",
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    try {
+      final result = await _goalService.withdrawFromGoal(
+        widget.goal.id,
+        accountId,
+        amount,
+        idempotencyKey,
+        transactedAt: nowUtc,
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        setState(() => _currentAmount -= amount);
+        _refreshProviders();
+        await _loadHistory();
+        _showSnackBar("Withdrawal successful!");
+      } else {
+        _showSnackBar(result['message'] ?? 'Withdrawal failed', isError: true);
+      }
+    } catch (e) {
+      if (mounted) _showSnackBar("Error: $e", isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showSnackBar(String msg, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: isError ? Colors.red : Colors.green,
+      backgroundColor: isError ? AppColors.error : AppColors.success,
       behavior: SnackBarBehavior.floating,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final double progress =
-        (_currentAmount / widget.goal.targetAmount).clamp(0.0, 1.0);
-    final bool isCompleted = progress >= 1.0;
-    final Color progressColor = isCompleted ? Colors.green : _blue;
-    final int daysLeft = widget.goal.daysLeft ??
-        widget.goal.targetDate.difference(DateTime.now()).inDays;
-    final double remaining = (widget.goal.targetAmount - _currentAmount)
-        .clamp(0.0, widget.goal.targetAmount);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final scaffoldBg = isDark ? AppColors.darkBgPrimary : const Color(0xFFF4F5F7);
+    final appBarBg = isDark ? AppColors.darkBgPrimary : const Color(0xFFF4F5F7);
+    final appBarTextColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F7), // Light clean background
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F5F7),
+        backgroundColor: appBarBg,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.black87, size: 18),
+          icon: Icon(Icons.arrow_back_ios_new, color: appBarTextColor, size: 18),
           onPressed: () => Navigator.pop(context, true),
         ),
-        title: const Text("Goal Details",
+        title: Text("Goal Details",
             style: TextStyle(
-                color: Colors.black87,
+                color: appBarTextColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w700)),
       ),
@@ -243,23 +356,18 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
           CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              SliverToBoxAdapter(
-                  child: _buildSummaryCard(progress, progressColor, isCompleted,
-                      daysLeft, remaining)),
+              SliverToBoxAdapter(child: _buildSummaryCard(isDark)),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
                     children: [
                       Expanded(
                         child: _ActionButton(
                           label: "Deposit",
                           icon: Icons.add_rounded,
-                          color: _blue,
-                          disabled: isCompleted,
-                          onTap: () =>
-                              _showTransactionBottomSheet(context, true),
+                          color: AppColors.savingsPrimary,
+                          onTap: () => _showTransactionBottomSheet(context, true),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -267,11 +375,10 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                         child: _ActionButton(
                           label: "Withdraw",
                           icon: Icons.remove_rounded,
-                          color: Colors.red.shade600,
+                          color: AppColors.expenseAmount,
                           outlined: true,
                           disabled: _currentAmount <= 0,
-                          onTap: () =>
-                              _showTransactionBottomSheet(context, false),
+                          onTap: () => _showTransactionBottomSheet(context, false),
                         ),
                       ),
                     ],
@@ -281,39 +388,66 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   child: Text("History",
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: Colors.grey.shade800)),
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary)),
                 ),
               ),
-              SliverToBoxAdapter(child: _buildHistoryList()),
+              SliverToBoxAdapter(child: _buildHistoryList(isDark)),
               const SliverToBoxAdapter(child: SizedBox(height: 40)),
             ],
           ),
           if (_isLoading)
             Container(
-              color: Colors.white.withOpacity(0.6),
-              child: const Center(
-                  child: CircularProgressIndicator(color: Colors.black87)),
+              color: isDark
+                  ? AppColors.darkBgPrimary.withOpacity(0.6)
+                  : AppColors.lightBgPrimary.withOpacity(0.6),
+              child: Center(
+                  child: CircularProgressIndicator(
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary)),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard(double progress, Color progressColor,
-      bool isCompleted, int daysLeft, double remaining) {
+  Widget _buildSummaryCard(bool isDark) {
+    // ─── 1. State Calculations ────────────────────────────────────────────────
+    final bool isCompleted = _currentAmount >= widget.goal.targetAmount;
+    final bool isOverflow = _currentAmount > widget.goal.targetAmount;
+    
+    final double rawProgress = _currentAmount / widget.goal.targetAmount;
+    final double safeProgress = rawProgress.clamp(0.0, 1.0); // Caps progress bar at 100%
+    
+    final double overflowAmount = _currentAmount - widget.goal.targetAmount;
+    final double remaining = (widget.goal.targetAmount - _currentAmount).clamp(0.0, widget.goal.targetAmount);
+    
+    final int daysLeft = widget.goal.daysLeft ?? widget.goal.targetDate.difference(DateTime.now()).inDays;
+    final int daysSinceCreated = DateTime.now().difference(widget.goal.createdAt).inDays;
+
+    // ─── 2. Dynamic Colors (Active = Blue, Completed = Green) ────────────────
+    final Color statusColor = isCompleted ? AppColors.success : Colors.blue;
+    final Color cardBg = isDark ? statusColor.withOpacity(0.08) : statusColor.withOpacity(0.05);
+    final Color cardBorder = statusColor.withOpacity(0.3);
+    
+    final Color textPrimary = isDark ? Colors.white : Colors.black87;
+    final Color textSecondary = isDark ? Colors.white70 : Colors.black54;
+    final Color textMuted = isDark ? Colors.white54 : Colors.black38;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16), // was 20
-        border: Border.all(color: Colors.grey.shade200), // add subtle border
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cardBorder, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,15 +457,14 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.track_changes,
-                      size: 16, color: Colors.grey.shade400),
+                  Icon(Icons.track_changes, size: 16, color: statusColor),
                   const SizedBox(width: 6),
                   Text(
                     widget.goal.category.toUpperCase(),
                     style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: statusColor,
                         fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         letterSpacing: 0.5),
                   ),
                 ],
@@ -339,33 +472,32 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isCompleted
-                      ? Colors.green.shade50
-                      : Colors.orange.shade50,
+                  color: isCompleted ? AppColors.success.withOpacity(0.15) : Colors.blue.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                     isCompleted
-                        ? "Completed"
+                        ? "Completed in ${daysSinceCreated <= 0 ? 1 : daysSinceCreated} days"
                         : "${daysLeft > 0 ? daysLeft : 0} days left",
                     style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 10, // smaller
-                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     )),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             widget.goal.title,
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 18, // was 20
-              fontWeight: FontWeight.w700, // slightly lighter
+            style: TextStyle(
+              color: textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 16),
+          
           if (!isCompleted &&
               widget.goal.requiredDailySaving != null &&
               widget.goal.requiredDailySaving! > 0) ...[
@@ -373,20 +505,19 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: AppColors.dailySavingBg,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.shade100),
+                      border: Border.all(color: AppColors.warning.withOpacity(0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           "DAILY SAVING NEEDED",
                           style: TextStyle(
-                            color: Colors.orange.shade900,
+                            color: AppColors.dailySavingText,
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.5,
@@ -395,17 +526,17 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                         const SizedBox(height: 4),
                         Text(
                           "₹${(widget.goal.requiredDailySaving ?? 0).toStringAsFixed(2)}",
-                          style: TextStyle(
-                            color: Colors.orange.shade900,
+                          style: const TextStyle(
+                            color: AppColors.dailySavingText,
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
+                        const Text(
                           "per day to reach on time",
                           style: TextStyle(
-                            color: Colors.orange.shade700,
+                            color: AppColors.warning,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -420,14 +551,15 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
           ] else ...[
             const SizedBox(height: 24),
           ],
+          
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
                 "₹${NumberFormat('#,##,###').format(_currentAmount.toInt())}",
-                style: const TextStyle(
-                    color: Colors.black87,
+                style: TextStyle(
+                    color: statusColor,
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5),
@@ -436,52 +568,140 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
               Text(
                 "/ ₹${NumberFormat('#,##,###').format(widget.goal.targetAmount.toInt())}",
                 style: TextStyle(
-                    color: Colors.grey.shade500,
+                    color: textMuted,
                     fontSize: 14,
                     fontWeight: FontWeight.w600),
               ),
             ],
           ),
           const SizedBox(height: 16),
+          
           Row(
             children: [
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
-                    value: progress,
+                    value: safeProgress,
                     minHeight: 6,
-                    backgroundColor: Colors.grey.shade100,
-                    valueColor: AlwaysStoppedAnimation(progressColor),
+                    backgroundColor: isDark
+                        ? statusColor.withOpacity(0.15)
+                        : statusColor.withOpacity(0.1),
+                    valueColor: AlwaysStoppedAnimation(statusColor),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                "${(progress * 100).clamp(0, 100).toInt()}%",
+                "${(safeProgress * 100).toInt()}%", // Safe bounded percentage
                 style: TextStyle(
-                    color: progressColor,
+                    color: statusColor,
                     fontSize: 14,
                     fontWeight: FontWeight.w800),
               ),
             ],
           ),
+          
           if (!isCompleted) ...[
             const SizedBox(height: 12),
             Text(
               "₹${NumberFormat('#,##,###').format(remaining.toInt())} left to reach your goal",
               style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: textSecondary,
                   fontSize: 13,
                   fontWeight: FontWeight.w500),
             ),
+          ] else ...[
+            const SizedBox(height: 16),
+            _buildPremiumAchievementCard(isOverflow, overflowAmount, isDark),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildHistoryList() {
+  Widget _buildPremiumAchievementCard(bool isOverflow, double overflowAmount, bool isDark) {
+    // Use a premium Gold for overfunding, and your standard Success Green for reaching it exactly
+    final Color highlightColor = isOverflow ? const Color(0xFFFFD700) : AppColors.success;
+    
+    // Create a subtle glowing background
+    final Color bgColor = isDark 
+        ? highlightColor.withOpacity(0.1) 
+        : highlightColor.withOpacity(0.08);
+    final Color borderColor = highlightColor.withOpacity(0.4);
+    final Color iconBgColor = highlightColor.withOpacity(0.2);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: highlightColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ]
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isOverflow 
+                  ? Icons.workspace_premium_rounded // Premium badge icon
+                  : Icons.task_alt_rounded,         // Clean success checkmark
+              color: highlightColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isOverflow ? "TARGET EXCEEDED" : "GOAL COMPLETED",
+                  style: TextStyle(
+                    color: highlightColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isOverflow 
+                      ? "You saved an extra ₹${NumberFormat('#,##,###').format(overflowAmount.toInt())}!"
+                      : "You've successfully reached your target!",
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryList(bool isDark) {
+    final cardBg = isDark ? AppColors.darkBgCard : AppColors.lightBgPrimary;
+    final cardBorder = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final iconBg = isDark ? AppColors.darkBgElevated : AppColors.lightBgSecondary;
+    final textPrimary = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final textMuted = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+
     if (_isLoadingHistory) {
       return const Padding(
           padding: EdgeInsets.symmetric(vertical: 32),
@@ -493,9 +713,7 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
         child: Center(
           child: Text("No transactions yet",
               style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500)),
+                  color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
         ),
       );
     }
@@ -508,6 +726,7 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
       itemBuilder: (context, index) {
         final item = _history[index];
         final direction = (item['direction'] ?? '').toString();
+        final description = (item['description'] ?? '').toString();
         final amount = item['amount']?.toString() ?? '0';
         final rawDate = item['transactedAt'] ?? item['createdAt'];
 
@@ -518,27 +737,42 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
           } catch (_) {}
         }
 
-        final isAllocation =
-            direction.contains('ALLOCATION') && !direction.contains('DEALLOC');
-        final Color dotColor = isAllocation ? Colors.green : Colors.black87;
-        final IconData dotIcon = isAllocation ? Icons.add : Icons.remove;
+        final isAllocation = direction == 'GOAL_ALLOCATION';
+        final isCompletion = direction == 'GOAL_COMPLETION';
+        final isDeallocation = direction == 'GOAL_DEALLOCATION';
+
+        final Color dotColor = isAllocation || isCompletion
+            ? AppColors.expenseAmount
+            : AppColors.success;
+        final IconData dotIcon =
+            isAllocation || isCompletion ? Icons.add : Icons.remove;
+
+        String label;
+        if (isAllocation) {
+          label = "Deposit";
+        } else if (isCompletion) {
+          label = "Goal Spent";
+        } else if (isDeallocation) {
+          label = description.contains('released') ? "Goal Released" : "Withdrawal";
+        } else {
+          label = direction;
+        }
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardBg,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
+            border: Border.all(color: cardBorder),
           ),
-          child: Row(
+         child: Row(
             children: [
               Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(10)),
+                    color: iconBg, borderRadius: BorderRadius.circular(10)),
                 child: Icon(dotIcon, color: dotColor, size: 18),
               ),
               const SizedBox(width: 12),
@@ -547,27 +781,43 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isAllocation ? "Deposit" : "Withdrawal",
-                      style: const TextStyle(
+                      label,
+                      style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black87),
+                          color: textPrimary),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       DateFormat('MMM dd, yyyy • h:mm a').format(date),
                       style: TextStyle(
-                          color: Colors.grey.shade500,
+                          color: textMuted,
                           fontSize: 11,
                           fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
               ),
-              Text(
-                "${isAllocation ? '+' : '-'}₹$amount",
-                style: TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w800, color: dotColor),
+              // --- Right Side: Amount and Account Name ---
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    "${isAllocation || isCompletion ? '+' : '-'}₹$amount",
+                    style: TextStyle(
+                        fontSize: 15, 
+                        fontWeight: FontWeight.w800, 
+                        color: dotColor),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item['accountName'] ?? 'General Wallet', // Shows account name
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: textMuted),
+                  ),
+                ],
               ),
             ],
           ),
@@ -596,36 +846,55 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 46,
       child: outlined
           ? OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                    color: disabled ? Colors.grey.shade300 : color, width: 1.5),
-                foregroundColor: disabled ? Colors.grey.shade400 : color,
+                    color: disabled
+                        ? (isDark
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder)
+                        : color,
+                    width: 1.5),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(12)),
+                foregroundColor: disabled
+                    ? (isDark
+                        ? AppColors.darkTextMuted
+                        : AppColors.lightTextMuted)
+                    : color,
               ),
-              onPressed: disabled ? null : onTap,
               icon: Icon(icon, size: 18),
               label: Text(label,
                   style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.bold)),
+                      fontSize: 14, fontWeight: FontWeight.w700)),
+              onPressed: disabled ? null : onTap,
             )
           : ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: disabled ? Colors.grey.shade300 : color,
-                foregroundColor: Colors.white,
-                elevation: 0,
+                backgroundColor: disabled
+                    ? (isDark
+                        ? AppColors.darkBgElevated
+                        : AppColors.lightBgSecondary)
+                    : color,
+                foregroundColor: disabled
+                    ? (isDark
+                        ? AppColors.darkTextMuted
+                        : AppColors.lightTextMuted)
+                    : AppColors.darkTextPrimary,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
               ),
-              onPressed: disabled ? null : onTap,
               icon: Icon(icon, size: 18),
               label: Text(label,
                   style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.bold)),
+                      fontSize: 14, fontWeight: FontWeight.w700)),
+              onPressed: disabled ? null : onTap,
             ),
     );
   }
