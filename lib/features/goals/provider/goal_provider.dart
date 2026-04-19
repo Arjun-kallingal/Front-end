@@ -6,7 +6,6 @@ import 'package:front_end/core/services/api_config.dart';
 class GoalProvider extends ChangeNotifier {
   final GoalService _goalService;
 
-  // Dependency Injection allows for easier testing
   GoalProvider({GoalService? goalService})
       : _goalService = goalService ?? GoalService(baseUrl: "${ApiConfig.baseUrl}/api");
 
@@ -14,7 +13,7 @@ class GoalProvider extends ChangeNotifier {
   List<GoalModel> _filteredGoals = [];
   
   bool _isLoading = false;
-  String? _error; // Exposes errors to the UI
+  String? _error; 
 
   List<GoalModel> get goals => _goals;
   List<GoalModel> get filteredGoals => _filteredGoals;
@@ -62,34 +61,35 @@ class GoalProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> createGoal(GoalModel goal) async {
-    final success = await _goalService.createGoal(goal);
-    if (success) await fetchGoals();
-    return success;
+  Future<String?> createGoal(GoalModel goal) async {
+    final result = await _goalService.createGoal(goal);
+    if (result['success'] == true) {
+      await fetchGoals();
+      return null; 
+    }
+    return result['message'] ?? "Failed to create goal.";
   }
 
-  Future<bool> deleteGoal(String id) async {
-    // 1. Cache the goal in case the server fails
-    final goalIndex = _goals.indexWhere((g) => g.id == id);
-    if (goalIndex == -1) return false;
-    final cachedGoal = _goals[goalIndex];
-
-    // 2. Optimistic UI update
-    _goals.removeAt(goalIndex);
-    _filteredGoals.removeWhere((g) => g.id == id);
-    notifyListeners();
-
-    // 3. Network call
-    final success = await _goalService.deleteGoal(id);
-    
-    // 4. Rollback on failure
-    if (!success) {
-      _goals.insert(goalIndex, cachedGoal);
-      _filteredGoals = List.from(_goals); 
-      notifyListeners();
+  Future<String?> updateGoal(GoalModel goal) async {
+    final result = await _goalService.updateGoal(goal);
+    if (result['success'] == true) {
+      await fetchGoals();
+      return null; 
     }
-    
-    return success;
+    return result['message'] ?? "Failed to update goal.";
+  }
+
+  Future<String?> deleteGoal(String id) async {
+    final result = await _goalService.deleteGoal(id);
+
+    if (result['success'] == true) {
+      _goals.removeWhere((g) => g.id == id);
+      _filteredGoals.removeWhere((g) => g.id == id);
+      notifyListeners();
+      return null; 
+    } else {
+      return result['message'] ?? "Failed to delete goal.";
+    }
   }
 
   Future<List<dynamic>> getHistory(String goalId) {

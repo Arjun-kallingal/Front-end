@@ -16,6 +16,7 @@ import 'package:front_end/features/transfer/transfer.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
+// Notification imports from Snippet 1
 import 'package:front_end/features/notifications/notification_screen.dart';
 import 'package:front_end/core/providers/notification_provider.dart';
 
@@ -70,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 🔥 Dispose logic from Snippet 2
   @override
   void dispose() {
     // FIX: Safely remove listener using the cached instance
@@ -162,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontSize: 14,
                         color: isDark
                             ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
+                            : AppColors.lightTextSecondary, // From Snippet 2
                         height: 1.4,
                         fontWeight: FontWeight.w500),
                   ),
@@ -228,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icons.close_rounded,
                         color: isDark
                             ? AppColors.darkTextMuted
-                            : AppColors.lightTextMuted,
+                            : AppColors.lightTextMuted, // From Snippet 2
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -242,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 14,
                       color: isDark
                           ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary,
+                          : AppColors.lightTextSecondary, // From Snippet 2
                       height: 1.4,
                       fontWeight: FontWeight.w500),
                 ),
@@ -253,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.expenseAmount,
-                      foregroundColor: AppColors.darkTextPrimary,
+                      foregroundColor: AppColors.darkTextPrimary, // From Snippet 2
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                     ),
@@ -1038,7 +1040,7 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: color.withOpacity(0.20), width: 1),
           boxShadow: [
             BoxShadow(
-              color: AppColors.darkBgPrimary.withOpacity(0.05),
+              color: AppColors.darkBgPrimary.withOpacity(0.05), // From Snippet 2
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

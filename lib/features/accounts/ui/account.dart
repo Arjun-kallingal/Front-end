@@ -11,6 +11,10 @@ import 'package:front_end/navigation/navigation_service.dart';
 import 'package:front_end/features/transactions/ui/transactionlist_screen.dart';
 import 'package:front_end/features/transactions/ui/reserve_funds_screen.dart';
 
+// ✅ Import the two new dedicated screens
+import 'create_account_screen.dart';
+import 'edit_account_screen.dart';
+
 class AccountsOverviewScreen extends StatefulWidget {
   const AccountsOverviewScreen({super.key});
 
@@ -36,15 +40,10 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
     _fabController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 350));
 
-    // Bouncy curve for movement and scaling
     _expandAnimation =
         CurvedAnimation(parent: _fabController, curve: Curves.easeOutBack);
-
-    // Strict smooth curve for Opacity
     _fadeAnimation =
         CurvedAnimation(parent: _fabController, curve: Curves.easeOut);
-
-    // Spin curve for the '+' icon
     _rotationAnimation =
         CurvedAnimation(parent: _fabController, curve: Curves.easeOutBack);
 
@@ -83,13 +82,47 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
       SnackBar(
         content: Text(message,
             style: TextStyle(
-                color: theme.colorScheme.surface, fontWeight: FontWeight.w600)),
+                color: theme.colorScheme.surface,
+                fontWeight: FontWeight.w600)),
         backgroundColor:
             isError ? AppColors.expenseAmount : AppColors.incomeAmount,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  // --- NAVIGATE TO CREATE ACCOUNT SCREEN ---
+  void _navigateToCreateAccount({String initialType = "CASH"}) {
+    if (_isFabOpen) _toggleFab();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CreateAccountScreen(initialType: initialType),
+      ),
+    ).then((created) {
+      // Refresh list if account was created
+      if (created == true && mounted) {
+        context.read<AccountProvider>().loadAccounts();
+      }
+    });
+  }
+
+  // --- NAVIGATE TO EDIT ACCOUNT SCREEN ---
+  void _navigateToEditAccount(AccountModel acc) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditAccountScreen(account: acc),
+      ),
+    ).then((updated) {
+      // Refresh list if account was updated
+      if (updated == true && mounted) {
+        context.read<AccountProvider>().loadAccounts();
+      }
+    });
   }
 
   // --- PREMIUM DELETE FLOW ---
@@ -189,8 +222,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Dialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(32)),
             backgroundColor: colorScheme.surface,
             elevation: 24,
             shadowColor: Colors.black45,
@@ -259,7 +292,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                             onPressed: () => Navigator.pop(ctx, false),
                             child: const Text("Cancel",
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16)),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16)),
                           ),
                         ),
                       ),
@@ -280,7 +314,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                             onPressed: () => Navigator.pop(ctx, true),
                             child: const Text("Delete",
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16)),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16)),
                           ),
                         ),
                       ),
@@ -297,9 +332,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
     if (confirm == true) {
       try {
         final result = await AccountService.deleteAccount(acc.id);
-
         if (!context.mounted) return;
-
         if (result['success'] == true) {
           _showSnackBar("Account successfully closed.");
           context.read<AccountProvider>().loadAccounts();
@@ -316,543 +349,9 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
     }
   }
 
-  // --- UPGRADED PREMIUM UI HELPER FOR TEXT FIELDS ---
-  InputDecoration _getPremiumDecoration(
-      ThemeData theme, ColorScheme colorScheme, Color surfaceAlt, Color textSec,
-      {required String label, required IconData icon, String? prefixText}) {
-    final isDark = theme.brightness == Brightness.dark;
-    return InputDecoration(
-      labelText: label,
-      labelStyle: TextStyle(color: textSec, fontWeight: FontWeight.w500),
-      floatingLabelStyle:
-          TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w800),
-      filled: true,
-      fillColor: isDark
-          ? Colors.white.withValues(alpha: 0.05)
-          : colorScheme.onSurface.withValues(alpha: 0.04),
-      prefixIcon: Icon(icon,
-          color: colorScheme.primary.withValues(alpha: 0.8), size: 22),
-      prefixText: prefixText,
-      prefixStyle: TextStyle(
-          color: colorScheme.primary,
-          fontWeight: FontWeight.bold,
-          fontSize: 16),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-      ),
-    );
-  }
-
-  // --- PREMIUM EDIT ACCOUNT BOTTOM SHEET ---
-  void _showEditAccountBottomSheet(AccountModel acc) {
-    final nameController = TextEditingController(text: acc.name);
-    final minBalanceController = TextEditingController(text: acc.minBalance);
-    String selectedType = acc.type;
-    bool isProcessing = false;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setSheetState) {
-          final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
-          final isDark = theme.brightness == Brightness.dark;
-          final textSec =
-              isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
-          final surfaceAlt = theme.inputDecorationTheme.fillColor ??
-              (isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary);
-
-          return BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: EdgeInsets.only(
-                top: 16,
-                left: 24,
-                right: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-              ),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(32)),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      spreadRadius: 5)
-                ],
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 50,
-                        height: 5,
-                        margin: const EdgeInsets.only(bottom: 24),
-                        decoration: BoxDecoration(
-                            color: textSec.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    // --- PREMIUM HEADER ---
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.edit_note_rounded,
-                              color: colorScheme.primary, size: 28),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Update Account",
-                                  style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      color: colorScheme.onSurface)),
-                              const SizedBox(height: 2),
-                              Text(
-                                  "Modify your account details and preferences.",
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: textSec,
-                                      fontWeight: FontWeight.w500)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
-                    TextField(
-                      controller: nameController,
-                      style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700),
-                      decoration: _getPremiumDecoration(
-                          theme, colorScheme, surfaceAlt, textSec,
-                          label: "Account Name",
-                          icon: Icons.account_balance_wallet_rounded),
-                    ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 8, left: 12, bottom: 24),
-                      child: Text(
-                          "This is how the account will appear in your lists and charts.",
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: textSec.withValues(alpha: 0.8))),
-                    ),
-
-                    TextField(
-                      controller: minBalanceController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700),
-                      decoration: _getPremiumDecoration(
-                          theme, colorScheme, surfaceAlt, textSec,
-                          label: "Low Balance Reminder",
-                          icon: Icons
-                              .notifications_active_rounded, // REMINDER ICON
-                          prefixText: "₹ "),
-                    ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 8, left: 12, bottom: 32),
-                      child: Text(
-                          "We'll visually notify you if funds drop below this limit.",
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: textSec.withValues(alpha: 0.8))),
-                    ),
-
-                    // --- ACCOUNT TYPE SECTION ---
-                    Text("ACCOUNT TYPE",
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
-                            color: textSec)),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _buildTypeOption(
-                            "CASH",
-                            Icons.wallet_rounded,
-                            selectedType == "CASH",
-                            AppColors.incomeAmount,
-                            isDark,
-                            textSec,
-                            () => setSheetState(() => selectedType = "CASH")),
-                        const SizedBox(width: 16),
-                        _buildTypeOption(
-                            "BANK",
-                            Icons.account_balance_rounded,
-                            selectedType == "BANK",
-                            AppColors.savingsPrimary,
-                            isDark,
-                            textSec,
-                            () => setSheetState(() => selectedType = "BANK")),
-                      ],
-                    ),
-                    const SizedBox(height: 36),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          shadowColor:
-                              colorScheme.primary.withValues(alpha: 0.4),
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                        onPressed: isProcessing
-                            ? null
-                            : () async {
-                                final name = nameController.text.trim();
-                                final minBal = minBalanceController.text.trim();
-                                if (name.isEmpty) return;
-
-                                setSheetState(() => isProcessing = true);
-                                try {
-                                  await context
-                                      .read<AccountProvider>()
-                                      .updateAccount(acc.id,
-                                          name: name,
-                                          type: selectedType,
-                                          minBalance:
-                                              minBal.isEmpty ? "0" : minBal);
-                                  if (context.mounted) Navigator.pop(ctx);
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    Navigator.pop(ctx);
-                                    _showSnackBar("Failed to update account",
-                                        isError: true);
-                                  }
-                                }
-                              },
-                        child: isProcessing
-                            ? SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                    color: colorScheme.onPrimary,
-                                    strokeWidth: 2.5))
-                            : const Text("Save Changes",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 17,
-                                    letterSpacing: 0.5)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // --- PREMIUM CREATE ACCOUNT BOTTOM SHEET ---
-  void _showCreateAccountBottomSheet({String initialType = "CASH"}) {
-    final nameController = TextEditingController();
-    final depositController = TextEditingController();
-    final minBalanceController = TextEditingController();
-    String selectedType = initialType;
-    bool isProcessing = false;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setSheetState) {
-          final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
-          final isDark = theme.brightness == Brightness.dark;
-          final textSec =
-              isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
-          final surfaceAlt = theme.inputDecorationTheme.fillColor ??
-              (isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary);
-
-          return BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: EdgeInsets.only(
-                top: 16,
-                left: 24,
-                right: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-              ),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(32)),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      spreadRadius: 5)
-                ],
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 50,
-                        height: 5,
-                        margin: const EdgeInsets.only(bottom: 24),
-                        decoration: BoxDecoration(
-                            color: textSec.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    // --- PREMIUM HEADER ---
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.add_card_rounded,
-                              color: colorScheme.primary, size: 28),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("New Account",
-                                  style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      color: colorScheme.onSurface)),
-                              const SizedBox(height: 2),
-                              Text("Add a wallet or bank to track your money.",
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: textSec,
-                                      fontWeight: FontWeight.w500)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
-                    TextField(
-                      controller: nameController,
-                      autofocus: true,
-                      style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700),
-                      decoration: _getPremiumDecoration(
-                          theme, colorScheme, surfaceAlt, textSec,
-                          label: "Account Name",
-                          icon: Icons.account_balance_wallet_rounded),
-                    ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 8, left: 12, bottom: 20),
-                      child: Text(
-                          "e.g., Main Wallet, Salary Account, Travel Fund",
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: textSec.withValues(alpha: 0.8))),
-                    ),
-
-                    TextField(
-                      controller: depositController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700),
-                      decoration: _getPremiumDecoration(
-                          theme, colorScheme, surfaceAlt, textSec,
-                          label: "Opening Balance",
-                          icon: Icons.payments_rounded,
-                          prefixText: "₹ "),
-                    ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 8, left: 12, bottom: 20),
-                      child: Text(
-                          "The current amount of money already in this account.",
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: textSec.withValues(alpha: 0.8))),
-                    ),
-
-                    TextField(
-                      controller: minBalanceController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700),
-                      decoration: _getPremiumDecoration(
-                          theme, colorScheme, surfaceAlt, textSec,
-                          label: "Low Balance Reminder",
-                          icon: Icons
-                              .notifications_active_rounded, // REMINDER ICON
-                          prefixText: "₹ "),
-                    ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 8, left: 12, bottom: 32),
-                      child: Text(
-                          "We'll visually notify you if funds drop below this limit.",
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: textSec.withValues(alpha: 0.8))),
-                    ),
-
-                    // --- ACCOUNT TYPE SECTION ---
-                    Text("ACCOUNT TYPE",
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
-                            color: textSec)),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _buildTypeOption(
-                            "CASH",
-                            Icons.wallet_rounded,
-                            selectedType == "CASH",
-                            AppColors.incomeAmount,
-                            isDark,
-                            textSec,
-                            () => setSheetState(() => selectedType = "CASH")),
-                        const SizedBox(width: 16),
-                        _buildTypeOption(
-                            "BANK",
-                            Icons.account_balance_rounded,
-                            selectedType == "BANK",
-                            AppColors.savingsPrimary,
-                            isDark,
-                            textSec,
-                            () => setSheetState(() => selectedType = "BANK")),
-                      ],
-                    ),
-                    const SizedBox(height: 36),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          shadowColor:
-                              colorScheme.primary.withValues(alpha: 0.4),
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                        onPressed: isProcessing
-                            ? null
-                            : () async {
-                                final name = nameController.text.trim();
-                                final deposit = depositController.text.trim();
-                                final minBal = minBalanceController.text.trim();
-                                if (name.isEmpty) return;
-
-                                setSheetState(() => isProcessing = true);
-
-                                try {
-                                  await AccountService.createAccount(
-                                      name: name,
-                                      type: selectedType,
-                                      initialDeposit:
-                                          deposit.isEmpty ? "0" : deposit,
-                                      minBalance:
-                                          minBal.isEmpty ? "0" : minBal);
-                                  if (!context.mounted) return;
-
-                                  context
-                                      .read<AccountProvider>()
-                                      .loadAccounts();
-                                  Navigator.pop(ctx);
-                                } catch (e) {
-                                  setSheetState(() => isProcessing = false);
-                                  if (context.mounted) {
-                                    _showSnackBar("Failed to create account",
-                                        isError: true);
-                                  }
-                                }
-                              },
-                        child: isProcessing
-                            ? SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                    color: colorScheme.onPrimary,
-                                    strokeWidth: 2.5))
-                            : const Text("Create Account",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 17,
-                                    letterSpacing: 0.5)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   // --- SMART RESERVE MANAGER ---
   void _handleManageReservesFabAction() {
     _toggleFab();
-
     final provider = context.read<AccountProvider>();
     final allAccounts = [...provider.cashAccounts, ...provider.bankAccounts];
 
@@ -961,10 +460,9 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                               color: baseColor,
                               size: 20),
                         ),
-                        title: Text(
-                          acc.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        title: Text(acc.name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text("Available: ₹${acc.availableBalance}",
                             style: TextStyle(
                                 color: textSec,
@@ -996,44 +494,6 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
     );
   }
 
-  // --- UPGRADED TYPE SELECTOR (CASH / BANK) ---
-  Widget _buildTypeOption(String label, IconData icon, bool isSel, Color col,
-      bool isDark, Color txt, VoidCallback onTap) {
-    final unselectedBg = isDark
-        ? Colors.white.withValues(alpha: 0.05)
-        : Colors.black.withValues(alpha: 0.03);
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: isSel ? col.withValues(alpha: 0.15) : unselectedBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: isSel ? col : Colors.transparent, width: isSel ? 2 : 1),
-          ),
-          child: Column(
-            children: [
-              Icon(icon,
-                  color: isSel ? col : txt.withValues(alpha: 0.7), size: 28),
-              const SizedBox(height: 8),
-              Text(label,
-                  style: TextStyle(
-                      color: isSel ? col : txt,
-                      fontWeight: isSel ? FontWeight.w900 : FontWeight.w600,
-                      fontSize: 13,
-                      letterSpacing: 0.5)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // --- REDESIGNED GLASSY RADIAL FAB ICON ---
   Widget _buildIconFabOption({
     required IconData icon,
     required Color bgColor,
@@ -1054,16 +514,13 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                // REFINED: Reduced alpha for more transparency
                 color: bgColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  // Subtle border tinted with the icon color
                   color: bgColor.withValues(alpha: 0.4),
                   width: 1.2,
                 ),
               ),
-              // REFINED: Increased icon size from 24 to 28 so it stands out more
               child: Icon(icon, color: bgColor, size: 28),
             ),
           ),
@@ -1103,8 +560,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
           Positioned.fill(
             child: provider.isLoading
                 ? Center(
-                    child:
-                        CircularProgressIndicator(color: colorScheme.primary))
+                    child: CircularProgressIndicator(
+                        color: colorScheme.primary))
                 : RefreshIndicator(
                     onRefresh: () async => provider.loadAccounts(),
                     child: SingleChildScrollView(
@@ -1118,13 +575,15 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                           _buildActionHub(colorScheme, isDark),
                           const SizedBox(height: 8),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (_activeFilter == "ALL" ||
                                     _activeFilter == "CASH") ...[
-                                  _buildSectionHeader("CASH WALLETS", isDark),
+                                  _buildSectionHeader(
+                                      "CASH WALLETS", isDark),
                                   ...provider.cashAccounts.map((acc) =>
                                       _buildSleekDataCard(
                                           acc, theme, colorScheme, isDark)),
@@ -1132,7 +591,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                                 ],
                                 if (_activeFilter == "ALL" ||
                                     _activeFilter == "BANK") ...[
-                                  _buildSectionHeader("BANK ACCOUNTS", isDark),
+                                  _buildSectionHeader(
+                                      "BANK ACCOUNTS", isDark),
                                   ...provider.bankAccounts.map((acc) =>
                                       _buildSleekDataCard(
                                           acc, theme, colorScheme, isDark)),
@@ -1146,20 +606,18 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                   ),
           ),
 
-          // --- INVISIBLE OVERLAY (No Blur, No Tint) ---
+          // --- INVISIBLE OVERLAY ---
           Positioned.fill(
             child: IgnorePointer(
               ignoring: !_isFabOpen,
               child: GestureDetector(
                 onTap: _toggleFab,
-                child: Container(
-                  color: Colors.transparent, // Completely untouched background
-                ),
+                child: Container(color: Colors.transparent),
               ),
             ),
           ),
 
-          // 3. RADIAL OPTION 2: Manage Reserves
+          // RADIAL OPTION 2: Manage Reserves
           AnimatedBuilder(
             animation: _fabController,
             builder: (context, child) {
@@ -1185,7 +643,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
             },
           ),
 
-          // 4. RADIAL OPTION 1: Add Account
+          // RADIAL OPTION 1: Add Account → navigates to CreateAccountScreen
           AnimatedBuilder(
             animation: _fabController,
             builder: (context, child) {
@@ -1202,10 +660,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                         icon: Icons.add_card_rounded,
                         bgColor: AppColors.incomeAmount,
                         tooltip: "Add Account",
-                        onTap: () {
-                          _toggleFab();
-                          _showCreateAccountBottomSheet();
-                        },
+                        onTap: () => _navigateToCreateAccount(),
                       ),
                     ),
                   ),
@@ -1214,7 +669,7 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
             },
           ),
 
-          // 5. MAIN FAB TRIGGER (Reverted to solid style)
+          // MAIN FAB TRIGGER
           Positioned(
             right: 20,
             bottom: 24,
@@ -1225,8 +680,9 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                   angle: _rotationAnimation.value * 3.14159 * 2,
                   child: FloatingActionButton(
                     onPressed: _toggleFab,
-                    backgroundColor:
-                        isDark ? const Color(0xFF2A2D3E) : colorScheme.primary,
+                    backgroundColor: isDark
+                        ? const Color(0xFF2A2D3E)
+                        : colorScheme.primary,
                     foregroundColor:
                         isDark ? Colors.white : colorScheme.onPrimary,
                     elevation: 6,
@@ -1245,22 +701,21 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
 
   Widget _buildActionHub(ColorScheme colorScheme, bool isDark) {
     const double uniformHeight = 42.0;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Row(
         children: [
           Expanded(
-              child: _buildFilterChip("ALL", Icons.apps_rounded, colorScheme,
-                  isDark, uniformHeight)),
+              child: _buildFilterChip(
+                  "ALL", Icons.apps_rounded, colorScheme, isDark, uniformHeight)),
           const SizedBox(width: 8),
           Expanded(
               child: _buildFilterChip("CASH", Icons.wallet_rounded, colorScheme,
                   isDark, uniformHeight)),
           const SizedBox(width: 8),
           Expanded(
-              child: _buildFilterChip("BANK", Icons.account_balance_rounded,
-                  colorScheme, isDark, uniformHeight)),
+              child: _buildFilterChip("BANK",
+                  Icons.account_balance_rounded, colorScheme, isDark, uniformHeight)),
         ],
       ),
     );
@@ -1305,7 +760,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                           : (isDark
                               ? AppColors.darkTextSecondary
                               : AppColors.lightTextSecondary),
-                      fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                      fontWeight:
+                          isSel ? FontWeight.bold : FontWeight.w600,
                       fontSize: 11),
                   overflow: TextOverflow.ellipsis),
             ),
@@ -1315,20 +771,21 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
     );
   }
 
-  Widget _buildSleekDataCard(
-      AccountModel acc, ThemeData theme, ColorScheme colorScheme, bool isDark) {
+  Widget _buildSleekDataCard(AccountModel acc, ThemeData theme,
+      ColorScheme colorScheme, bool isDark) {
     final textSec =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final baseColor =
         acc.type == "CASH" ? AppColors.incomeAmount : AppColors.savingsPrimary;
-
     final double minBalDouble = double.tryParse(acc.minBalance) ?? 0.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? baseColor.withValues(alpha: 0.06) : colorScheme.surface,
+        color: isDark
+            ? baseColor.withValues(alpha: 0.06)
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
             color: isDark
@@ -1370,7 +827,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                               overflow: TextOverflow.ellipsis)),
                       if (acc.isDefault) ...[
                         const SizedBox(width: 6),
-                        Icon(Icons.verified_rounded, color: baseColor, size: 16)
+                        Icon(Icons.verified_rounded,
+                            color: baseColor, size: 16)
                       ],
                     ]),
                     const SizedBox(height: 4),
@@ -1409,7 +867,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                 const SizedBox(width: 8),
               ],
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_horiz_rounded, color: textSec, size: 22),
+                icon:
+                    Icon(Icons.more_horiz_rounded, color: textSec, size: 22),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
                 onSelected: (val) {
@@ -1421,7 +880,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                             builder: (context) =>
                                 TransactionListScreen(accountId: acc.id)));
                   }
-                  if (val == 'edit') _showEditAccountBottomSheet(acc);
+                  // ✅ Navigate to EditAccountScreen instead of bottom sheet
+                  if (val == 'edit') _navigateToEditAccount(acc);
                   if (val == 'delete') _handleDeleteAccount(acc);
                 },
                 itemBuilder: (ctx) => [
@@ -1430,17 +890,20 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
                         value: 'primary',
                         child: Text("Set as Primary Account",
                             style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w500))),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500))),
                   const PopupMenuItem(
                       value: 'history',
                       child: Text("View Transaction History",
                           style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500))),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500))),
                   const PopupMenuItem(
                       value: 'edit',
                       child: Text("Edit Account",
                           style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500))),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500))),
                   const PopupMenuItem(
                       value: 'delete',
                       child: Text("Delete Account",
@@ -1541,7 +1004,8 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
               const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
-                      color: AppColors.darkTextPrimary.withValues(alpha: 0.8),
+                      color:
+                          AppColors.darkTextPrimary.withValues(alpha: 0.8),
                       fontSize: 11,
                       fontWeight: FontWeight.w600)),
             ]),
@@ -1565,8 +1029,9 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
               fontSize: 11,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
-              color:
-                  isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
+              color: isDark
+                  ? AppColors.darkTextMuted
+                  : AppColors.lightTextMuted)),
     );
   }
 
@@ -1582,7 +1047,9 @@ class _AccountsOverviewScreenState extends State<AccountsOverviewScreen>
         const SizedBox(height: 2),
         Text("₹ $value",
             style: TextStyle(
-                color: color, fontSize: 13, fontWeight: FontWeight.bold)),
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.bold)),
       ],
     );
   }
