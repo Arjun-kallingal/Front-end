@@ -11,7 +11,8 @@ class TransactionModel {
   final String direction;
   final String accountName;
   final String? idempotencyKey;
-  final String status; // Needed to check if already voided/reversed
+  final String status; 
+   final bool isCancelled;
 
   TransactionModel({
     required this.id,
@@ -26,6 +27,7 @@ class TransactionModel {
     required this.accountName,
     this.idempotencyKey,
     required this.status,
+    this.isCancelled = false,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class TransactionModel {
       accountName: (json['accountName'] ?? 'Unknown Account').toString(),
       idempotencyKey: json['idempotencyKey']?.toString(),
       status: (json['status'] ?? 'COMPLETED').toString().toUpperCase(),
+       isCancelled: json['isCancelled'] == true,
     );
   }
 }
