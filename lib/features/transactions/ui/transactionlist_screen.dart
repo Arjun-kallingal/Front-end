@@ -61,10 +61,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       _transactions = [];
     });
 
+    // 1. Declare the variable HERE, at the top of the function
+    List<AccountModel> fetchedAccounts = [];
+
     try {
       final Map<String, dynamic> accountData =
           await AccountService.getAccountDashboard();
-      final List<AccountModel> fetchedAccounts =
+
+      // 2. Assign the value (don't use 'final' or 'List' here again)
+      fetchedAccounts =
           (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
               [];
 
@@ -81,6 +86,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       }
 
       String? resolvedAccountId;
+      // 3. Now this block can see 'fetchedAccounts' perfectly!
       if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
         try {
           resolvedAccountId = fetchedAccounts
@@ -94,12 +100,19 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
       final historyData = await TransactionService.getHistory(
         accountId: resolvedAccountId,
+        category: selectedCategory,
+        type: selectedType,
+        startDate: startDate,
+        endDate: endDate,
+        searchQuery: searchQuery,
       );
 
       if (mounted) {
         setState(() {
           _accounts = fetchedAccounts;
           _transactions = historyData.transactions;
+          // Apply the sort we discussed to keep the Today -> Yesterday order
+          _transactions.sort((a, b) => b.date.compareTo(a.date));
           _nextCursor = historyData.nextCursor;
           _isLoading = false;
         });
@@ -128,12 +141,20 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
       final historyData = await TransactionService.getHistory(
         accountId: resolvedAccountId,
+        category: selectedCategory,
+        type: selectedType,
+        startDate: startDate,
+        endDate: endDate,
+        searchQuery: searchQuery,
         lastId: _nextCursor,
       );
 
       if (mounted) {
         setState(() {
           _transactions.addAll(historyData.transactions);
+          // Re-sort the entire list after adding new items
+          _transactions.sort((a, b) => b.date.compareTo(a.date));
+
           _nextCursor = historyData.nextCursor;
           _isFetchingMore = false;
         });
@@ -148,8 +169,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       SnackBar(
         content: Text(message,
             style: const TextStyle(
-                color: AppColors.darkTextPrimary,
-                fontWeight: FontWeight.w600)),
+                color: AppColors.darkTextPrimary, fontWeight: FontWeight.w600)),
         backgroundColor:
             isError ? AppColors.expenseAmount : AppColors.incomeAmount,
         behavior: SnackBarBehavior.floating,
@@ -520,9 +540,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                   color: tx.status == "VOIDED" ? textSec : moneyColor,
-                  decoration: tx.status == "VOIDED"
-                      ? TextDecoration.lineThrough
-                      : null,
+                  decoration:
+                      tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
                 ),
               ),
               const SizedBox(height: 4),
@@ -530,12 +549,20 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
+<<<<<<< HEAD
                     isCash
                         ? Icons.account_balance_wallet_rounded
                         : Icons.account_balance_rounded,
                     size: 11,
                     color: textSec.withOpacity(0.8),
                   ),
+=======
+                      isCash
+                          ? Icons.account_balance_wallet_rounded
+                          : Icons.account_balance_rounded,
+                      size: 11,
+                      color: textSec.withOpacity(0.8)),
+>>>>>>> 54294a87c30e67186da1073454db82b0ff8bf0d5
                   const SizedBox(width: 4),
                   Text(
                     tx.accountName,
@@ -556,9 +583,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   Widget _buildTransactionList(
       ThemeData theme, ColorScheme colorScheme, bool isDark, Color textSec) {
+<<<<<<< HEAD
     final list = _filteredTransactions;
 
     if (list.isEmpty) {
+=======
+    // 1. USE THE LIST DIRECTLY (Server already filtered this for you)
+    final list = _transactions;
+
+    if (list.isEmpty && !_isLoading) {
+>>>>>>> 54294a87c30e67186da1073454db82b0ff8bf0d5
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
@@ -568,9 +602,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           Center(
             child: Text("No transactions found",
                 style: TextStyle(
-                    fontSize: 16,
-                    color: textSec,
-                    fontWeight: FontWeight.w500)),
+                    fontSize: 16, color: textSec, fontWeight: FontWeight.w500)),
           ),
         ],
       );
@@ -591,40 +623,45 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       color: colorScheme.secondary, strokeWidth: 2)),
             );
           }
-          if (_nextCursor == null && list.isNotEmpty) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                  child: Text("You have reached the end",
-                      style: TextStyle(color: textSec, fontSize: 13))),
-            );
-          }
-          return const SizedBox.shrink();
+          return const SizedBox(height: 80); // Bottom padding
         }
 
         final tx = list[i];
         final isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
 
+        // 2. LOGIC FOR HEADERS (Group by transactedAt)
         bool showHeader = false;
         if (i == 0) {
           showHeader = true;
         } else {
           final prevTx = list[i - 1];
-          final currentDay =
-              DateTime(tx.date.year, tx.date.month, tx.date.day);
+
+          // Normalize both to midnight to compare just the "Calendar Day"
+          final currentDay = DateTime(tx.date.year, tx.date.month, tx.date.day);
           final prevDay =
               DateTime(prevTx.date.year, prevTx.date.month, prevTx.date.day);
-          if (currentDay != prevDay) showHeader = true;
+
+          // Use !isAtSameMomentAs for a bulletproof comparison
+          if (!currentDay.isAtSameMomentAs(prevDay)) {
+            showHeader = true;
+          }
         }
 
         Widget tileContent = Column(
           children: [
             _buildTransactionTile(tx, theme, colorScheme, textSec, isCash),
-            Divider(color: theme.dividerColor, height: 1),
+            Divider(color: theme.dividerColor.withOpacity(0.05), height: 1),
           ],
         );
+      if (showHeader) {
+  String headerText;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = today.subtract(const Duration(days: 1));
+  final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
 
+<<<<<<< HEAD
         if (showHeader) {
           String headerText;
           final today = DateTime.now();
@@ -653,13 +690,63 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       fontWeight: FontWeight.bold,
                       color: textSec),
                 ),
-              ),
-              tileContent,
-            ],
-          );
-        }
+=======
+  // 1. Logic for Smart Date Labels
+  if (txDate.isAtSameMomentAs(today)) {
+    headerText = "Today";
+  } else if (txDate.isAtSameMomentAs(yesterday)) {
+    headerText = "Yesterday";
+  } else if (txDate.year == now.year) {
+    headerText = DateFormat('EEEE, dd MMM').format(tx.date); // e.g., "Friday, 17 Apr"
+  } else {
+    headerText = DateFormat('dd MMM, yyyy').format(tx.date); // e.g., "17 Apr, 2025"
+  }
 
-        return tileContent;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 28.0, bottom: 12.0, left: 4),
+        child: Row(
+          children: [
+            // A small dot to represent the timeline point
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: colorScheme.secondary.withOpacity(0.5),
+                shape: BoxShape.circle,
+>>>>>>> 54294a87c30e67186da1073454db82b0ff8bf0d5
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              headerText.toUpperCase(),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+                // Using a slightly more vibrant color for the "Today" header
+                color: headerText == "Today" 
+                    ? colorScheme.secondary 
+                    : textSec.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // A subtle line that fills the rest of the width
+            Expanded(
+              child: Divider(
+                color: theme.dividerColor.withOpacity(0.05),
+                thickness: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+      tileContent,
+    ],
+  );
+}        return tileContent;
       },
     );
   }
@@ -669,8 +756,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
     final surfaceAlt =
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
@@ -741,8 +827,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           decoration: BoxDecoration(
                               color: surfaceAlt,
                               borderRadius: BorderRadius.circular(12)),
-                          child:
-                              Icon(Icons.tune, color: colorScheme.primary),
+                          child: Icon(Icons.tune, color: colorScheme.primary),
                         ),
                       ),
                     ],

@@ -4,51 +4,62 @@ import 'package:uuid/uuid.dart';
 import 'package:front_end/core/services/api_client.dart';
 import 'package:front_end/core/services/api_config.dart';
 import 'package:front_end/core/models/transaction_model.dart';
-import 'package:flutter/foundation.dart';
 
 class TransactionService {
   static String get _baseUrl => "${ApiConfig.baseUrl}/api/transaction";
 
   /// --- 1. FETCH HISTORY ---
- static Future<TransactionHistoryResponse> getHistory({
-  String? accountId,
-  String? category,
-  String? lastId,
-}) async {
-  try {
-    final Map<String, String> queryParams = {};
-    if (accountId != null && accountId != "All Accounts") {
-      queryParams['accountId'] = accountId;
-    }
-    if (category != null && category != "All Categories") {
-      queryParams['category'] = category;
-    }
-    if (lastId != null) {
-      queryParams['lastId'] = lastId;
-    }
+  static Future<TransactionHistoryResponse> getHistory({
+    String? accountId,
+    String? category,
+    String? lastId,
+    DateTime? startDate,     // <-- NEW
+    DateTime? endDate,       // <-- NEW
+    String? searchQuery,     // <-- NEW
+    String? type,            // <-- NEW
+  }) async {
+    try {
+      final Map<String, String> queryParams = {};
+      if (accountId != null && accountId != "All Accounts") {
+        queryParams['accountId'] = accountId;
+      }
+      if (category != null && category != "All Categories" && category != "All") {
+        queryParams['category'] = category;
+      }
+      if (lastId != null) {
+        queryParams['lastId'] = lastId;
+      }
+      // Add new date filters (convert DateTime to ISO string for backend)
+      if (startDate != null) {
+        queryParams['startDate'] = startDate.toIso8601String();
+      }
+      if (endDate != null) {
+        queryParams['endDate'] = endDate.toIso8601String();
+      }
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['searchQuery'] = searchQuery;
+      }
+      if (type != null && type != "All Type") {
+        queryParams['type'] = type;
+      }
 
-    final uri = Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
-    final headers = await ApiClient.getHeaders();
-    
-    debugPrint("HISTORY URL: $uri");          // ← ADD THIS
-    
-    final response = await http.get(uri, headers: headers);
-    
-    debugPrint("HISTORY STATUS: ${response.statusCode}");   // ← ADD THIS
-    debugPrint("HISTORY BODY: ${response.body.substring(0, 200)}");  // ← ADD THIS
+      final uri = Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
+      final headers = await ApiClient.getHeaders();
+      
+      final response = await http.get(uri, headers: headers);
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> body = jsonDecode(response.body);
-      return TransactionHistoryResponse.fromJson(body);
-    } else if (response.statusCode == 401) {
-      throw Exception("Unauthorized - Please login again");
-    } else {
-      throw Exception("Server error: ${response.statusCode}");
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        return TransactionHistoryResponse.fromJson(body);
+      } else if (response.statusCode == 401) {
+        throw Exception("Unauthorized - Please login again");
+      } else {
+        throw Exception("Server error: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Connection Error: $e");
     }
-  } catch (e) {
-    throw Exception("Connection Error: $e");
   }
-}
 
   /// --- 2. PROCESS TRANSACTION ---
   static Future<Map<String, dynamic>> processTransaction({
@@ -83,7 +94,8 @@ class TransactionService {
       final data = jsonDecode(response.body);
       return {
         "success": response.statusCode == 201,
-        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ??
+            (response.statusCode == 201 ? "Success" : "Failed"),
         "data": data,
       };
     } catch (e) {
@@ -98,7 +110,7 @@ class TransactionService {
   }) async {
     try {
       final headers = await ApiClient.getHeaders();
-      
+
       final body = jsonEncode({
         "accountId": originalTx.accountId,
         "amount": originalTx.amount.abs().toString(),
@@ -106,7 +118,8 @@ class TransactionService {
         "direction": "REVERSAL",
         "category": originalTx.category,
         "description": reason ?? "Reversing ${originalTx.title}",
-        "idempotencyKey": "rev-${originalTx.id}-${DateTime.now().millisecondsSinceEpoch}",
+        "idempotencyKey":
+            "rev-${originalTx.id}-${DateTime.now().millisecondsSinceEpoch}",
         "parentTransactionId": originalTx.id,
       });
 
@@ -119,7 +132,8 @@ class TransactionService {
       final data = jsonDecode(response.body);
       return {
         "success": response.statusCode == 201,
-        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ??
+            (response.statusCode == 201 ? "Success" : "Failed"),
       };
     } catch (e) {
       return {"success": false, "message": "Network Failure: $e"};
@@ -136,7 +150,7 @@ class TransactionService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
         final List dataList = body['data'] ?? [];
-        
+
         return dataList.map((item) => TransactionModel.fromJson(item)).toList();
       } else if (response.statusCode == 401) {
         throw Exception("Unauthorized - Please login again");
@@ -147,7 +161,8 @@ class TransactionService {
       throw Exception("Connection Error: $e");
     }
   }
-static Future<Map<String, dynamic>> reserveFunds({
+
+  static Future<Map<String, dynamic>> reserveFunds({
     required String accountId,
     required String amount,
     required String action, // "RESERVE" or "RELEASE"
@@ -175,9 +190,11 @@ static Future<Map<String, dynamic>> reserveFunds({
 
       final data = jsonDecode(response.body);
       return {
-        // Backend returns 201 Created on success
-        "success": response.statusCode == 201,
-        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        // Accept both 201 (Created) and 409 (Duplicate/Idempotent Success)
+        "success": response.statusCode == 201 ||
+            (response.statusCode == 409 && data['success'] == true),
+        "message": data['error'] ??
+            (response.statusCode == 201 ? "Success" : "Already processed"),
         "data": data,
       };
     } catch (e) {

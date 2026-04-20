@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../data/goal_model.dart';
 import 'package:front_end/core/services/api_client.dart';
@@ -8,12 +9,32 @@ class GoalService {
 
   GoalService({required this.baseUrl});
 
-  // Helper method to safely decode JSON and avoid HTML crash pages
+  // 🛡️ Helper: Safely decode JSON
   dynamic _safeJsonDecode(http.Response response) {
     if (response.headers['content-type']?.contains('application/json') != true) {
       throw const FormatException("Invalid server response format. Expected JSON.");
     }
     return jsonDecode(response.body);
+  }
+
+  // 🚨 Helper: Extract backend error messages
+  String _extractErrorMessage(http.Response response) {
+    try {
+      final decoded = _safeJsonDecode(response);
+      if (decoded is Map && decoded.containsKey('message')) {
+        return decoded['message'];
+      }
+      return "Server Error: ${response.statusCode}";
+    } catch (_) {
+      return "An unexpected server error occurred (${response.statusCode}).";
+    }
+  }
+
+  // 🚨 Helper: Format connection errors
+  String _formatCatchError(dynamic e) {
+    if (e is TimeoutException) return "Connection timed out. Please check your internet.";
+    if (e is FormatException) return "Server configuration error. Try again later.";
+    return "Network error. Please try again.";
   }
 
   /// GET ALL GOALS
@@ -37,15 +58,15 @@ class GoalService {
         }
         return data.map((json) => GoalModel.fromJson(json)).toList();
       } else {
-        throw Exception("Server Error: ${response.statusCode}");
+        throw Exception(_extractErrorMessage(response));
       }
     } catch (e) {
-      throw Exception("Failed to fetch goals: $e");
+      throw Exception(_formatCatchError(e));
     }
   }
 
   /// CREATE GOAL
-  Future<bool> createGoal(GoalModel goal) async {
+  Future<Map<String, dynamic>> createGoal(GoalModel goal) async {
     try {
       final headers = await ApiClient.getHeaders();
       final response = await http
@@ -56,14 +77,18 @@ class GoalService {
           )
           .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 201 || response.statusCode == 200;
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {'success': true};
+      } else {
+        return {'success': false, 'message': _extractErrorMessage(response)};
+      }
     } catch (e) {
-      return false;
+      return {'success': false, 'message': _formatCatchError(e)};
     }
   }
 
   /// UPDATE GOAL
-  Future<bool> updateGoal(GoalModel goal) async {
+  Future<Map<String, dynamic>> updateGoal(GoalModel goal) async {
     try {
       final headers = await ApiClient.getHeaders();
       final response = await http
@@ -74,9 +99,13 @@ class GoalService {
           )
           .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        return {'success': true};
+      } else {
+        return {'success': false, 'message': _extractErrorMessage(response)};
+      }
     } catch (e) {
-      return false;
+      return {'success': false, 'message': _formatCatchError(e)};
     }
   }
 
@@ -105,9 +134,8 @@ class GoalService {
           )
           .timeout(const Duration(seconds: 10));
 
-      final decoded = _safeJsonDecode(response);
-
       if (response.statusCode == 200 || response.statusCode == 409) {
+        final decoded = _safeJsonDecode(response);
         return {
           'success': true,
           'txid': decoded['txid'],
@@ -115,10 +143,10 @@ class GoalService {
           'isDuplicate': response.statusCode == 409
         };
       } else {
-        return {'success': false, 'message': decoded['message'] ?? 'Deposit failed'};
+        return {'success': false, 'message': _extractErrorMessage(response)};
       }
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      return {'success': false, 'message': _formatCatchError(e)};
     }
   }
 
@@ -147,9 +175,8 @@ class GoalService {
           )
           .timeout(const Duration(seconds: 10));
 
-      final decoded = _safeJsonDecode(response);
-
       if (response.statusCode == 200 || response.statusCode == 409) {
+        final decoded = _safeJsonDecode(response);
         return {
           'success': true,
           'txid': decoded['txid'],
@@ -157,24 +184,28 @@ class GoalService {
           'isDuplicate': response.statusCode == 409
         };
       } else {
-        return {'success': false, 'message': decoded['message'] ?? 'Withdrawal failed'};
+        return {'success': false, 'message': _extractErrorMessage(response)};
       }
     } catch (e) {
-      return {'success': false, 'message': e.toString()};
+      return {'success': false, 'message': _formatCatchError(e)};
     }
   }
 
-  /// DELETE GOAL (Updated to return bool for consistency)
-  Future<bool> deleteGoal(String goalId) async {
+  /// DELETE GOAL
+  Future<Map<String, dynamic>> deleteGoal(String goalId) async {
     try {
       final headers = await ApiClient.getHeaders();
       final response = await http
           .delete(Uri.parse("$baseUrl/goals/$goalId"), headers: headers)
           .timeout(const Duration(seconds: 10));
 
-      return response.statusCode == 200 || response.statusCode == 204;
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {'success': true};
+      } else {
+        return {'success': false, 'message': _extractErrorMessage(response)};
+      }
     } catch (e) {
-      return false;
+      return {'success': false, 'message': _formatCatchError(e)};
     }
   }
 
@@ -182,10 +213,12 @@ class GoalService {
   Future<List<dynamic>> getGoalHistory(String goalId) async {
     try {
       final headers = await ApiClient.getHeaders();
-      final response = await http.get(
-        Uri.parse("$baseUrl/goals/$goalId/history"),
-        headers: headers,
-      );
+      final response = await http
+          .get(
+            Uri.parse("$baseUrl/goals/$goalId/history"),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final body = _safeJsonDecode(response);

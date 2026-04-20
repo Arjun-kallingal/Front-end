@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:front_end/core/services/transaction_service.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/account_provider.dart';
@@ -26,7 +25,6 @@ class ReserveFundsScreen extends StatefulWidget {
 
 class _ReserveFundsScreenState extends State<ReserveFundsScreen> {
   String amount = "";
-  DateTime selectedDate = DateTime.now();
   bool _isLoading = false;
   late bool _isReserveOut;
   String? _selectedCategory;
@@ -98,7 +96,6 @@ class _ReserveFundsScreenState extends State<ReserveFundsScreen> {
 
   void _showSnackBar(String message, {bool isError = true}) {
     if (!mounted) return;
-    final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -141,9 +138,6 @@ class _ReserveFundsScreenState extends State<ReserveFundsScreen> {
                       controller: descriptionController,
                       hint: "What is this reserve for?",
                     ),
-                    const SizedBox(height: 16),
-                    _buildLabel("Date"),
-                    _datePicker(),
                     const SizedBox(height: 24),
                     _buildLabel("Reserve Category"),
                     _buildTwoLineCategories(),
@@ -262,40 +256,6 @@ class _ReserveFundsScreenState extends State<ReserveFundsScreen> {
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: activeColor, width: 2)),
       ),
       onChanged: isAmount ? (val) => amount = val : null,
-    );
-  }
-
-  Widget _datePicker() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return InkWell(
-      onTap: () async {
-        final d = await showDatePicker(
-          context: context,
-          initialDate: selectedDate,
-          firstDate: DateTime(2020),
-          lastDate: DateTime.now(),
-        );
-        if (d != null) setState(() => selectedDate = d);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              DateFormat('dd MMM, yyyy').format(selectedDate),
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface),
-            ),
-            Icon(Icons.calendar_month_rounded, size: 22, color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
-          ],
-        ),
-      ),
     );
   }
 

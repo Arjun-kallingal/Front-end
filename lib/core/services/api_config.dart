@@ -12,7 +12,7 @@ class ApiConfig {
     if (Platform.isAndroid) {
       // ⚠️ EMULATOR: Use "http://10.0.2.2:5000"
       // ✅ PHYSICAL DEVICE: Use your computer's IPv4 address below!
-      return "http://10.202.207.88:5000";
+      return "http://192.168.56.1:5000";
     }
     
     return "http://localhost:5000"; // iOS Simulator

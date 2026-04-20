@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../data/goal_model.dart';
-import '../services/goal_service.dart';
-import 'package:front_end/core/services/api_config.dart';
+import '../provider/goal_provider.dart';
 
 class CreateNewGoalScreen extends StatefulWidget {
   final GoalModel? existingGoal;
@@ -24,10 +24,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   late TextEditingController titleController;
   late TextEditingController targetController;
 
-  late final GoalService _goalService = GoalService(
-    baseUrl: "${ApiConfig.baseUrl}/api",
-  );
-
   bool _isSaving = false;
 
   DateTime? selectedDate;
@@ -46,7 +42,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
   void initState() {
     super.initState();
 
-    // Populate fields if we are editing an existing goal
     titleController =
         TextEditingController(text: widget.existingGoal?.title ?? "");
 
@@ -81,7 +76,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
 
     setState(() => _isSaving = true);
 
-    // Construct the GoalModel (Notice there is no accountId here!)
     final goalToSave = GoalModel(
       id: widget.existingGoal?.id ?? '',
       title: titleController.text.trim(),
@@ -94,33 +88,34 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
     );
 
     try {
-      bool success;
+      final provider = context.read<GoalProvider>();
+      String? errorMessage;
 
       if (widget.existingGoal != null) {
-        success = await _goalService.updateGoal(goalToSave);
+        errorMessage = await provider.updateGoal(goalToSave);
       } else {
-        success = await _goalService.createGoal(goalToSave);
+        errorMessage = await provider.createGoal(goalToSave);
       }
 
-      if (success && mounted) {
-        Navigator.pop(context, true); // Pop back to the list and trigger a refresh
+      if (!mounted) return;
+
+      if (errorMessage == null) {
+        Navigator.pop(context, true); 
       } else {
-        _showSnackBar("Failed to save goal. Please try again.", isError: true);
+        _showSnackBar(errorMessage, isError: true);
       }
     } catch (e) {
-      _showSnackBar("Error saving goal: $e", isError: true);
+      if (mounted) _showSnackBar("Network error. Please try again.", isError: true);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    final colors = Theme.of(context).colorScheme;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: isError ? colors.error : colors.primary,
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+        backgroundColor: isError ? Colors.redAccent : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -129,7 +124,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
 
   Widget _buildLabel(String text) {
     final colors = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 2),
       child: Text(
@@ -146,7 +140,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
 
   Widget _buildHeader() {
     final colors = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
@@ -170,7 +163,6 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
 
   Widget _buildStickySaveButton() {
     final colors = Theme.of(context).colorScheme;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -380,7 +372,7 @@ class _CreateNewGoalScreenState extends State<CreateNewGoalScreen> {
                           );
                         },
                       ),
-                      const SizedBox(height: 40), // Extra bottom padding
+                      const SizedBox(height: 40), 
                     ],
                   ),
                 ),
