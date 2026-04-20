@@ -34,6 +34,35 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   void initState() {
     super.initState();
     startTimer();
+    // listen for clipboard paste on each focus node
+    for (int i = 0; i < 6; i++) {
+      focusNodes[i].addListener(() => _onFocusChange(i));
+    }
+  }
+
+  // auto-paste when a box gains focus and clipboard has 6 digits
+  void _onFocusChange(int index) async {
+    if (!focusNodes[index].hasFocus) return;
+    final data = await Clipboard.getData('text/plain');
+    if (data == null || data.text == null) return;
+    final text = data.text!.trim();
+    if (text.length == 6 && RegExp(r'^\d{6}$').hasMatch(text)) {
+      _pasteOtp(text);
+    }
+  }
+
+  // fill all 6 boxes from a 6-digit string and auto-verify
+  void _pasteOtp(String otp) {
+    for (int i = 0; i < 6; i++) {
+      controllers[i].text = otp[i];
+    }
+    // move focus to last box
+    focusNodes[5].requestFocus();
+    setState(() {});
+    // slight delay so UI updates before verify
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) verifyOtp();
+    });
   }
 
   void startTimer() {
@@ -129,62 +158,86 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 5),
         height: 58,
-        child: TextField(
-          controller: controllers[index],
-          focusNode: focusNodes[index],
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          maxLength: 1,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: isLight ? Colors.black : Colors.white,
-          ),
-          decoration: InputDecoration(
-            counterText: '',
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
-            filled: true,
-            fillColor: isLight ? Colors.grey[100] : Colors.grey[900],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: isLight ? Colors.black12 : Colors.white12,
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: isLight ? Colors.black : Colors.white,
-                width: 2,
-              ),
-            ),
-          ),
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          onChanged: (value) {
-            if (value.isNotEmpty && index < 5) {
-              FocusScope.of(context).nextFocus();
-            }
-            if (value.isEmpty && index > 0) {
-              FocusScope.of(context).previousFocus();
-            }
-            if (getOtp().length == 6) {
-              verifyOtp();
-            }
-          },
-          onTap: () async {
-            final data = await Clipboard.getData('text/plain');
-            if (data != null && data.text!.length == 6) {
-              for (int i = 0; i < 6; i++) {
-                controllers[i].text = data.text![i];
+        child: KeyboardListener(
+          focusNode: FocusNode(),
+          onKeyEvent: (event) {
+            // handle physical backspace key (desktop/hardware keyboard)
+            if (event is KeyDownEvent &&
+                event.logicalKey == LogicalKeyboardKey.backspace) {
+              if (controllers[index].text.isEmpty && index > 0) {
+                controllers[index - 1].clear();
+                focusNodes[index - 1].requestFocus();
               }
-              verifyOtp();
             }
           },
+          child: TextField(
+            controller: controllers[index],
+            focusNode: focusNodes[index],
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            maxLength: 1,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: isLight ? Colors.black : Colors.white,
+            ),
+            decoration: InputDecoration(
+              counterText: '',
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              filled: true,
+              fillColor: isLight ? Colors.grey[100] : Colors.grey[900],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: isLight ? Colors.black12 : Colors.white12,
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: isLight ? Colors.black : Colors.white,
+                  width: 2,
+                ),
+              ),
+            ),
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (value) {
+              if (value.length > 1) {
+                // handle paste via onChanged (some Android keyboards)
+                if (value.length == 6 && RegExp(r'^\d{6}$').hasMatch(value)) {
+                  _pasteOtp(value);
+                  return;
+                }
+                // truncate to 1 digit
+                controllers[index].text = value[0];
+                controllers[index].selection = TextSelection.fromPosition(
+                  TextPosition(offset: controllers[index].text.length),
+                );
+              }
+
+              if (value.isNotEmpty && index < 5) {
+                // advance to next box
+                focusNodes[index + 1].requestFocus();
+              }
+
+              if (value.isEmpty && index > 0) {
+                // go back to previous box
+                focusNodes[index - 1].requestFocus();
+              }
+
+              // auto-verify when all 6 filled
+              if (getOtp().length == 6) {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (mounted) verifyOtp();
+                });
+              }
+            },
+          ),
         ),
       ),
     );

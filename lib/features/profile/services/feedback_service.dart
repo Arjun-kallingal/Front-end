@@ -26,7 +26,6 @@ class FeedbackService {
     required String token,
     required String category,
     required String description,
-    String? screenshotUrl,
   }) async {
     final response = await http.post(
       Uri.parse(baseUrl),
@@ -37,7 +36,6 @@ class FeedbackService {
       body: jsonEncode({
         "category": category,
         "description": description,
-        "screenshot": screenshotUrl,
       }),
     );
 
