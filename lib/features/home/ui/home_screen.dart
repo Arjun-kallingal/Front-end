@@ -22,7 +22,7 @@ import 'package:front_end/core/providers/notification_provider.dart';
 
 // IMPORTANT: Adjust these import paths if your files are located elsewhere!
 import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
-import 'package:front_end/features/goals/ui/create_new_goal.dart'; 
+import 'package:front_end/features/goals/ui/create_new_goal.dart';
 import 'package:front_end/features/goals/data/goal_model.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<TransactionModel> _recentTransactions = [];
   bool _isLoadingRecent = true;
   String? _recentError;
-  
+
   // FIX: Cache the provider to safely remove listeners in dispose()
   late TransactionProvider _transactionProvider;
 
@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _transactionProvider = context.read<TransactionProvider>();
-    
+
     // FIX: Use post-frame callback for safer provider initialization
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _transactionProvider.fetchTransactions();
@@ -255,7 +255,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.expenseAmount,
-                      foregroundColor: AppColors.darkTextPrimary, // From Snippet 2
+                      foregroundColor:
+                          AppColors.darkTextPrimary, // From Snippet 2
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                     ),
@@ -277,7 +278,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirm == true) {
       setState(() => _isProcessing = true);
 
-      final result = await TransactionService.reverseTransaction(originalTx: tx);
+      final result =
+          await TransactionService.reverseTransaction(originalTx: tx);
 
       if (result['success']) {
         if (!mounted) return;
@@ -324,7 +326,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 onRefresh: () async {
                   await _transactionProvider.fetchTransactions();
                   await _loadRecentTransactions();
-                  if (mounted) await context.read<NotificationProvider>().loadNotifications();
+                  if (mounted)
+                    await context
+                        .read<NotificationProvider>()
+                        .loadNotifications();
                   if (mounted) await context.read<GoalProvider>().fetchGoals();
                 },
                 color: colorScheme.secondary,
@@ -346,14 +351,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildActionButtons(context, colorScheme, theme, isDark),
                       const SizedBox(height: 32),
 
-                      // 🔥 2. ACTIVE GOALS 
-                      _buildActiveGoalsSection(context, colorScheme, theme, isDark),
+                      // 🔥 2. ACTIVE GOALS
+                      _buildActiveGoalsSection(
+                          context, colorScheme, theme, isDark),
                       const SizedBox(height: 28),
 
                       // 🔥 3. RECENT ACTIVITY
                       _buildRecentHeader(context, colorScheme, theme, isDark),
                       const SizedBox(height: 8),
-                      _buildTransactionList(context, colorScheme, theme, isDark),
+                      _buildTransactionList(
+                          context, colorScheme, theme, isDark),
                       const SizedBox(height: 48),
                     ],
                   ),
@@ -363,7 +370,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   color: AppColors.darkBgPrimary.withOpacity(0.3),
                   child: Center(
-                    child: CircularProgressIndicator(color: colorScheme.primary),
+                    child:
+                        CircularProgressIndicator(color: colorScheme.primary),
                   ),
                 ),
             ],
@@ -377,13 +385,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // 🔥 ACTIVE GOALS SECTION
   // ===========================================================================
 
-  Widget _buildActiveGoalsSection(
-      BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
-    
+  Widget _buildActiveGoalsSection(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
     final goalProvider = context.watch<GoalProvider>();
-    final activeGoals = goalProvider.goals.where((g) => g.status != 'completed').toList();
+    final activeGoals =
+        goalProvider.goals.where((g) => g.status != 'completed').toList();
 
-    final double responsiveHeight = math.max(180.0, MediaQuery.of(context).size.height * 0.22);
+    final double responsiveHeight =
+        math.max(180.0, MediaQuery.of(context).size.height * 0.22);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,9 +414,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const FinancialGoalsScreen()),
                   ).then((_) {
-                    if (mounted) context.read<GoalProvider>().fetchGoals(); // FIX: added mounted check
+                    if (mounted)
+                      context
+                          .read<GoalProvider>()
+                          .fetchGoals(); // FIX: added mounted check
                   });
                 },
                 child: Row(
@@ -415,7 +428,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       "View All",
                       style: TextStyle(
-                        color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                        color: isDark
+                            ? AppColors.darkTextMuted
+                            : AppColors.lightTextMuted,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -424,7 +439,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 10,
-                      color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted,
                     ),
                   ],
                 ),
@@ -433,7 +450,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 14),
-
         if (activeGoals.isEmpty)
           _buildEmptyGoalsState(context, colorScheme, isDark)
         else
@@ -459,38 +475,46 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGoalCard({
-    required dynamic goal, 
+    required dynamic goal,
     required bool isSingle,
     required BuildContext context,
     required bool isDark,
   }) {
     // FIX: Safe math calculation to prevent DivisionByZero/NaN exceptions
-    final double targetAmount = (goal.targetAmount != null && goal.targetAmount > 0) 
-        ? goal.targetAmount 
-        : 1.0; 
+    final double targetAmount =
+        (goal.targetAmount != null && goal.targetAmount > 0)
+            ? goal.targetAmount
+            : 1.0;
     final double progress = (goal.currentAmount / targetAmount).clamp(0.0, 1.0);
-    
+
     int daysRemaining = 0;
     try {
-      daysRemaining = goal.daysLeft ?? goal.targetDate?.difference(DateTime.now()).inDays ?? 0;
+      daysRemaining = goal.daysLeft ??
+          goal.targetDate?.difference(DateTime.now()).inDays ??
+          0;
     } catch (_) {}
 
-    const Color cardBgColor = Color(0xFFEFF6FF); 
+    const Color cardBgColor = Color(0xFFEFF6FF);
     const Color cardBorderColor = Color(0xFFBFDBFE);
     const Color watermarkColor = Color(0xFFDBEAFE);
 
-    const Color accentColor = Color(0xFF3B82F6); 
+    const Color accentColor = Color(0xFF3B82F6);
     const Color iconBgColor = Color(0xFFDBEAFE);
     const Color badgeTextColor = Color(0xFF1E40AF);
 
     final Color textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
-    final Color textSecondary = isDark ? Colors.white70 : const Color(0xFF64748B);
-    final Color textTertiary = isDark ? Colors.white54 : const Color(0xFF94A3B8);
+    final Color textSecondary =
+        isDark ? Colors.white70 : const Color(0xFF64748B);
+    final Color textTertiary =
+        isDark ? Colors.white54 : const Color(0xFF94A3B8);
 
-    final Color finalCardBgColor = isDark ? const Color(0xFF1E1E2C) : cardBgColor;
+    final Color finalCardBgColor =
+        isDark ? const Color(0xFF1E1E2C) : cardBgColor;
     final Color finalBorderColor = isDark ? Colors.white10 : cardBorderColor;
-    final Color finalWatermarkColor = isDark ? Colors.white.withOpacity(0.02) : watermarkColor;
-    final Color finalIconBgColor = isDark ? accentColor.withOpacity(0.15) : iconBgColor;
+    final Color finalWatermarkColor =
+        isDark ? Colors.white.withOpacity(0.02) : watermarkColor;
+    final Color finalIconBgColor =
+        isDark ? accentColor.withOpacity(0.15) : iconBgColor;
 
     String predictionText;
     if (goal.requiredDailySaving != null && goal.requiredDailySaving! > 0) {
@@ -499,16 +523,16 @@ class _HomeScreenState extends State<HomeScreen> {
       predictionText = "On track";
     }
 
-    final double cardWidth = isSingle 
-        ? MediaQuery.of(context).size.width - 48 
-        : MediaQuery.of(context).size.width * 0.85; 
+    final double cardWidth = isSingle
+        ? MediaQuery.of(context).size.width - 48
+        : MediaQuery.of(context).size.width * 0.85;
 
     return Container(
       width: cardWidth,
-      margin: EdgeInsets.only(right: isSingle ? 0 : 16, bottom: 12), 
+      margin: EdgeInsets.only(right: isSingle ? 0 : 16, bottom: 12),
       decoration: BoxDecoration(
         color: finalCardBgColor,
-        borderRadius: BorderRadius.circular(20), 
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: finalBorderColor, width: 1.0),
         boxShadow: [
           if (!isDark)
@@ -523,12 +547,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
-             ).then((_) {
-               if (mounted) context.read<GoalProvider>().fetchGoals(); // FIX: mounted check
-             });
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
+            ).then((_) {
+              if (mounted)
+                context.read<GoalProvider>().fetchGoals(); // FIX: mounted check
+            });
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
@@ -539,26 +564,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   bottom: -15,
                   child: Icon(
                     Icons.radar_rounded,
-                    size: 110, 
+                    size: 110,
                     color: finalWatermarkColor,
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16), 
+                  padding: const EdgeInsets.all(16),
                   child: Column(
-                    mainAxisSize: MainAxisSize.max, 
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // --- TOP ROW ---
                       Row(
                         children: [
                           Container(
-                            width: 38, 
+                            width: 38,
                             height: 38,
                             decoration: BoxDecoration(
                                 color: finalIconBgColor,
                                 borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.track_changes_rounded, color: accentColor, size: 18), 
+                            child: const Icon(Icons.track_changes_rounded,
+                                color: accentColor, size: 18),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -569,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   goal.title,
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14, 
+                                      fontSize: 14,
                                       color: textPrimary),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -577,13 +603,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 2),
                                 Row(
                                   children: [
-                                    Icon(Icons.category_rounded, size: 12, color: textSecondary),
+                                    Icon(Icons.category_rounded,
+                                        size: 12, color: textSecondary),
                                     const SizedBox(width: 4),
                                     Flexible(
                                       child: Text(
                                         goal.category,
                                         style: TextStyle(
-                                            fontSize: 11, 
+                                            fontSize: 11,
                                             color: textSecondary,
                                             fontWeight: FontWeight.w500),
                                         maxLines: 1,
@@ -591,14 +618,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 4),
-                                    Text("•", style: TextStyle(color: textTertiary, fontSize: 11)),
+                                    Text("•",
+                                        style: TextStyle(
+                                            color: textTertiary, fontSize: 11)),
                                     const SizedBox(width: 4),
                                     Text(
-                                      goal.targetDate != null 
-                                          ? DateFormat('MMM dd, yyyy').format(goal.targetDate)
+                                      goal.targetDate != null
+                                          ? DateFormat('MMM dd, yyyy')
+                                              .format(goal.targetDate)
                                           : 'No Date', // Safe fallback
                                       style: TextStyle(
-                                          fontSize: 11, 
+                                          fontSize: 11,
                                           color: textSecondary,
                                           fontWeight: FontWeight.w500),
                                     ),
@@ -619,14 +649,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text("Saved",
                                   style: TextStyle(
-                                      fontSize: 11, 
+                                      fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                       color: textSecondary)),
                               const SizedBox(height: 2),
                               Text(
                                 "₹${goal.currentAmount.toInt()}",
                                 style: TextStyle(
-                                    fontSize: 18, 
+                                    fontSize: 18,
                                     fontWeight: FontWeight.w900,
                                     color: textPrimary,
                                     letterSpacing: -0.5),
@@ -638,14 +668,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text("Target",
                                   style: TextStyle(
-                                      fontSize: 11, 
+                                      fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                       color: textSecondary)),
                               const SizedBox(height: 2),
                               Text(
                                 "₹${goal.targetAmount.toInt()}",
                                 style: TextStyle(
-                                    fontSize: 13, 
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: textPrimary),
                               ),
@@ -661,11 +691,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(8),
                               child: LinearProgressIndicator(
                                 value: progress,
-                                minHeight: 6, 
+                                minHeight: 6,
                                 backgroundColor: isDark
                                     ? Colors.white10
                                     : Colors.black.withOpacity(0.05),
-                                valueColor: const AlwaysStoppedAnimation(accentColor),
+                                valueColor:
+                                    const AlwaysStoppedAnimation(accentColor),
                               ),
                             ),
                           ),
@@ -676,7 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               "${(progress * 100).toInt()}%",
                               textAlign: TextAlign.right,
                               style: const TextStyle(
-                                  fontSize: 12, 
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: accentColor),
                             ),
@@ -688,26 +719,28 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                                 color: finalIconBgColor,
                                 borderRadius: BorderRadius.circular(6)),
                             child: Text(
                               predictionText,
                               style: TextStyle(
-                                  fontSize: 10, 
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: isDark ? accentColor : badgeTextColor),
                             ),
                           ),
                           Row(
                             children: [
-                              Icon(Icons.access_time_rounded, size: 12, color: textSecondary),
+                              Icon(Icons.access_time_rounded,
+                                  size: 12, color: textSecondary),
                               const SizedBox(width: 4),
                               Text(
                                 "${daysRemaining > 0 ? daysRemaining : 0} days left",
                                 style: TextStyle(
-                                    fontSize: 11, 
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     color: textSecondary),
                               ),
@@ -726,7 +759,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyGoalsState(BuildContext context, ColorScheme colorScheme, bool isDark) {
+  Widget _buildEmptyGoalsState(
+      BuildContext context, ColorScheme colorScheme, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
@@ -748,7 +782,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.incomeAmount.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.auto_graph_rounded, size: 28, color: AppColors.incomeAmount),
+              child: const Icon(Icons.auto_graph_rounded,
+                  size: 28, color: AppColors.incomeAmount),
             ),
             const SizedBox(height: 16),
             Text(
@@ -774,19 +809,26 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const CreateNewGoalScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const CreateNewGoalScreen()),
                 ).then((_) {
-                  if (mounted) context.read<GoalProvider>().fetchGoals(); // FIX: Mounted check
+                  if (mounted)
+                    context
+                        .read<GoalProvider>()
+                        .fetchGoals(); // FIX: Mounted check
                 });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 elevation: 0,
               ),
-              child: const Text("Create a Goal", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text("Create a Goal",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -798,9 +840,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // EXISTING UI COMPONENTS
   // ===========================================================================
 
-  Widget _buildAppBar(BuildContext context, ThemeData theme, ColorScheme colorScheme, bool isDark) {
-    final iconBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
-    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06);
+  Widget _buildAppBar(BuildContext context, ThemeData theme,
+      ColorScheme colorScheme, bool isDark) {
+    final iconBg = isDark
+        ? Colors.white.withOpacity(0.04)
+        : Colors.black.withOpacity(0.03);
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.black.withOpacity(0.06);
     final iconColor = isDark ? Colors.white : Colors.black87;
     final Color premiumGreen = const Color(0xFF81AF63);
     final Color premiumText = isDark ? Colors.white : const Color(0xFF0F172A);
@@ -814,12 +861,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Container(
-                width: 40, 
+                width: 40,
                 height: 60,
                 decoration: const BoxDecoration(shape: BoxShape.circle),
                 child: Image.asset(
                   'assets/images/homeicon.png',
-                  fit: BoxFit.contain, 
+                  fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.eco_rounded,
                     color: premiumGreen,
@@ -833,7 +880,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     TextSpan(
                       text: "Green",
                       style: TextStyle(
-                        color: premiumGreen, 
+                        color: premiumGreen,
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
@@ -842,7 +889,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     TextSpan(
                       text: "Pouch",
                       style: TextStyle(
-                        color: premiumText, 
+                        color: premiumText,
                         fontSize: 22,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -0.5,
@@ -862,7 +909,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const NotificationScreen()),
                       );
                     },
                     child: Stack(
@@ -876,7 +924,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: iconBg,
                             border: Border.all(color: borderColor, width: 1),
                           ),
-                          child: Icon(Icons.notifications_outlined, color: iconColor, size: 22),
+                          child: Icon(Icons.notifications_outlined,
+                              color: iconColor, size: 22),
                         ),
                         if (unreadCount > 0)
                           Positioned(
@@ -886,11 +935,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 14,
                               height: 14,
                               decoration: BoxDecoration(
-                                color: premiumGreen, 
+                                color: premiumGreen,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: theme.scaffoldBackgroundColor,
-                                  width: 2.5, 
+                                  width: 2.5,
                                 ),
                               ),
                             ),
@@ -904,7 +953,8 @@ class _HomeScreenState extends State<HomeScreen> {
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const ProfileSettingsScreen()),
                 ),
                 child: Container(
                   width: 44,
@@ -914,7 +964,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: iconBg,
                     border: Border.all(color: borderColor, width: 1),
                   ),
-                  child: Icon(Icons.person_outline_rounded, color: iconColor, size: 22),
+                  child: Icon(Icons.person_outline_rounded,
+                      color: iconColor, size: 22),
                 ),
               ),
             ],
@@ -928,8 +979,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // 🔥 QUICK ACTIONS SECTION
   // ===========================================================================
 
-  Widget _buildActionButtons(
-      BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
+  Widget _buildActionButtons(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -956,13 +1007,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.trending_up_rounded,
                   label: "Income",
                   color: AppColors.incomeAmount, // Green
-                  surfaceColor: isDark ? const Color(0xFF161618) : colorScheme.surface,
+                  surfaceColor:
+                      isDark ? const Color(0xFF161618) : colorScheme.surface,
                   textColor: isDark ? Colors.white : colorScheme.primary,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                            const AddTransactionScreen(initialIsExpense: false)),
+                        builder: (_) => const AddTransactionScreen(
+                            initialIsExpense: false)),
                   ).then((result) {
                     if (!mounted) return;
                     if (result is String) {
@@ -979,7 +1031,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.trending_down_rounded,
                   label: "Expense",
                   color: AppColors.expenseAmount, // Red
-                  surfaceColor: isDark ? const Color(0xFF161618) : colorScheme.surface,
+                  surfaceColor:
+                      isDark ? const Color(0xFF161618) : colorScheme.surface,
                   textColor: isDark ? Colors.white : colorScheme.primary,
                   onTap: () => Navigator.push(
                     context,
@@ -1001,8 +1054,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _actionButton(
                   icon: Icons.swap_horiz_rounded,
                   label: "Transfer",
-                  color: const Color(0xFFA78BFA), // The purple color from your screenshot
-                  surfaceColor: isDark ? const Color(0xFF161618) : colorScheme.surface,
+                  color: const Color(
+                      0xFFA78BFA), // The purple color from your screenshot
+                  surfaceColor:
+                      isDark ? const Color(0xFF161618) : colorScheme.surface,
                   textColor: isDark ? Colors.white : colorScheme.primary,
                   onTap: () => Navigator.push(
                     context,
@@ -1021,7 +1076,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
- Widget _actionButton({
+  Widget _actionButton({
     required IconData icon,
     required String label,
     required Color color,
@@ -1040,7 +1095,8 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: color.withOpacity(0.20), width: 1),
           boxShadow: [
             BoxShadow(
-              color: AppColors.darkBgPrimary.withOpacity(0.05), // From Snippet 2
+              color:
+                  AppColors.darkBgPrimary.withOpacity(0.05), // From Snippet 2
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1072,8 +1128,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
-    final surfaceAlt = theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
+
+  Widget _buildRecentHeader(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
+    final surfaceAlt =
+        theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1109,7 +1168,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     "See all",
                     style: TextStyle(
-                      color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1117,7 +1178,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 4),
                   Icon(Icons.arrow_forward_ios_rounded,
                       size: 10,
-                      color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted),
                 ],
               ),
             ),
@@ -1127,14 +1190,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme, ThemeData theme, bool isDark) {
+  Widget _buildTransactionList(BuildContext context, ColorScheme colorScheme,
+      ThemeData theme, bool isDark) {
     final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
 
     if (_isLoadingRecent) {
       return Padding(
         padding: const EdgeInsets.all(48),
         child: Center(
-          child: CircularProgressIndicator(color: colorScheme.secondary, strokeWidth: 2),
+          child: CircularProgressIndicator(
+              color: colorScheme.secondary, strokeWidth: 2),
         ),
       );
     }
@@ -1178,22 +1243,21 @@ class _HomeScreenState extends State<HomeScreen> {
       itemBuilder: (context, index) {
         bool isLatest = index == 0;
         return _buildTile(
-          context, 
-          _recentTransactions[index], 
-          colorScheme, 
-          theme, 
-          isDark, 
-          isLatest: isLatest
-        );
+            context, _recentTransactions[index], colorScheme, theme, isDark,
+            isLatest: isLatest);
       },
     );
   }
 
-  Widget _buildTile(BuildContext context, TransactionModel tx, ColorScheme colorScheme, ThemeData theme, bool isDark, {bool isLatest = false}) {
+ Widget _buildTile(BuildContext context, TransactionModel tx, ColorScheme colorScheme, ThemeData theme, bool isDark, {bool isLatest = false}) {
     final Color moneyColor = _getTransactionColor(tx);
     final bool isCash = tx.accountName.toLowerCase().contains('cash') || tx.accountName.toLowerCase().contains('wallet');
     final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
-    bool canReverse = tx.type != "REVERSAL" && tx.status != "VOIDED" && isLatest;
+    bool canReverse = !tx.isCancelled &&
+                  tx.type != "REVERSAL" && 
+                  tx.direction != "REVERSAL" && 
+                  tx.status != "VOIDED" && 
+                  isLatest;
 
     return Column(
       children: [
@@ -1211,9 +1275,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       tx.title,
                       style: TextStyle(
-                        color: colorScheme.primary,
+                        color: tx.isCancelled ? textSec : colorScheme.primary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        // 1. Removed tx.isCancelled from the line-through decoration
                         decoration: tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
                       ),
                       maxLines: 1,
@@ -1255,9 +1320,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     "₹${tx.amount.abs().toStringAsFixed(2)}",
                     style: TextStyle(
-                      color: tx.status == "VOIDED" ? textSec : moneyColor,
+                      color: tx.isCancelled || tx.status == "VOIDED" ? textSec : moneyColor,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
+                      // 1. Removed tx.isCancelled from the line-through decoration here as well
                       decoration: tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
                     ),
                   ),
@@ -1266,6 +1332,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     DateFormat('dd MMM, yyyy').format(tx.date),
                     style: TextStyle(color: textSec, fontSize: 10, fontWeight: FontWeight.w500),
                   ),
+                  if (tx.isCancelled) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        // 2. Changed theme.colorScheme.error to Colors.red
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 2. Changed icon color to Colors.red
+                          const Icon(Icons.cancel_outlined, size: 10, color: Colors.red),
+                          const SizedBox(width: 4),
+                          const Text(
+                            "Cancelled",
+                            style: TextStyle(
+                              color: Colors.red, // 2. Changed text color to Colors.red
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   if (canReverse) ...[
                     const SizedBox(height: 8),
                     GestureDetector(
@@ -1307,14 +1401,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Color _getTransactionColor(TransactionModel tx) {
     switch (tx.direction) {
-      case "GOAL_ALLOCATION": return AppColors.savingsPrimary;
-      case "GOAL_DEALLOCATION": return AppColors.progressGreen;
-      case "GOAL_COMPLETION": return AppColors.chartIncome;
-      case "ACCOUNT_TRANSFER_IN": return AppColors.incomeAmount;
-      case "ACCOUNT_TRANSFER_OUT": return AppColors.dateLabel;
-      case "RESERVED_IN": return AppColors.warning;
-      case "RESERVED_OUT": return AppColors.incomeAmount;
-      case "REVERSAL": return AppColors.warning;
+      case "GOAL_ALLOCATION":
+        return AppColors.savingsPrimary;
+      case "GOAL_DEALLOCATION":
+        return const Color(0xFF8B5CF6); // 👈 purple
+      case "GOAL_COMPLETION":
+        return AppColors.chartIncome;
+      case "ACCOUNT_TRANSFER_IN":
+        return AppColors.incomeAmount;
+      case "ACCOUNT_TRANSFER_OUT":
+        return AppColors.dateLabel;
+      case "RESERVED_IN":
+        return AppColors.warning;
+      case "RESERVED_OUT":
+        return AppColors.incomeAmount;
+      case "REVERSAL":
+        return AppColors.warning;
     }
     if (tx.type == "INCOME") return AppColors.incomeAmount;
     if (tx.type == "EXPENSE") return AppColors.expenseAmount;
@@ -1325,21 +1427,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
   IconData _getTransactionIcon(TransactionModel tx) {
     switch (tx.direction) {
-      case "GOAL_ALLOCATION": return Icons.savings_rounded;
-      case "GOAL_DEALLOCATION": return Icons.savings_outlined;
-      case "GOAL_COMPLETION": return Icons.task_alt_rounded;
-      case "ACCOUNT_TRANSFER_IN": return Icons.call_received_rounded;
-      case "ACCOUNT_TRANSFER_OUT": return Icons.call_made_rounded;
-      case "RESERVED_IN": return Icons.lock_outline_rounded;
-      case "RESERVED_OUT": return Icons.lock_open_rounded;
-      case "REVERSAL": return Icons.undo_rounded;
+      case "GOAL_ALLOCATION":
+        return Icons.savings_rounded;
+      case "GOAL_DEALLOCATION":
+        return Icons.savings_outlined;
+      case "GOAL_COMPLETION":
+        return Icons.task_alt_rounded;
+      case "ACCOUNT_TRANSFER_IN":
+        return Icons.call_received_rounded;
+      case "ACCOUNT_TRANSFER_OUT":
+        return Icons.call_made_rounded;
+      case "RESERVED_IN":
+        return Icons.lock_outline_rounded;
+      case "RESERVED_OUT":
+        return Icons.lock_open_rounded;
+      case "REVERSAL":
+        return Icons.undo_rounded;
     }
     switch (tx.type) {
-      case "INCOME": return Icons.trending_up_rounded;
-      case "EXPENSE": return Icons.trending_down_rounded;
-      case "TRANSFER": return Icons.swap_horiz_rounded;
-      case "REVERSAL": return Icons.undo_rounded;
-      default: return Icons.receipt_long_rounded;
+      case "INCOME":
+        return Icons.trending_up_rounded;
+      case "EXPENSE":
+        return Icons.trending_down_rounded;
+      case "TRANSFER":
+        return Icons.swap_horiz_rounded;
+      case "REVERSAL":
+        return Icons.undo_rounded;
+      default:
+        return Icons.receipt_long_rounded;
     }
   }
 
@@ -1348,7 +1463,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: 44,
       height: 44,
-      decoration: BoxDecoration(color: iconColor.withOpacity(0.12), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+          color: iconColor.withOpacity(0.12), shape: BoxShape.circle),
       child: Icon(_getTransactionIcon(tx), color: iconColor, size: 20),
     );
   }
