@@ -45,7 +45,7 @@ class _FilterScreenState extends State<FilterScreen> {
     "All Type",
     "Income",
     "Expense",
-    "Reserved",
+    "Reserve",
     "Transfer",
   ];
 

@@ -61,14 +61,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       _transactions = [];
     });
 
-    // 1. Declare the variable HERE, at the top of the function
     List<AccountModel> fetchedAccounts = [];
 
     try {
       final Map<String, dynamic> accountData =
           await AccountService.getAccountDashboard();
 
-      // 2. Assign the value (don't use 'final' or 'List' here again)
       fetchedAccounts =
           (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
               [];
@@ -86,7 +84,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       }
 
       String? resolvedAccountId;
-      // 3. Now this block can see 'fetchedAccounts' perfectly!
       if (selectedAccountName != "All Accounts" && fetchedAccounts.isNotEmpty) {
         try {
           resolvedAccountId = fetchedAccounts
@@ -111,7 +108,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         setState(() {
           _accounts = fetchedAccounts;
           _transactions = historyData.transactions;
-          // Apply the sort we discussed to keep the Today -> Yesterday order
           _transactions.sort((a, b) => b.date.compareTo(a.date));
           _nextCursor = historyData.nextCursor;
           _isLoading = false;
@@ -152,9 +148,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       if (mounted) {
         setState(() {
           _transactions.addAll(historyData.transactions);
-          // Re-sort the entire list after adding new items
           _transactions.sort((a, b) => b.date.compareTo(a.date));
-
           _nextCursor = historyData.nextCursor;
           _isFetchingMore = false;
         });
@@ -196,125 +190,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
 
     if (result != null) {
-      final newAccount = result["account"] as String;
-      final accountChanged = newAccount != selectedAccountName;
-
       setState(() {
-        selectedType = result["type"] as String;
-        selectedCategory = result["category"] as String;
-        selectedAccountName = newAccount;
-        startDate = result["startDate"] as DateTime?;
-        endDate = result["endDate"] as DateTime?;
+        selectedType = result["type"];
+        selectedCategory = result["category"];
+        selectedAccountName = result["account"];
+        startDate = result["startDate"];
+        endDate = result["endDate"];
       });
-
-      // Re-fetch from server only when the account filter changes,
-      // because account filtering is done server-side.
-      // All other filters (type, category, date, search) are client-side.
-      if (accountChanged) {
-        _fetchData();
-      }
+      _fetchData();
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // FILTERING LOGIC (client-side)
-  // ---------------------------------------------------------------------------
-
-  /// Returns true if [tx] passes the type filter.
-  bool _matchesType(TransactionModel tx) {
-    switch (selectedType) {
-      case "All Type":
-        return true;
-
-      case "Income":
-        // Only standard income transactions
-        return tx.type == "INCOME";
-
-      case "Expense":
-        // Expense, but exclude goal allocations / completions which are
-        // shown under their own "Reserved" bucket.
-        return tx.type == "EXPENSE" &&
-            tx.direction != "GOAL_ALLOCATION" &&
-            tx.direction != "GOAL_COMPLETION";
-
-      case "Reserved":
-        // Anything that moves money into or out of the reserve/goal envelope
-        return tx.direction == "GOAL_ALLOCATION" ||
-            tx.direction == "GOAL_DEALLOCATION" ||
-            tx.direction == "GOAL_COMPLETION" ||
-            tx.direction == "RESERVED_IN" ||
-            tx.direction == "RESERVED_OUT";
-
-      case "Transfer":
-        return tx.type == "TRANSFER" ||
-            tx.direction == "ACCOUNT_TRANSFER_IN" ||
-            tx.direction == "ACCOUNT_TRANSFER_OUT";
-
-      default:
-        return true;
-    }
-  }
-
-  /// Returns true if [tx] passes the category filter.
-  bool _matchesCategory(TransactionModel tx) {
-    if (selectedCategory == "All") return true;
-    // Case-insensitive exact match
-    return tx.category.toLowerCase() == selectedCategory.toLowerCase();
-  }
-
-  /// Returns true if [tx] passes the account filter.
-  bool _matchesAccount(TransactionModel tx) {
-    if (selectedAccountName == "All Accounts") return true;
-    return tx.accountName == selectedAccountName;
-  }
-
-  /// Returns true if [tx] falls within the selected date range.
-  /// Supports open-ended ranges (only startDate or only endDate set).
-  bool _matchesDate(TransactionModel tx) {
-    if (startDate == null && endDate == null) return true;
-
-    final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
-
-    if (startDate != null && endDate != null) {
-      final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
-      final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
-      return !txDate.isBefore(start) && !txDate.isAfter(end);
-    }
-
-    if (startDate != null) {
-      final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
-      return !txDate.isBefore(start);
-    }
-
-    // endDate != null only
-    final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
-    return !txDate.isAfter(end);
-  }
-
-  /// Returns true if [tx] matches the search query.
-  bool _matchesSearch(TransactionModel tx) {
-    if (searchQuery.isEmpty) return true;
-    final q = searchQuery.toLowerCase();
-    return tx.title.toLowerCase().contains(q) ||
-        tx.subtitle.toLowerCase().contains(q) ||
-        tx.category.toLowerCase().contains(q) ||
-        tx.accountName.toLowerCase().contains(q);
-  }
-
-  /// Master filter – combines all sub-filters.
-  List<TransactionModel> get _filteredTransactions {
-    return _transactions.where((tx) {
-      return _matchesType(tx) &&
-          _matchesCategory(tx) &&
-          _matchesAccount(tx) &&
-          _matchesDate(tx) &&
-          _matchesSearch(tx);
-    }).toList();
-  }
-
-  // ---------------------------------------------------------------------------
-  // UI helpers
-  // ---------------------------------------------------------------------------
 
   Color _getTransactionColor(TransactionModel tx) {
     switch (tx.direction) {
@@ -410,53 +295,35 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     if (selectedType != "All Type") {
       chips.add(_buildChip(
-        selectedType,
-        () => setState(() => selectedType = "All Type"),
-        chipBgColor,
-        colorScheme.primary,
-      ));
+          selectedType,
+          () => setState(() => selectedType = "All Type"),
+          chipBgColor,
+          colorScheme.primary));
     }
     if (selectedCategory != "All") {
       chips.add(_buildChip(
-        selectedCategory,
-        () => setState(() => selectedCategory = "All"),
-        chipBgColor,
-        colorScheme.primary,
-      ));
+          selectedCategory,
+          () => setState(() => selectedCategory = "All"),
+          chipBgColor,
+          colorScheme.primary));
     }
     if (selectedAccountName != "All Accounts") {
-      chips.add(_buildChip(
-        selectedAccountName,
-        () {
-          setState(() => selectedAccountName = "All Accounts");
-          _fetchData(); // account filter is server-side, must re-fetch
-        },
-        chipBgColor,
-        colorScheme.primary,
-      ));
+      chips.add(_buildChip(selectedAccountName, () {
+        setState(() => selectedAccountName = "All Accounts");
+        _fetchData();
+      }, chipBgColor, colorScheme.primary));
     }
-
-    // Show a date chip for every combination: only start, only end, or both
-    if (startDate != null || endDate != null) {
-      final String dateLabel;
-      if (startDate != null && endDate != null) {
-        dateLabel =
-            "${DateFormat('MMM d').format(startDate!)} – ${DateFormat('MMM d').format(endDate!)}";
-      } else if (startDate != null) {
-        dateLabel = "From ${DateFormat('MMM d').format(startDate!)}";
-      } else {
-        dateLabel = "Until ${DateFormat('MMM d').format(endDate!)}";
-      }
-
+    if (startDate != null && endDate != null) {
+      final dateRange =
+          "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
       chips.add(_buildChip(
-        dateLabel,
-        () => setState(() {
-          startDate = null;
-          endDate = null;
-        }),
-        chipBgColor,
-        colorScheme.primary,
-      ));
+          dateRange,
+          () => setState(() {
+                startDate = null;
+                endDate = null;
+              }),
+          chipBgColor,
+          colorScheme.primary));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -485,8 +352,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  Widget _buildTransactionTile(TransactionModel tx, ThemeData theme,
-      ColorScheme colorScheme, Color textSec, bool isCash) {
+  Widget _buildTransactionTile(
+    TransactionModel tx,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    Color textSec,
+    bool isCash,
+  ) {
     final Color moneyColor = _getTransactionColor(tx);
 
     return Padding(
@@ -505,7 +377,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: colorScheme.primary,
+                    color: tx.isCancelled ? textSec : colorScheme.primary,
                     decoration: tx.status == "VOIDED"
                         ? TextDecoration.lineThrough
                         : null,
@@ -539,9 +411,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: tx.status == "VOIDED" ? textSec : moneyColor,
-                  decoration:
-                      tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
+                  color: tx.isCancelled || tx.status == "VOIDED"
+                      ? textSec
+                      : moneyColor,
+                  decoration: tx.status == "VOIDED"
+                      ? TextDecoration.lineThrough
+                      : null,
                 ),
               ),
               const SizedBox(height: 4),
@@ -549,20 +424,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-<<<<<<< HEAD
-                    isCash
-                        ? Icons.account_balance_wallet_rounded
-                        : Icons.account_balance_rounded,
-                    size: 11,
-                    color: textSec.withOpacity(0.8),
-                  ),
-=======
                       isCash
                           ? Icons.account_balance_wallet_rounded
                           : Icons.account_balance_rounded,
                       size: 11,
                       color: textSec.withOpacity(0.8)),
->>>>>>> 54294a87c30e67186da1073454db82b0ff8bf0d5
                   const SizedBox(width: 4),
                   Text(
                     tx.accountName,
@@ -574,6 +440,35 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   ),
                 ],
               ),
+              // ── Cancelled badge ──
+              if (tx.isCancelled) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.4)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.cancel_outlined, size: 10, color: Colors.red),
+                      SizedBox(width: 4),
+                      Text(
+                        "Cancelled",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
             ],
           ),
         ],
@@ -583,16 +478,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   Widget _buildTransactionList(
       ThemeData theme, ColorScheme colorScheme, bool isDark, Color textSec) {
-<<<<<<< HEAD
-    final list = _filteredTransactions;
-
-    if (list.isEmpty) {
-=======
-    // 1. USE THE LIST DIRECTLY (Server already filtered this for you)
     final list = _transactions;
 
     if (list.isEmpty && !_isLoading) {
->>>>>>> 54294a87c30e67186da1073454db82b0ff8bf0d5
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
@@ -602,7 +490,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           Center(
             child: Text("No transactions found",
                 style: TextStyle(
-                    fontSize: 16, color: textSec, fontWeight: FontWeight.w500)),
+                    fontSize: 16,
+                    color: textSec,
+                    fontWeight: FontWeight.w500)),
           ),
         ],
       );
@@ -623,26 +513,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       color: colorScheme.secondary, strokeWidth: 2)),
             );
           }
-          return const SizedBox(height: 80); // Bottom padding
+          return const SizedBox(height: 80);
         }
 
         final tx = list[i];
         final isCash = tx.accountName.toLowerCase().contains('cash') ||
             tx.accountName.toLowerCase().contains('wallet');
 
-        // 2. LOGIC FOR HEADERS (Group by transactedAt)
+        // Group header logic
         bool showHeader = false;
         if (i == 0) {
           showHeader = true;
         } else {
           final prevTx = list[i - 1];
-
-          // Normalize both to midnight to compare just the "Calendar Day"
-          final currentDay = DateTime(tx.date.year, tx.date.month, tx.date.day);
-          final prevDay =
-              DateTime(prevTx.date.year, prevTx.date.month, prevTx.date.day);
-
-          // Use !isAtSameMomentAs for a bulletproof comparison
+          final currentDay =
+              DateTime(tx.date.year, tx.date.month, tx.date.day);
+          final prevDay = DateTime(
+              prevTx.date.year, prevTx.date.month, prevTx.date.day);
           if (!currentDay.isAtSameMomentAs(prevDay)) {
             showHeader = true;
           }
@@ -651,29 +538,25 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         Widget tileContent = Column(
           children: [
             _buildTransactionTile(tx, theme, colorScheme, textSec, isCash),
-            Divider(color: theme.dividerColor.withOpacity(0.05), height: 1),
+            Divider(
+                color: theme.dividerColor.withOpacity(0.05), height: 1),
           ],
         );
-      if (showHeader) {
-  String headerText;
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final yesterday = today.subtract(const Duration(days: 1));
-  final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
 
-<<<<<<< HEAD
         if (showHeader) {
           String headerText;
-          final today = DateTime.now();
-          final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
-          final todayDate =
-              DateTime(today.year, today.month, today.day);
-          final yesterdayDate = todayDate.subtract(const Duration(days: 1));
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final yesterday = today.subtract(const Duration(days: 1));
+          final txDate =
+              DateTime(tx.date.year, tx.date.month, tx.date.day);
 
-          if (txDate == todayDate) {
+          if (txDate.isAtSameMomentAs(today)) {
             headerText = "Today";
-          } else if (txDate == yesterdayDate) {
+          } else if (txDate.isAtSameMomentAs(yesterday)) {
             headerText = "Yesterday";
+          } else if (txDate.year == now.year) {
+            headerText = DateFormat('EEEE, dd MMM').format(tx.date);
           } else {
             headerText = DateFormat('dd MMM, yyyy').format(tx.date);
           }
@@ -682,71 +565,46 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-                child: Text(
-                  headerText,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: textSec),
+                padding: const EdgeInsets.only(
+                    top: 28.0, bottom: 12.0, left: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondary.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      headerText.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        color: headerText == "Today"
+                            ? colorScheme.secondary
+                            : textSec.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Divider(
+                        color: theme.dividerColor.withOpacity(0.05),
+                        thickness: 1,
+                      ),
+                    ),
+                  ],
                 ),
-=======
-  // 1. Logic for Smart Date Labels
-  if (txDate.isAtSameMomentAs(today)) {
-    headerText = "Today";
-  } else if (txDate.isAtSameMomentAs(yesterday)) {
-    headerText = "Yesterday";
-  } else if (txDate.year == now.year) {
-    headerText = DateFormat('EEEE, dd MMM').format(tx.date); // e.g., "Friday, 17 Apr"
-  } else {
-    headerText = DateFormat('dd MMM, yyyy').format(tx.date); // e.g., "17 Apr, 2025"
-  }
+              ),
+              tileContent,
+            ],
+          );
+        }
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.only(top: 28.0, bottom: 12.0, left: 4),
-        child: Row(
-          children: [
-            // A small dot to represent the timeline point
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: colorScheme.secondary.withOpacity(0.5),
-                shape: BoxShape.circle,
->>>>>>> 54294a87c30e67186da1073454db82b0ff8bf0d5
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              headerText.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-                // Using a slightly more vibrant color for the "Today" header
-                color: headerText == "Today" 
-                    ? colorScheme.secondary 
-                    : textSec.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // A subtle line that fills the rest of the width
-            Expanded(
-              child: Divider(
-                color: theme.dividerColor.withOpacity(0.05),
-                thickness: 1,
-              ),
-            ),
-          ],
-        ),
-      ),
-      tileContent,
-    ],
-  );
-}        return tileContent;
+        return tileContent;
       },
     );
   }
@@ -756,7 +614,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final textSec =
+        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
     final surfaceAlt =
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
@@ -812,8 +671,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 12),
                             ),
                           ),
                         ),
@@ -827,7 +686,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           decoration: BoxDecoration(
                               color: surfaceAlt,
                               borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.tune, color: colorScheme.primary),
+                          child: Icon(Icons.tune,
+                              color: colorScheme.primary),
                         ),
                       ),
                     ],

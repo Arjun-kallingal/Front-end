@@ -24,6 +24,7 @@ import 'package:front_end/core/providers/notification_provider.dart';
 import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
 import 'package:front_end/features/goals/ui/create_new_goal.dart';
 import 'package:front_end/features/goals/data/goal_model.dart';
+import 'package:front_end/features/goals/ui/goal_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -388,6 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActiveGoalsSection(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
     final goalProvider = context.watch<GoalProvider>();
+    
     final activeGoals =
         goalProvider.goals.where((g) => g.status != 'completed').toList();
 
@@ -423,6 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           .fetchGoals(); // FIX: added mounted check
                   });
                 },
+                
                 child: Row(
                   children: [
                     Text(
@@ -546,14 +549,18 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
-            ).then((_) {
-              if (mounted)
-                context.read<GoalProvider>().fetchGoals(); // FIX: mounted check
-            });
+          // onTap: () {
+          //   Navigator.push(
+          //     context,
+          //     MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
+          //   ).then((_) {
+          //     if (mounted)
+          //       context.read<GoalProvider>().fetchGoals(); // FIX: mounted check
+          //   });
+          // },
+            onTap: () async {
+            final refresh = await Navigator.push(context, MaterialPageRoute(builder: (_) => GoalDetailsScreen(goal: goal)));
+            if (refresh == true && context.mounted) context.read<GoalProvider>().fetchGoals();
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
@@ -1249,15 +1256,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
- Widget _buildTile(BuildContext context, TransactionModel tx, ColorScheme colorScheme, ThemeData theme, bool isDark, {bool isLatest = false}) {
+  Widget _buildTile(BuildContext context, TransactionModel tx,
+      ColorScheme colorScheme, ThemeData theme, bool isDark,
+      {bool isLatest = false}) {
     final Color moneyColor = _getTransactionColor(tx);
-    final bool isCash = tx.accountName.toLowerCase().contains('cash') || tx.accountName.toLowerCase().contains('wallet');
+    final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
+        tx.accountName.toLowerCase().contains('wallet');
     final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
     bool canReverse = !tx.isCancelled &&
-                  tx.type != "REVERSAL" && 
-                  tx.direction != "REVERSAL" && 
-                  tx.status != "VOIDED" && 
-                  isLatest;
+        tx.type != "REVERSAL" &&
+        tx.direction != "REVERSAL" &&
+        tx.status != "VOIDED" &&
+        isLatest;
 
     return Column(
       children: [
@@ -1279,7 +1289,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         // 1. Removed tx.isCancelled from the line-through decoration
-                        decoration: tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
+                        decoration: tx.status == "VOIDED"
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1287,11 +1299,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 5),
                     Row(
                       children: [
-                        Icon(isCash ? Icons.wallet : Icons.account_balance, size: 11, color: textSec),
+                        Icon(isCash ? Icons.wallet : Icons.account_balance,
+                            size: 11, color: textSec),
                         const SizedBox(width: 4),
                         Text(
                           tx.accountName,
-                          style: TextStyle(color: textSec, fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                              color: textSec,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500),
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (tx.subtitle.isNotEmpty) ...[
@@ -1320,22 +1336,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     "₹${tx.amount.abs().toStringAsFixed(2)}",
                     style: TextStyle(
-                      color: tx.isCancelled || tx.status == "VOIDED" ? textSec : moneyColor,
+                      color: tx.isCancelled || tx.status == "VOIDED"
+                          ? textSec
+                          : moneyColor,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       // 1. Removed tx.isCancelled from the line-through decoration here as well
-                      decoration: tx.status == "VOIDED" ? TextDecoration.lineThrough : null,
+                      decoration: tx.status == "VOIDED"
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('dd MMM, yyyy').format(tx.date),
-                    style: TextStyle(color: textSec, fontSize: 10, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                        color: textSec,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500),
                   ),
                   if (tx.isCancelled) ...[
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         // 2. Changed theme.colorScheme.error to Colors.red
                         color: Colors.red.withOpacity(0.1),
@@ -1346,12 +1370,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // 2. Changed icon color to Colors.red
-                          const Icon(Icons.cancel_outlined, size: 10, color: Colors.red),
+                          const Icon(Icons.cancel_outlined,
+                              size: 10, color: Colors.red),
                           const SizedBox(width: 4),
                           const Text(
                             "Cancelled",
                             style: TextStyle(
-                              color: Colors.red, // 2. Changed text color to Colors.red
+                              color: Colors
+                                  .red, // 2. Changed text color to Colors.red
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1365,16 +1391,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     GestureDetector(
                       onTap: () => _handleReversal(tx),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.error.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: theme.colorScheme.error.withOpacity(0.4)),
+                          border: Border.all(
+                              color: theme.colorScheme.error.withOpacity(0.4)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.undo_rounded, size: 12, color: theme.colorScheme.error),
+                            Icon(Icons.undo_rounded,
+                                size: 12, color: theme.colorScheme.error),
                             const SizedBox(width: 4),
                             Text(
                               "Undo",
