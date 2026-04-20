@@ -68,9 +68,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           (accountData['accounts'] as List<dynamic>?)?.cast<AccountModel>() ??
               [];
 
-      if (_isFirstLoad && widget.accountId != null && fetchedAccounts.isNotEmpty) {
+      if (_isFirstLoad &&
+          widget.accountId != null &&
+          fetchedAccounts.isNotEmpty) {
         try {
-          selectedAccountName = fetchedAccounts.firstWhere((a) => a.id == widget.accountId).name;
+          selectedAccountName =
+              fetchedAccounts.firstWhere((a) => a.id == widget.accountId).name;
         } catch (e) {
           debugPrint("Account ID not found in list: $e");
         }
@@ -173,16 +176,125 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
 
     if (result != null) {
+      final newAccount = result["account"] as String;
+      final accountChanged = newAccount != selectedAccountName;
+
       setState(() {
-        selectedType = result["type"];
-        selectedCategory = result["category"];
-        selectedAccountName = result["account"];
-        startDate = result["startDate"];
-        endDate = result["endDate"];
+        selectedType = result["type"] as String;
+        selectedCategory = result["category"] as String;
+        selectedAccountName = newAccount;
+        startDate = result["startDate"] as DateTime?;
+        endDate = result["endDate"] as DateTime?;
       });
-      _fetchData();
+
+      // Re-fetch from server only when the account filter changes,
+      // because account filtering is done server-side.
+      // All other filters (type, category, date, search) are client-side.
+      if (accountChanged) {
+        _fetchData();
+      }
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // FILTERING LOGIC (client-side)
+  // ---------------------------------------------------------------------------
+
+  /// Returns true if [tx] passes the type filter.
+  bool _matchesType(TransactionModel tx) {
+    switch (selectedType) {
+      case "All Type":
+        return true;
+
+      case "Income":
+        // Only standard income transactions
+        return tx.type == "INCOME";
+
+      case "Expense":
+        // Expense, but exclude goal allocations / completions which are
+        // shown under their own "Reserved" bucket.
+        return tx.type == "EXPENSE" &&
+            tx.direction != "GOAL_ALLOCATION" &&
+            tx.direction != "GOAL_COMPLETION";
+
+      case "Reserved":
+        // Anything that moves money into or out of the reserve/goal envelope
+        return tx.direction == "GOAL_ALLOCATION" ||
+            tx.direction == "GOAL_DEALLOCATION" ||
+            tx.direction == "GOAL_COMPLETION" ||
+            tx.direction == "RESERVED_IN" ||
+            tx.direction == "RESERVED_OUT";
+
+      case "Transfer":
+        return tx.type == "TRANSFER" ||
+            tx.direction == "ACCOUNT_TRANSFER_IN" ||
+            tx.direction == "ACCOUNT_TRANSFER_OUT";
+
+      default:
+        return true;
+    }
+  }
+
+  /// Returns true if [tx] passes the category filter.
+  bool _matchesCategory(TransactionModel tx) {
+    if (selectedCategory == "All") return true;
+    // Case-insensitive exact match
+    return tx.category.toLowerCase() == selectedCategory.toLowerCase();
+  }
+
+  /// Returns true if [tx] passes the account filter.
+  bool _matchesAccount(TransactionModel tx) {
+    if (selectedAccountName == "All Accounts") return true;
+    return tx.accountName == selectedAccountName;
+  }
+
+  /// Returns true if [tx] falls within the selected date range.
+  /// Supports open-ended ranges (only startDate or only endDate set).
+  bool _matchesDate(TransactionModel tx) {
+    if (startDate == null && endDate == null) return true;
+
+    final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+
+    if (startDate != null && endDate != null) {
+      final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
+      final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
+      return !txDate.isBefore(start) && !txDate.isAfter(end);
+    }
+
+    if (startDate != null) {
+      final start = DateTime(startDate!.year, startDate!.month, startDate!.day);
+      return !txDate.isBefore(start);
+    }
+
+    // endDate != null only
+    final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
+    return !txDate.isAfter(end);
+  }
+
+  /// Returns true if [tx] matches the search query.
+  bool _matchesSearch(TransactionModel tx) {
+    if (searchQuery.isEmpty) return true;
+    final q = searchQuery.toLowerCase();
+    return tx.title.toLowerCase().contains(q) ||
+        tx.subtitle.toLowerCase().contains(q) ||
+        tx.category.toLowerCase().contains(q) ||
+        tx.accountName.toLowerCase().contains(q);
+  }
+
+  /// Master filter – combines all sub-filters.
+  List<TransactionModel> get _filteredTransactions {
+    return _transactions.where((tx) {
+      return _matchesType(tx) &&
+          _matchesCategory(tx) &&
+          _matchesAccount(tx) &&
+          _matchesDate(tx) &&
+          _matchesSearch(tx);
+    }).toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI helpers
+  // ---------------------------------------------------------------------------
 
   Color _getTransactionColor(TransactionModel tx) {
     switch (tx.direction) {
@@ -208,7 +320,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
     if (tx.type == "TRANSFER") return AppColors.dateLabel;
-    
+
     return AppColors.expenseAmount;
   }
 
@@ -278,35 +390,53 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     if (selectedType != "All Type") {
       chips.add(_buildChip(
-          selectedType,
-          () => setState(() => selectedType = "All Type"),
-          chipBgColor,
-          colorScheme.primary));
+        selectedType,
+        () => setState(() => selectedType = "All Type"),
+        chipBgColor,
+        colorScheme.primary,
+      ));
     }
     if (selectedCategory != "All") {
       chips.add(_buildChip(
-          selectedCategory,
-          () => setState(() => selectedCategory = "All"),
-          chipBgColor,
-          colorScheme.primary));
+        selectedCategory,
+        () => setState(() => selectedCategory = "All"),
+        chipBgColor,
+        colorScheme.primary,
+      ));
     }
     if (selectedAccountName != "All Accounts") {
-      chips.add(_buildChip(selectedAccountName, () {
-        setState(() => selectedAccountName = "All Accounts");
-        _fetchData();
-      }, chipBgColor, colorScheme.primary));
-    }
-    if (startDate != null && endDate != null) {
-      final dateRange =
-          "${DateFormat('MMM d').format(startDate!)} - ${DateFormat('MMM d').format(endDate!)}";
       chips.add(_buildChip(
-          dateRange,
-          () => setState(() {
-                startDate = null;
-                endDate = null;
-              }),
-          chipBgColor,
-          colorScheme.primary));
+        selectedAccountName,
+        () {
+          setState(() => selectedAccountName = "All Accounts");
+          _fetchData(); // account filter is server-side, must re-fetch
+        },
+        chipBgColor,
+        colorScheme.primary,
+      ));
+    }
+
+    // Show a date chip for every combination: only start, only end, or both
+    if (startDate != null || endDate != null) {
+      final String dateLabel;
+      if (startDate != null && endDate != null) {
+        dateLabel =
+            "${DateFormat('MMM d').format(startDate!)} – ${DateFormat('MMM d').format(endDate!)}";
+      } else if (startDate != null) {
+        dateLabel = "From ${DateFormat('MMM d').format(startDate!)}";
+      } else {
+        dateLabel = "Until ${DateFormat('MMM d').format(endDate!)}";
+      }
+
+      chips.add(_buildChip(
+        dateLabel,
+        () => setState(() {
+          startDate = null;
+          endDate = null;
+        }),
+        chipBgColor,
+        colorScheme.primary,
+      ));
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -400,9 +530,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isCash ? Icons.account_balance_wallet_rounded : Icons.account_balance_rounded,
-                    size: 11, 
-                    color: textSec.withOpacity(0.8)
+                    isCash
+                        ? Icons.account_balance_wallet_rounded
+                        : Icons.account_balance_rounded,
+                    size: 11,
+                    color: textSec.withOpacity(0.8),
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -424,47 +556,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   Widget _buildTransactionList(
       ThemeData theme, ColorScheme colorScheme, bool isDark, Color textSec) {
-    final list = _transactions.where((tx) {
-      final mSearch =
-          tx.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              tx.subtitle.toLowerCase().contains(searchQuery.toLowerCase());
-      final mCategory = selectedCategory == "All" ||
-          tx.category.toLowerCase() == selectedCategory.toLowerCase();
-      final mAccount = selectedAccountName == "All Accounts" ||
-          tx.accountName == selectedAccountName;
-
-      bool mType;
-      switch (selectedType) {
-        case "Income":
-          mType = tx.type == "INCOME";
-          break;
-        case "Expense":
-          mType = tx.type == "EXPENSE" &&
-              tx.direction != "GOAL_ALLOCATION" &&
-              tx.direction != "GOAL_COMPLETION";
-          break;
-        case "Reserved":
-          mType = tx.direction == "GOAL_ALLOCATION";
-          break;
-        case "Transfer":
-          mType = tx.type == "TRANSFER";
-          break;
-        default:
-          mType = true;
-      }
-
-      bool mDate = true;
-      if (startDate != null && endDate != null) {
-        final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
-        final start =
-            DateTime(startDate!.year, startDate!.month, startDate!.day);
-        final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
-        mDate = txDate.isAfter(start.subtract(const Duration(days: 1))) &&
-            txDate.isBefore(end.add(const Duration(days: 1)));
-      }
-
-      return mSearch && mCategory && mAccount && mType && mDate;
-    }).toList();
+    final list = _filteredTransactions;
 
     if (list.isEmpty) {
       return ListView(
@@ -537,14 +629,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           String headerText;
           final today = DateTime.now();
           final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+          final todayDate =
+              DateTime(today.year, today.month, today.day);
+          final yesterdayDate = todayDate.subtract(const Duration(days: 1));
 
-          if (txDate.year == today.year &&
-              txDate.month == today.month &&
-              txDate.day == today.day) {
+          if (txDate == todayDate) {
             headerText = "Today";
-          } else if (txDate.year == today.year &&
-              txDate.month == today.month &&
-              txDate.day == today.day - 1) {
+          } else if (txDate == yesterdayDate) {
             headerText = "Yesterday";
           } else {
             headerText = DateFormat('dd MMM, yyyy').format(tx.date);
@@ -624,12 +715,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                               color: surfaceAlt,
                               borderRadius: BorderRadius.circular(12)),
                           child: TextField(
-                            onChanged: (v) => setState(() => searchQuery = v),
+                            onChanged: (v) =>
+                                setState(() => searchQuery = v),
                             style: TextStyle(color: colorScheme.primary),
                             decoration: InputDecoration(
                               hintText: "Search transactions...",
                               hintStyle: TextStyle(color: textSec),
-                              prefixIcon: Icon(Icons.search, color: textSec),
+                              prefixIcon:
+                                  Icon(Icons.search, color: textSec),
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
