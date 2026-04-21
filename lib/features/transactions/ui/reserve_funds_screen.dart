@@ -6,6 +6,7 @@ import '../../../core/providers/account_provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/features/analytics/provider/analytics_provider.dart';
 import 'package:front_end/core/constants/app_colors.dart';
+import 'package:front_end/core/services/sound_service.dart';
 
 class ReserveFundsScreen extends StatefulWidget {
   final String accountId;
@@ -82,6 +83,9 @@ class _ReserveFundsScreenState extends State<ReserveFundsScreen> {
         await context.read<AccountProvider>().loadAccounts();
         await context.read<TransactionProvider>().fetchTransactions();
         await context.read<AnalyticsProvider>().reload();
+        await SoundService.instance.playTransaction(
+      _isReserveOut ? TransactionSound.income : TransactionSound.expense,
+    );
 
         Navigator.pop(context, "Funds ${_isReserveOut ? 'released to Available' : 'locked in Reserve'} successfully!");
       } else {

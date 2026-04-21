@@ -14,6 +14,7 @@ import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:front_end/features/profile/ui/notifications/notification.dart';
 import 'package:front_end/features/profile/ui/account/delete_account_screen.dart';
 import 'package:front_end/features/profile/ui/account/sign_out_screen.dart';
+import 'package:front_end/core/services/sound_service.dart ';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -49,7 +50,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final user = context.watch<UserProfileProvider>();
+    
     // final isLight = theme.brightness == Brightness.light;
+const Color premiumGreen = Color(0xFF0F766E);
+const Color premiumDarkGreen = Color(0xFF4A6B36);
 
     String userName = user.name;
     String email = user.email;
@@ -64,7 +68,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               // ─── AppBar ───────────────────────────────────────────
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                 color: color.surface,
                 child: Row(
                   children: [
@@ -93,20 +98,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0D9488).withOpacity(0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
+  gradient: const LinearGradient(
+    colors: [premiumGreen, premiumDarkGreen],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+  borderRadius: BorderRadius.circular(20),
+  boxShadow: [
+    BoxShadow(
+      color: premiumGreen.withOpacity(0.35),
+      blurRadius: 16,
+      offset: const Offset(0, 6),
+    ),
+  ],
+),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -122,7 +127,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             ),
                             child: CircleAvatar(
                               radius: 30,
-                              backgroundColor: const Color(0xFF14B8A6),
+                             backgroundColor: premiumDarkGreen,
                               child: Text(
                                 getInitials(userName),
                                 style: const TextStyle(
@@ -206,14 +211,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 16),
                       Divider(
                           color: Colors.white.withOpacity(0.25),
                           height: 1,
                           thickness: 1),
                       const SizedBox(height: 16),
-
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -263,9 +266,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               // ─── Appearance ───────────────────────────────────────
               _sectionHeader(context, "Appearance"),
               _switchTile(
@@ -289,8 +290,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 title: "Notification Settings",
                 subtitle: "Manage alerts & reminders",
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const NotificationScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const NotificationScreen()));
                 },
               ),
 
@@ -304,8 +307,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 title: "Change Password",
                 subtitle: "Update your credentials",
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ChangePasswordScreen()));
                 },
               ),
 
@@ -319,8 +324,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 title: "Export Data",
                 subtitle: "Download your financial records",
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const ExportDataScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ExportDataScreen()));
                 },
               ),
 
@@ -334,8 +341,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 title: "Help & Support",
                 subtitle: "FAQs and contact us",
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const HelpSupportScreen()));
                 },
               ),
               _inlineDivider(context),
@@ -345,8 +354,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 title: "Feedback & Rate Us",
                 subtitle: "Share your experience",
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const FeedbackScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const FeedbackScreen()));
                 },
               ),
               _inlineDivider(context),
@@ -356,8 +367,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 title: "Privacy Policy",
                 subtitle: "How we handle your data",
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const PrivacyPolicyScreen()));
                 },
               ),
               _inlineDivider(context),
@@ -367,8 +380,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 title: "Terms of Service",
                 subtitle: "Usage terms and conditions",
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const TermsOfServiceScreen()));
                 },
               ),
 
@@ -396,8 +411,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 iconColor: Theme.of(context).colorScheme.error,
                 titleColor: Theme.of(context).colorScheme.error,
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const DeleteAccountScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const DeleteAccountScreen()));
                 },
               ),
 
@@ -408,11 +425,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               _navigationTile(
                 context,
                 icon: Icons.info_outline,
-                title: "About WalletCare",
+                title: "About GreenPouch",
                 subtitle: "Version, licenses & more",
                 onTap: () {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const AboutWalletCareScreen()));
+                     MaterialPageRoute(builder: (_) => const AboutGreenPouchScreen()));
                 },
               ),
 

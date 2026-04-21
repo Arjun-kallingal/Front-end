@@ -32,7 +32,7 @@ import 'core/services/notification_channel_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
-
+import 'core/services/sound_service.dart';
 // ── 1. GLOBAL KEYS & ROUTING ───────────────────────────────────────────
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Widget? initialScreen;
@@ -71,6 +71,7 @@ void _handleNotificationRouting(RemoteMessage message) {
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  await SoundService.instance.init(); 
 
   final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
   

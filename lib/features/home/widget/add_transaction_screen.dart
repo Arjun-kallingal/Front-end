@@ -9,6 +9,7 @@ import '../../../core/providers/account_provider.dart';
 import 'package:front_end/core/providers/transaction_provider.dart';
 import 'package:front_end/features/analytics/provider/analytics_provider.dart';
 import 'package:front_end/core/constants/app_colors.dart';
+import 'package:front_end/core/services/sound_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final bool initialIsExpense;
@@ -162,12 +163,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
+        
         await context.read<AccountProvider>().loadAccounts();
         await context.read<TransactionProvider>().fetchTransactions();
         await context.read<AnalyticsProvider>().reload();
 
         Navigator.pop(context,
             "${_isExpense ? 'Expense' : 'Income'} saved successfully!");
+             await SoundService.instance.playTransaction(
+      _isExpense ? TransactionSound.expense : TransactionSound.income,
+    );
       } else {
         _showSnackBar(result['message'] ?? "Failed to save");
       }

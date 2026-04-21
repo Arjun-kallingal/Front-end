@@ -12,6 +12,7 @@ import 'package:front_end/core/providers/transaction_provider.dart';
 import '../provider/goal_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import 'package:front_end/core/constants/app_colors.dart';
+import 'package:front_end/core/services/sound_service.dart';
 
 class GoalDetailsScreen extends StatefulWidget {
   final GoalModel goal;
@@ -272,6 +273,7 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
+        await SoundService.instance.playTransaction(TransactionSound.goalDeposit);
         setState(() => _currentAmount += amount); 
         _refreshProviders();
         await _loadHistory();
@@ -303,6 +305,7 @@ class _GoalDetailsScreenState extends State<GoalDetailsScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
+        await SoundService.instance.playTransaction(TransactionSound.goalWithdraw);
         setState(() => _currentAmount -= amount);
         _refreshProviders();
         await _loadHistory();
