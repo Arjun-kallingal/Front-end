@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/models/account_model.dart';
 import '../../core/providers/transfer_provider.dart';
 import '../../core/constants/app_colors.dart';
+import 'package:front_end/core/services/sound_service.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -189,6 +190,7 @@ class _TransferScreenState extends State<TransferScreen> {
                           if (error != null) {
                             showSnackBar(error);
                           } else {
+                            await SoundService.instance.playTransaction(TransactionSound.transfer);
                             showSnackBar("Transfer Successful", error: false);
                             Navigator.pop(context);
                           }

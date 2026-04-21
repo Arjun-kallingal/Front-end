@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  audioplayers: ^5.2.1
   toastification: ^2.1.0
   provider: ^6.1.2
   http: ^0.13.6
@@ -32,7 +32,7 @@ dependencies:
   firebase_messaging: ^16.1.3
   flutter_local_notifications: ^18.0.1
   flutter_native_splash: ^2.4.0
-
+ 
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +48,13 @@ flutter:
     - assets/images/GrassHopper.png
     - assets/images/login.png
     - assets/images/homeicon.png
+    
+    - assets/sounds/income.mp3
+    - assets/sounds/expense.mp3
+    - assets/sounds/transfer.mp3
+    - assets/sounds/goal_deposit.mp3
+    - assets/sounds/goal_withdraw.mp3
+    - assets/sounds/reverse.mp3
 
   fonts:
     - family: Inter
