@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class AboutWalletCareScreen extends StatelessWidget {
-  const AboutWalletCareScreen({super.key});
+class AboutGreenPouchScreen extends StatelessWidget {
+  const AboutGreenPouchScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +23,18 @@ class AboutWalletCareScreen extends StatelessWidget {
               size: 18, color: color.onSurface),
         ),
         title: Text(
-          "About WalletCare",
+          "About GreenPouch",
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w700,
             color: color.onSurface,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            thickness: 0.6,
+            color: color.outline.withOpacity(0.15),
           ),
         ),
       ),
@@ -52,13 +60,14 @@ class AboutWalletCareScreen extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: color.primary.withOpacity(0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: const Icon(
-                Icons.account_balance_wallet_outlined,
+                Icons.savings_outlined,
                 size: 48,
                 color: Colors.white,
               ),
@@ -68,7 +77,7 @@ class AboutWalletCareScreen extends StatelessWidget {
 
             // ─── App Name ─────────────────────────────────────────
             Text(
-              "WalletCare",
+              "GreenPouch",
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: color.onSurface,
@@ -79,8 +88,7 @@ class AboutWalletCareScreen extends StatelessWidget {
 
             // ─── Version ──────────────────────────────────────────
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               decoration: BoxDecoration(
                 color: color.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(20),
@@ -99,13 +107,13 @@ class AboutWalletCareScreen extends StatelessWidget {
             Divider(
                 height: 1,
                 thickness: 0.5,
-                color: color.outline.withOpacity(0.2)),
+                color: color.outline.withOpacity(0.15)),
 
             const SizedBox(height: 24),
 
             // ─── Description ──────────────────────────────────────
             Text(
-              "WalletCare helps you track expenses, manage savings goals, "
+              "GreenPouch helps you track expenses, manage savings goals, "
               "and stay financially organized with a clean and secure experience.",
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -116,18 +124,35 @@ class AboutWalletCareScreen extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // ─── Info Rows ────────────────────────────────────────
-            _infoRow(context, Icons.person_outline, "Developer", "asinaaa"),
-            _infoRow(context, Icons.email_outlined, "Support",
-                "support@walletcare.app"),
-            _infoRow(context, Icons.language_outlined, "Platform",
-                "iOS & Android"),
+            // ─── Info Card ────────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: color.primary.withOpacity(0.04),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: color.outline.withOpacity(0.12),
+                  width: 1,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Column(
+                children: [
+                  _infoRow(context, Icons.person_outline, "Developer", "Syamjith"),
+                  Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.12)),
+                  _infoRow(context, Icons.email_outlined, "Support",
+                      "support@greenpouch.app"),
+                  Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.12)),
+                  _infoRow(context, Icons.language_outlined, "Platform",
+                      "iOS & Android"),
+                ],
+              ),
+            ),
 
             const SizedBox(height: 48),
 
             // ─── Copyright ────────────────────────────────────────
             Text(
-              "© 2026 WalletCare. All rights reserved.",
+              "© 2026 GreenPouch. All rights reserved.",
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: color.onSurface.withOpacity(0.35),
@@ -147,10 +172,10 @@ class AboutWalletCareScreen extends StatelessWidget {
     final color = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: color.onSurface.withOpacity(0.45)),
+          Icon(icon, size: 18, color: color.primary.withOpacity(0.7)),
           const SizedBox(width: 12),
           Text(
             label,

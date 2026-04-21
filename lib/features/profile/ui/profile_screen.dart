@@ -50,7 +50,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
     final user = context.watch<UserProfileProvider>();
+    
     // final isLight = theme.brightness == Brightness.light;
+const Color premiumGreen = Color(0xFF0F766E);
+const Color premiumDarkGreen = Color(0xFF4A6B36);
 
     String userName = user.name;
     String email = user.email;
@@ -95,20 +98,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0D9488), Color(0xFF0F766E)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0D9488).withOpacity(0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
+  gradient: const LinearGradient(
+    colors: [premiumGreen, premiumDarkGreen],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+  borderRadius: BorderRadius.circular(20),
+  boxShadow: [
+    BoxShadow(
+      color: premiumGreen.withOpacity(0.35),
+      blurRadius: 16,
+      offset: const Offset(0, 6),
+    ),
+  ],
+),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -124,7 +127,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             ),
                             child: CircleAvatar(
                               radius: 30,
-                              backgroundColor: const Color(0xFF14B8A6),
+                             backgroundColor: premiumDarkGreen,
                               child: Text(
                                 getInitials(userName),
                                 style: const TextStyle(
@@ -422,13 +425,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               _navigationTile(
                 context,
                 icon: Icons.info_outline,
-                title: "About WalletCare",
+                title: "About GreenPouch",
                 subtitle: "Version, licenses & more",
                 onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const AboutWalletCareScreen()));
+                  Navigator.push(context,
+                     MaterialPageRoute(builder: (_) => const AboutGreenPouchScreen()));
                 },
               ),
 

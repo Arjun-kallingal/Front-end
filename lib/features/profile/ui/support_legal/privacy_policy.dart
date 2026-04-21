@@ -10,44 +10,94 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: color.surface,
-     appBar: AppBar(
-  backgroundColor: color.surface,
-  elevation: 0,
-  surfaceTintColor: Colors.transparent,
-  automaticallyImplyLeading: false,
-  titleSpacing: 0,
-  leading: IconButton(
-    onPressed: () => Navigator.pop(context),
-    padding: EdgeInsets.zero,
-    icon: Icon(
-      Icons.arrow_back_ios_new,
-      size: 18,
-      color: color.onSurface,
-    ),
-  ),
-  title: Text(
-    "Privacy Policy",
-    style: theme.textTheme.titleLarge?.copyWith(
-      fontWeight: FontWeight.w700,
-      color: color.onSurface,
-    ),
-  ),
-),
+      appBar: AppBar(
+        backgroundColor: color.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: color.onSurface,
+          ),
+        ),
+        title: Text(
+          "Privacy Policy",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            thickness: 0.6,
+            color: color.outline.withOpacity(0.15),
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ─── Last Updated ──────────────────────────────────────
-            Text(
-              "Last updated: February 26, 2026",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: color.onSurface.withOpacity(0.45),
+            // ─── Header Card ───────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: color.primary.withOpacity(0.07),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: color.primary.withOpacity(0.18),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.verified_user_rounded,
+                      color: color.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "GreenPouch Privacy Policy",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: color.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "Last updated: February 26, 2026",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: color.onSurface.withOpacity(0.45),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             _section(context, "1. Information We Collect", [
               _subsection(context, "Personal Information", [
@@ -108,12 +158,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ]),
 
             _section(context, "9. Contact", [
-              _prose(context, "Developer: Syamjith\nEmail: support@walletcare.app"),
+              _prose(context, "Developer: Syamjith\nEmail: support@greenpouch.app"),
             ]),
 
             _section(context, "10. Consent", [
               _prose(context,
-                  "By using WalletCare, you agree to this policy."),
+                  "By using GreenPouch, you agree to this policy."),
             ]),
 
             const SizedBox(height: 16),
@@ -133,20 +183,34 @@ class PrivacyPolicyScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color.onSurface,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 3.5,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: color.primary,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: color.onSurface,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ...children,
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Divider(
             height: 1,
             thickness: 0.5,
-            color: color.outline.withOpacity(0.2),
+            color: color.outline.withOpacity(0.15),
           ),
         ],
       ),
@@ -159,7 +223,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     final color = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -189,12 +253,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
     final color = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 6, right: 8),
+            padding: const EdgeInsets.only(top: 7, right: 9),
             child: Container(
               width: 5,
               height: 5,
@@ -208,8 +272,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
             child: Text(
               text,
               style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.6,
-                color: color.onSurface.withOpacity(0.75),
+                height: 1.65,
+                color: color.onSurface.withOpacity(0.72),
               ),
             ),
           ),
@@ -226,7 +290,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
       text,
       style: theme.textTheme.bodyMedium?.copyWith(
         height: 1.7,
-        color: color.onSurface.withOpacity(0.75),
+        color: color.onSurface.withOpacity(0.72),
       ),
     );
   }
