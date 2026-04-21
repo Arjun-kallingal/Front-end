@@ -16,14 +16,10 @@ import 'package:front_end/features/transfer/transfer.dart';
 import 'package:front_end/core/providers/account_provider.dart';
 import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
-// Notification imports from Snippet 1
 import 'package:front_end/features/notifications/notification_screen.dart';
 import 'package:front_end/core/providers/notification_provider.dart';
-
-// IMPORTANT: Adjust these import paths if your files are located elsewhere!
 import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
 import 'package:front_end/features/goals/ui/create_new_goal.dart';
-import 'package:front_end/features/goals/data/goal_model.dart';
 import 'package:front_end/features/goals/ui/goal_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -40,7 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingRecent = true;
   String? _recentError;
 
-  // FIX: Cache the provider to safely remove listeners in dispose()
   late TransactionProvider _transactionProvider;
 
   @override
@@ -48,15 +43,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _transactionProvider = context.read<TransactionProvider>();
 
-    // FIX: Use post-frame callback for safer provider initialization
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _transactionProvider.fetchTransactions();
       _transactionProvider.addListener(_onTransactionUpdate);
 
-      // Fetch goals for the Active Goals section
       if (mounted) context.read<GoalProvider>().fetchGoals();
 
-      // INITIALIZE NOTIFICATIONS & SOCKET
       if (mounted) {
         final notifProvider = context.read<NotificationProvider>();
         notifProvider.loadNotifications();
@@ -72,10 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 🔥 Dispose logic from Snippet 2
   @override
   void dispose() {
-    // FIX: Safely remove listener using the cached instance
     _transactionProvider.removeListener(_onTransactionUpdate);
     super.dispose();
   }
@@ -165,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontSize: 14,
                         color: isDark
                             ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary, // From Snippet 2
+                            : AppColors.lightTextSecondary,
                         height: 1.4,
                         fontWeight: FontWeight.w500),
                   ),
@@ -231,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icons.close_rounded,
                         color: isDark
                             ? AppColors.darkTextMuted
-                            : AppColors.lightTextMuted, // From Snippet 2
+                            : AppColors.lightTextMuted,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -245,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 14,
                       color: isDark
                           ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary, // From Snippet 2
+                          : AppColors.lightTextSecondary,
                       height: 1.4,
                       fontWeight: FontWeight.w500),
                 ),
@@ -256,8 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.expenseAmount,
-                      foregroundColor:
-                          AppColors.darkTextPrimary, // From Snippet 2
+                      foregroundColor: AppColors.darkTextPrimary,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                     ),
@@ -327,10 +316,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 onRefresh: () async {
                   await _transactionProvider.fetchTransactions();
                   await _loadRecentTransactions();
-                  if (mounted)
+                  if (mounted) {
                     await context
                         .read<NotificationProvider>()
                         .loadNotifications();
+                  }
                   if (mounted) await context.read<GoalProvider>().fetchGoals();
                 },
                 color: colorScheme.secondary,
@@ -419,10 +409,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(
                         builder: (_) => const FinancialGoalsScreen()),
                   ).then((_) {
-                    if (mounted)
-                      context
-                          .read<GoalProvider>()
-                          .fetchGoals(); // FIX: added mounted check
+                    if (mounted) context.read<GoalProvider>().fetchGoals();
                   });
                 },
                 child: Row(
@@ -482,7 +469,6 @@ class _HomeScreenState extends State<HomeScreen> {
     required BuildContext context,
     required bool isDark,
   }) {
-    // FIX: Safe math calculation to prevent DivisionByZero/NaN exceptions
     final double targetAmount =
         (goal.targetAmount != null && goal.targetAmount > 0)
             ? goal.targetAmount
@@ -548,22 +534,14 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          // onTap: () {
-          //   Navigator.push(
-          //     context,
-          //     MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
-          //   ).then((_) {
-          //     if (mounted)
-          //       context.read<GoalProvider>().fetchGoals(); // FIX: mounted check
-          //   });
-          // },
           onTap: () async {
             final refresh = await Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (_) => GoalDetailsScreen(goal: goal)));
-            if (refresh == true && context.mounted)
+            if (refresh == true && context.mounted) {
               context.read<GoalProvider>().fetchGoals();
+            }
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
@@ -636,7 +614,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       goal.targetDate != null
                                           ? DateFormat('MMM dd, yyyy')
                                               .format(goal.targetDate)
-                                          : 'No Date', // Safe fallback
+                                          : 'No Date',
                                       style: TextStyle(
                                           fontSize: 11,
                                           color: textSecondary,
@@ -822,10 +800,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                       builder: (_) => const CreateNewGoalScreen()),
                 ).then((_) {
-                  if (mounted)
-                    context
-                        .read<GoalProvider>()
-                        .fetchGoals(); // FIX: Mounted check
+                  if (mounted) {
+                    context.read<GoalProvider>().fetchGoals();
+                  }
                 });
               },
               style: ElevatedButton.styleFrom(
@@ -994,7 +971,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // The restored QUICK ACTIONS label
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
@@ -1016,7 +992,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _actionButton(
                   icon: Icons.trending_up_rounded,
                   label: "Income",
-                  color: AppColors.incomeAmount, // Green
+                  color: AppColors.incomeAmount,
                   surfaceColor:
                       isDark ? const Color(0xFF161618) : colorScheme.surface,
                   textColor: isDark ? Colors.white : colorScheme.primary,
@@ -1040,7 +1016,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _actionButton(
                   icon: Icons.trending_down_rounded,
                   label: "Expense",
-                  color: AppColors.expenseAmount, // Red
+                  color: AppColors.expenseAmount,
                   surfaceColor:
                       isDark ? const Color(0xFF161618) : colorScheme.surface,
                   textColor: isDark ? Colors.white : colorScheme.primary,
@@ -1064,8 +1040,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: _actionButton(
                   icon: Icons.swap_horiz_rounded,
                   label: "Transfer",
-                  color: const Color(
-                      0xFFA78BFA), // The purple color from your screenshot
+                  color: const Color(0xFFA78BFA),
                   surfaceColor:
                       isDark ? const Color(0xFF161618) : colorScheme.surface,
                   textColor: isDark ? Colors.white : colorScheme.primary,
@@ -1105,8 +1080,7 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: color.withOpacity(0.20), width: 1),
           boxShadow: [
             BoxShadow(
-              color:
-                  AppColors.darkBgPrimary.withOpacity(0.05), // From Snippet 2
+              color: AppColors.darkBgPrimary.withOpacity(0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1162,7 +1136,7 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
               MaterialPageRoute(builder: (_) => const TransactionListScreen()),
             ).then((_) {
-              if (!mounted) return; // FIX: added mounted check
+              if (!mounted) return;
               context.read<TransactionProvider>().fetchTransactions();
               _loadRecentTransactions();
             }),
@@ -1266,196 +1240,192 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isCash = tx.accountName.toLowerCase().contains('cash') ||
         tx.accountName.toLowerCase().contains('wallet');
     final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+
     bool canReverse = !tx.isCancelled &&
         tx.type != "REVERSAL" &&
         tx.direction != "REVERSAL" &&
         tx.status != "VOIDED" &&
         isLatest;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _getTransactionLeading(tx),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: () => _showTransactionDetails(
+          context, tx, colorScheme, theme, isDark, canReverse),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _getTransactionLeading(tx),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tx.title,
+                        style: TextStyle(
+                          color: tx.isCancelled ? textSec : colorScheme.primary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          decoration: tx.status == "VOIDED"
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Icon(isCash ? Icons.wallet : Icons.account_balance,
+                              size: 11, color: textSec),
+                          const SizedBox(width: 4),
+                          Text(
+                            tx.accountName,
+                            style: TextStyle(
+                                color: textSec,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500),
+                          ),
+                          if (tx.linkedAccountName != null &&
+                              tx.linkedAccountName!.isNotEmpty &&
+                              tx.linkedAccountName!.toLowerCase() !=
+                                  'null') ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded,
+                                size: 10, color: textSec),
+                            const SizedBox(width: 4),
+                            Icon(
+                                (tx.linkedAccountName!
+                                            .toLowerCase()
+                                            .contains('cash') ||
+                                        tx.linkedAccountName!
+                                            .toLowerCase()
+                                            .contains('wallet'))
+                                    ? Icons.wallet
+                                    : Icons.account_balance,
+                                size: 11,
+                                color: textSec),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                tx.linkedAccountName!,
+                                style: TextStyle(
+                                    color: textSec,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+
+                          // 🔥 THE UPDATED DESCRIPTION LOGIC
+                          if (tx.subtitle.isNotEmpty &&
+                              tx.subtitle.toLowerCase() != 'null') ...[
+                            const SizedBox(width: 6),
+                            Icon(Icons.circle, size: 4, color: textSec),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      // Strictly cuts at 20 characters and adds "..."
+                                      tx.subtitle.length > 45
+                                          ? '${tx.subtitle.substring(0, 45)}...'
+                                          : tx.subtitle,
+                                      style: TextStyle(
+                                          color: textSec, fontSize: 12),
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                  // Shows the expansion arrow if the text was cut
+                                  if (tx.subtitle.length > 45) ...[
+                                    const SizedBox(width: 2),
+                                    Icon(Icons.arrow_outward_rounded,
+                                        size: 14, color: textSec),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      tx.title,
+                      "₹${tx.amount.abs().toStringAsFixed(2)}",
                       style: TextStyle(
-                        color: tx.isCancelled ? textSec : colorScheme.primary,
+                        color: tx.isCancelled || tx.status == "VOIDED"
+                            ? textSec
+                            : moneyColor,
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                         decoration: tx.status == "VOIDED"
                             ? TextDecoration.lineThrough
                             : null,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Icon(isCash ? Icons.wallet : Icons.account_balance,
-                            size: 11, color: textSec),
-                        const SizedBox(width: 4),
-                        Text(
-                          tx.accountName,
-                          style: TextStyle(
-                              color: textSec,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500),
-                        ),
-                        // 1. Added a check to hide if linked account is the string 'null'
-                        if (tx.linkedAccountName != null && 
-                            tx.linkedAccountName!.isNotEmpty && 
-                            tx.linkedAccountName!.toLowerCase() != 'null') ...[
-                          const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_rounded,
-                              size: 10, color: textSec),
-                          const SizedBox(width: 4),
-                          Icon(
-                              (tx.linkedAccountName!
-                                          .toLowerCase()
-                                          .contains('cash') ||
-                                      tx.linkedAccountName!
-                                          .toLowerCase()
-                                          .contains('wallet'))
-                                  ? Icons.wallet
-                                  : Icons.account_balance,
-                              size: 11,
-                              color: textSec),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              tx.linkedAccountName!,
-                              style: TextStyle(
-                                  color: textSec,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                        // 2. Added check to hide dot and description if it's the string 'null'
-                        if (tx.subtitle.isNotEmpty && 
-                            tx.subtitle.toLowerCase() != 'null') ...[
-                          const SizedBox(width: 6),
-                          Icon(Icons.circle, size: 4, color: textSec),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              tx.subtitle,
-                              style: TextStyle(color: textSec, fontSize: 12),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ],
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat('dd MMM, yyyy').format(tx.date),
+                      style: TextStyle(
+                          color: textSec,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "₹${tx.amount.abs().toStringAsFixed(2)}",
-                    style: TextStyle(
-                      color: tx.isCancelled || tx.status == "VOIDED"
-                          ? textSec
-                          : moneyColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      decoration: tx.status == "VOIDED"
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('dd MMM, yyyy').format(tx.date),
-                    style: TextStyle(
-                        color: textSec,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500),
-                  ),
-                  if (tx.isCancelled) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.withOpacity(0.4)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.cancel_outlined,
-                              size: 10, color: Colors.red),
-                          const SizedBox(width: 4),
-                          const Text(
-                            "Cancelled",
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  if (canReverse) ...[
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () => _handleReversal(tx),
-                      child: Container(
+                    if (tx.isCancelled) ...[
+                      const SizedBox(height: 6),
+                      Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.error.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: theme.colorScheme.error.withOpacity(0.4)),
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border:
+                              Border.all(color: Colors.red.withOpacity(0.4)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Icon(Icons.undo_rounded,
-                                size: 12, color: theme.colorScheme.error),
+                            const Icon(Icons.cancel_outlined,
+                                size: 10, color: Colors.red),
                             const SizedBox(width: 4),
-                            Text(
-                              "Undo",
-                              style: TextStyle(
-                                color: theme.colorScheme.error,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 1),
+                              child: Text(
+                                "Cancelled",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.0,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ),
-        Divider(color: theme.dividerColor, height: 1),
-      ],
+          Divider(color: theme.dividerColor, height: 1),
+        ],
+      ),
     );
   }
 
@@ -1464,13 +1434,13 @@ class _HomeScreenState extends State<HomeScreen> {
       case "GOAL_ALLOCATION":
         return AppColors.savingsPrimary;
       case "GOAL_DEALLOCATION":
-        return const Color(0xFF8B5CF6); 
+        return const Color(0xFF8B5CF6);
       case "GOAL_COMPLETION":
-        return AppColors.chartIncome;
+        return const Color(0xFFF59E0B);
       case "ACCOUNT_TRANSFER_IN":
         return AppColors.incomeAmount;
       case "ACCOUNT_TRANSFER_OUT":
-        return Color(0xFFA78BFA);
+        return const Color(0xFFA78BFA);
       case "RESERVED_IN":
         return AppColors.warning;
       case "RESERVED_OUT":
@@ -1492,7 +1462,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case "GOAL_DEALLOCATION":
         return Icons.savings_outlined;
       case "GOAL_COMPLETION":
-        return Icons.task_alt_rounded;
+        return Icons.emoji_events_rounded;
       case "ACCOUNT_TRANSFER_OUT":
       case "ACCOUNT_TRANSFER_IN":
         return Icons.swap_horiz_rounded;
@@ -1525,6 +1495,282 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
           color: iconColor.withOpacity(0.12), shape: BoxShape.circle),
       child: Icon(_getTransactionIcon(tx), color: iconColor, size: 20),
+    );
+  }
+
+  void _showTransactionDetails(BuildContext context, TransactionModel tx,
+      ColorScheme colorScheme, ThemeData theme, bool isDark, bool canReverse) {
+    final Color moneyColor = _getTransactionColor(tx);
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final textPrim = isDark ? Colors.white : const Color(0xFF0F172A);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 8, bottom: 24),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _getTransactionLeading(tx),
+                        const SizedBox(height: 16),
+                        Text(
+                          "₹${tx.amount.abs().toStringAsFixed(2)}",
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: tx.isCancelled || tx.status == "VOIDED"
+                                ? textSec
+                                : moneyColor,
+                            decoration: tx.status == "VOIDED"
+                                ? TextDecoration.lineThrough
+                                : null,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          tx.title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: textPrim,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF161618)
+                                : colorScheme.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white10
+                                  : Colors.black.withOpacity(0.05),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildDetailRow(
+                                  "Status",
+                                  tx.isCancelled ? "Cancelled" : tx.status,
+                                  isDark,
+                                  valueColor:
+                                      tx.isCancelled ? Colors.red : null),
+                              _buildDetailRow(
+                                  "Date",
+                                  DateFormat('dd MMM yyyy').format(tx.date),
+                                  isDark),
+                              _buildDetailRow(
+                                  "Account", tx.accountName, isDark),
+                              if (tx.linkedAccountName != null &&
+                                  tx.linkedAccountName!.isNotEmpty &&
+                                  tx.linkedAccountName!.toLowerCase() != 'null')
+                                _buildDetailRow("Transferred To",
+                                    tx.linkedAccountName!, isDark),
+                              if (tx.category.isNotEmpty)
+                                _buildDetailRow(
+                                    "Category", tx.category, isDark),
+                              if (tx.subtitle.isNotEmpty &&
+                                  tx.subtitle.toLowerCase() != 'null')
+                                _buildDetailRow(
+                                    "Description", tx.subtitle, isDark),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+                if (canReverse) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            theme.colorScheme.error.withOpacity(0.1),
+                        foregroundColor: theme.colorScheme.error,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _handleReversal(tx);
+                      },
+                      child: const Text("Undo Transaction",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: OutlinedButton.icon(
+                          icon: Icon(Icons.copy_rounded,
+                              size: 18, color: textPrim),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: textPrim,
+                            side: BorderSide(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                          onPressed: () {
+                            final String clipboardText = """
+Transaction: ${tx.title}
+Amount: ₹${tx.amount.abs().toStringAsFixed(2)}
+Transacted At: ${DateFormat('dd MMM yyyy').format(tx.date)}
+Account: ${tx.accountName}${tx.linkedAccountName != null && tx.linkedAccountName!.toLowerCase() != 'null' ? '\nTransferred To: ${tx.linkedAccountName}' : ''}${tx.subtitle.isNotEmpty && tx.subtitle.toLowerCase() != 'null' ? '\nDescription: ${tx.subtitle}' : ''}
+Status: ${tx.isCancelled ? 'Cancelled' : tx.status}
+"""
+                                .trim();
+
+                            Clipboard.setData(
+                                ClipboardData(text: clipboardText));
+                            Navigator.pop(ctx);
+                            _showSnackBar("Receipt copied to clipboard!");
+                          },
+                          label: const Text("Copy",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                isDark ? Colors.white10 : Colors.grey.shade100,
+                            foregroundColor: textPrim,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text("Close",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, bool isDark,
+      {Color? valueColor}) {
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final textPrim = isDark ? Colors.white : const Color(0xFF0F172A);
+
+    final displayLabel = label.toLowerCase() == 'note' ? 'Description' : label;
+
+    if (value.length > 35) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              displayLabel,
+              style: TextStyle(
+                color: textSec,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              textAlign: TextAlign.left,
+              style: TextStyle(
+                color: valueColor ?? textPrim,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              displayLabel,
+              style: TextStyle(
+                color: textSec,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: valueColor ?? textPrim,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

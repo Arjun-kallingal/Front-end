@@ -1,20 +1,22 @@
-// 1. THE INDIVIDUAL TRANSACTION OBJECT
+// lib/core/models/transaction_model.dart
+
 class TransactionModel {
   final String id;
-  final String accountId; // Needed for Reversal API
+  final String accountId; 
   final String title;
   final String subtitle;
   final double amount;
-  final DateTime date;
+  final DateTime date;      // Maps to transactedAt (User-facing calendar grouping)
+  final DateTime createdAt; // Maps to exact machine timestamp (Sorting within groups)
   final String type;
   final String category;
   final String direction;
   final String accountName;
   final String? idempotencyKey;
   final String status; 
-   final bool isCancelled;
-   final String? transferGroupId;
-   final String? linkedAccountName;
+  final bool isCancelled;
+  final String? transferGroupId;
+  final String? linkedAccountName;
 
   TransactionModel({
     required this.id,
@@ -23,6 +25,7 @@ class TransactionModel {
     required this.subtitle,
     required this.amount,
     required this.date,
+    required this.createdAt, 
     required this.type,
     required this.category,
     required this.direction,
@@ -37,13 +40,13 @@ class TransactionModel {
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['_id']?.toString() ?? '',
-      // Safely extract accountId whether it's populated or just a string
       accountId: (json['accountId'] is Map)
           ? json['accountId']['_id']?.toString() ?? ''
           : json['accountId']?.toString() ?? '',
       title: json['category'] ?? 'General',
       subtitle: json['description'] ?? '',
       amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
+      
       date: () {
         if (json['transactedAt'] != null) {
           return DateTime.parse(json['transactedAt'].toString()).toLocal();
@@ -53,20 +56,30 @@ class TransactionModel {
         }
         return DateTime.now();
       }(),
+
+      createdAt: () {
+        if (json['createdAt'] != null) {
+          return DateTime.parse(json['createdAt'].toString()).toLocal();
+        }
+        if (json['transactedAt'] != null) {
+          return DateTime.parse(json['transactedAt'].toString()).toLocal();
+        }
+        return DateTime.now();
+      }(),
+
       type: (json['transactionType'] ?? 'EXPENSE').toString().toUpperCase(),
       category: json['category'] ?? 'General',
       direction: (json['direction'] ?? 'STANDARD').toString().toUpperCase(),
       accountName: (json['accountName'] ?? 'Unknown Account').toString(),
       idempotencyKey: json['idempotencyKey']?.toString(),
       status: (json['status'] ?? 'COMPLETED').toString().toUpperCase(),
-       isCancelled: json['isCancelled'] == true,
-       transferGroupId: json['transferGroupId']?.toString(),
-       linkedAccountName: null, 
+      isCancelled: json['isCancelled'] == true,
+      transferGroupId: json['transferGroupId']?.toString(),
+      linkedAccountName: null, 
     );
   }
 }
 
-// 2. THE WRAPPER FOR THE FULL BACKEND RESPONSE
 class TransactionHistoryResponse {
   final int count;
   final String? nextCursor;

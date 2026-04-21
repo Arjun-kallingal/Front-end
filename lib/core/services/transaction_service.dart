@@ -1,6 +1,7 @@
+// lib/core/services/transaction_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:uuid/uuid.dart';
 import 'package:front_end/core/services/api_client.dart';
 import 'package:front_end/core/services/api_config.dart';
 import 'package:front_end/core/models/transaction_model.dart';
@@ -8,30 +9,27 @@ import 'package:front_end/core/models/transaction_model.dart';
 class TransactionService {
   static String get _baseUrl => "${ApiConfig.baseUrl}/api/transaction";
 
-  /// --- 1. FETCH HISTORY ---
   static Future<TransactionHistoryResponse> getHistory({
     String? accountId,
     String? category,
     String? lastId,
-    DateTime? startDate, // <-- NEW
-    DateTime? endDate, // <-- NEW
-    String? searchQuery, // <-- NEW
-    String? type, // <-- NEW
+    DateTime? startDate,
+    DateTime? endDate,
+    String? searchQuery,
+    String? type,
   }) async {
     try {
       final Map<String, String> queryParams = {};
-      if (accountId != null && accountId != "All Accounts") {
+      
+      if (accountId != null && accountId.isNotEmpty) {
         queryParams['accountId'] = accountId;
       }
-      if (category != null &&
-          category != "All Categories" &&
-          category != "All") {
+      if (category != null && category.isNotEmpty) {
         queryParams['category'] = category;
       }
-      if (lastId != null) {
+      if (lastId != null && lastId.isNotEmpty) {
         queryParams['lastId'] = lastId;
       }
-      // Add new date filters (convert DateTime to ISO string for backend)
       if (startDate != null) {
         queryParams['startDate'] = startDate.toIso8601String();
       }
@@ -41,12 +39,11 @@ class TransactionService {
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['searchQuery'] = searchQuery;
       }
-      if (type != null && type != "All Type") {
+      if (type != null && type.isNotEmpty) {
         queryParams['type'] = type;
       }
 
-      final uri =
-          Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
+      final uri = Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
       final headers = await ApiClient.getHeaders();
 
       final response = await http.get(uri, headers: headers);
@@ -68,7 +65,6 @@ class TransactionService {
     }
   }
 
-  /// --- 2. PROCESS TRANSACTION ---
   static Future<Map<String, dynamic>> processTransaction({
     required String accountId,
     required String amount,
@@ -76,12 +72,11 @@ class TransactionService {
     required String category,
     String? description,
     String direction = "STANDARD",
-    String? idempotencyKey,
+    required String idempotencyKey, // UI must pass this
     String? transactedAt,
   }) async {
     try {
       final headers = await ApiClient.getHeaders();
-      final effectiveKey = idempotencyKey ?? const Uuid().v4();
 
       final response = await http.post(
         Uri.parse('$_baseUrl/process'),
@@ -93,7 +88,7 @@ class TransactionService {
           "direction": direction,
           "category": category,
           "description": description ?? "",
-          "idempotencyKey": effectiveKey,
+          "idempotencyKey": idempotencyKey,
           "transactedAt": transactedAt,
         }),
       );
@@ -101,8 +96,7 @@ class TransactionService {
       final data = jsonDecode(response.body);
       return {
         "success": response.statusCode == 201,
-        "message": data['error'] ??
-            (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
         "data": data,
       };
     } catch (e) {
@@ -110,7 +104,6 @@ class TransactionService {
     }
   }
 
-  /// --- 3. REVERSE TRANSACTION ---
   static Future<Map<String, dynamic>> reverseTransaction({
     required TransactionModel originalTx,
     String? reason,
@@ -138,15 +131,13 @@ class TransactionService {
       final data = jsonDecode(response.body);
       return {
         "success": response.statusCode == 201,
-        "message": data['error'] ??
-            (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
       };
     } catch (e) {
       return {"success": false, "message": "Network Failure: $e"};
     }
   }
 
-  /// --- 4. FETCH LATEST TRANSACTIONS ---
   static Future<List<TransactionModel>> getLatestTransactions() async {
     try {
       final uri = Uri.parse('$_baseUrl/latest');
@@ -157,8 +148,7 @@ class TransactionService {
         final Map<String, dynamic> body = jsonDecode(response.body);
         final List data = body['data'] ?? [];
 
-        final txs =
-            data.map((item) => TransactionModel.fromJson(item)).toList();
+        final txs = data.map((item) => TransactionModel.fromJson(item)).toList();
         return _groupTransferLegs(txs);
       } else if (response.statusCode == 401) {
         throw Exception("Unauthorized - Please login again");
@@ -173,15 +163,13 @@ class TransactionService {
   static Future<Map<String, dynamic>> reserveFunds({
     required String accountId,
     required String amount,
-    required String action, // "RESERVE" or "RELEASE"
+    required String action, 
     required String category,
     String? description,
-    String? idempotencyKey,
+    required String idempotencyKey, // UI must pass this
   }) async {
     try {
       final headers = await ApiClient.getHeaders();
-      // Ensure we always have a unique key to prevent double-reserving funds
-      final effectiveKey = idempotencyKey ?? const Uuid().v4();
 
       final response = await http.post(
         Uri.parse('$_baseUrl/reserve'),
@@ -192,13 +180,12 @@ class TransactionService {
           "action": action.toUpperCase(),
           "category": category,
           "description": description ?? "",
-          "idempotencyKey": effectiveKey,
+          "idempotencyKey": idempotencyKey,
         }),
       );
 
       final data = jsonDecode(response.body);
       return {
-        // Accept both 201 (Created) and 409 (Duplicate/Idempotent Success)
         "success": response.statusCode == 201 ||
             (response.statusCode == 409 && data['success'] == true),
         "message": data['error'] ??
@@ -211,7 +198,6 @@ class TransactionService {
   }
 
   static List<TransactionModel> _groupTransferLegs(List<TransactionModel> txs) {
-    // Remove REVERSAL entries — isCancelled flag on originals handles the UI
     final filtered = txs.where((t) => t.direction != 'REVERSAL').toList();
 
     final seen = <String>{};
@@ -243,6 +229,7 @@ class TransactionService {
             linkedAccountName: inLeg.accountName,
             amount: outLeg.amount,
             date: outLeg.date,
+            createdAt: outLeg.createdAt, 
             type: outLeg.type,
             category: outLeg.category,
             direction: outLeg.direction,
