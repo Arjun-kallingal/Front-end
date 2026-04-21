@@ -10,7 +10,7 @@ import 'package:front_end/core/providers/account_provider.dart';
 import 'package:front_end/features/goals/provider/goal_provider.dart';
 
 void main() {
-  testWidgets('WalletCare app loads correctly', (WidgetTester tester) async {
+  testWidgets('GreenPouch app loads correctly', (WidgetTester tester) async {
 
     await tester.pumpWidget(
       MultiProvider(
@@ -22,7 +22,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => AccountProvider()),
           ChangeNotifierProvider(create: (_) => GoalProvider()),
         ],
-        child: const WalletCareApp(),
+        child: const GreenPouch(),
       ),
     );
 
@@ -32,6 +32,6 @@ void main() {
     await tester.pumpAndSettle();
 
     /// Verify app loaded
-    expect(find.byType(WalletCareApp), findsOneWidget);
+    expect(find.byType(GreenPouch), findsOneWidget);
   });
 }
