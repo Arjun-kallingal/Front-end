@@ -9,6 +9,7 @@ import 'package:front_end/core/models/transaction_model.dart';
 class TransactionService {
   static String get _baseUrl => "${ApiConfig.baseUrl}/api/transaction";
 
+  // --- 1. FETCH HISTORY ---
   static Future<TransactionHistoryResponse> getHistory({
     String? accountId,
     String? category,
@@ -20,7 +21,7 @@ class TransactionService {
   }) async {
     try {
       final Map<String, String> queryParams = {};
-      
+
       if (accountId != null && accountId.isNotEmpty) {
         queryParams['accountId'] = accountId;
       }
@@ -43,7 +44,8 @@ class TransactionService {
         queryParams['type'] = type;
       }
 
-      final uri = Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
+      final uri =
+          Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
       final headers = await ApiClient.getHeaders();
 
       final response = await http.get(uri, headers: headers);
@@ -65,6 +67,7 @@ class TransactionService {
     }
   }
 
+  // --- 2. PROCESS TRANSACTION ---
   static Future<Map<String, dynamic>> processTransaction({
     required String accountId,
     required String amount,
@@ -72,7 +75,7 @@ class TransactionService {
     required String category,
     String? description,
     String direction = "STANDARD",
-    required String idempotencyKey, // UI must pass this
+    required String idempotencyKey,
     String? transactedAt,
   }) async {
     try {
@@ -96,7 +99,8 @@ class TransactionService {
       final data = jsonDecode(response.body);
       return {
         "success": response.statusCode == 201,
-        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ??
+            (response.statusCode == 201 ? "Success" : "Failed"),
         "data": data,
       };
     } catch (e) {
@@ -104,6 +108,7 @@ class TransactionService {
     }
   }
 
+  // --- 3. REVERSE TRANSACTION ---
   static Future<Map<String, dynamic>> reverseTransaction({
     required TransactionModel originalTx,
     String? reason,
@@ -131,13 +136,15 @@ class TransactionService {
       final data = jsonDecode(response.body);
       return {
         "success": response.statusCode == 201,
-        "message": data['error'] ?? (response.statusCode == 201 ? "Success" : "Failed"),
+        "message": data['error'] ??
+            (response.statusCode == 201 ? "Success" : "Failed"),
       };
     } catch (e) {
       return {"success": false, "message": "Network Failure: $e"};
     }
   }
 
+  // --- 4. FETCH LATEST TRANSACTIONS ---
   static Future<List<TransactionModel>> getLatestTransactions() async {
     try {
       final uri = Uri.parse('$_baseUrl/latest');
@@ -148,7 +155,8 @@ class TransactionService {
         final Map<String, dynamic> body = jsonDecode(response.body);
         final List data = body['data'] ?? [];
 
-        final txs = data.map((item) => TransactionModel.fromJson(item)).toList();
+        final txs =
+            data.map((item) => TransactionModel.fromJson(item)).toList();
         return _groupTransferLegs(txs);
       } else if (response.statusCode == 401) {
         throw Exception("Unauthorized - Please login again");
@@ -160,13 +168,14 @@ class TransactionService {
     }
   }
 
+  // --- 5. RESERVE FUNDS ---
   static Future<Map<String, dynamic>> reserveFunds({
     required String accountId,
     required String amount,
-    required String action, 
+    required String action,
     required String category,
     String? description,
-    required String idempotencyKey, // UI must pass this
+    required String idempotencyKey,
   }) async {
     try {
       final headers = await ApiClient.getHeaders();
@@ -198,6 +207,7 @@ class TransactionService {
   }
 
   static List<TransactionModel> _groupTransferLegs(List<TransactionModel> txs) {
+    // Remove REVERSAL entries — isCancelled flag on originals handles the UI
     final filtered = txs.where((t) => t.direction != 'REVERSAL').toList();
 
     final seen = <String>{};
@@ -229,7 +239,7 @@ class TransactionService {
             linkedAccountName: inLeg.accountName,
             amount: outLeg.amount,
             date: outLeg.date,
-            createdAt: outLeg.createdAt, 
+            createdAt: outLeg.createdAt,
             type: outLeg.type,
             category: outLeg.category,
             direction: outLeg.direction,

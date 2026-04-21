@@ -2,7 +2,7 @@
 
 class TransactionModel {
   final String id;
-  final String accountId; 
+  final String accountId;
   final String title;
   final String subtitle;
   final double amount;
@@ -13,7 +13,7 @@ class TransactionModel {
   final String direction;
   final String accountName;
   final String? idempotencyKey;
-  final String status; 
+  final String status;
   final bool isCancelled;
   final String? transferGroupId;
   final String? linkedAccountName;
@@ -25,7 +25,7 @@ class TransactionModel {
     required this.subtitle,
     required this.amount,
     required this.date,
-    required this.createdAt, 
+    required this.createdAt,
     required this.type,
     required this.category,
     required this.direction,
@@ -46,7 +46,7 @@ class TransactionModel {
       title: json['category'] ?? 'General',
       subtitle: json['description'] ?? '',
       amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
-      
+
       date: () {
         if (json['transactedAt'] != null) {
           return DateTime.parse(json['transactedAt'].toString()).toLocal();
@@ -75,7 +75,7 @@ class TransactionModel {
       status: (json['status'] ?? 'COMPLETED').toString().toUpperCase(),
       isCancelled: json['isCancelled'] == true,
       transferGroupId: json['transferGroupId']?.toString(),
-      linkedAccountName: null, 
+      linkedAccountName: null,
     );
   }
 }
@@ -93,7 +93,6 @@ class TransactionHistoryResponse {
 
   factory TransactionHistoryResponse.fromJson(Map<String, dynamic> json) {
     final List dataList = json['data'] ?? [];
-
     return TransactionHistoryResponse(
       count: json['count'] ?? 0,
       nextCursor: json['nextCursor']?.toString(),
