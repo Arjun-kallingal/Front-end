@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front_end/core/services/sound_service.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -116,6 +117,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
               onChanged: (v) => setState(() => promotions = v),
               isLight: isLight,
             ),
+            
+_divider(context),
+
+_notificationTile(
+  context,
+  icon: Icons.volume_up_outlined,
+  title: "Transaction Sounds",
+  subtitle: "Play audio feedback after each transaction",
+  value: SoundService.instance.soundEnabled,
+  onChanged: (val) async {
+    await SoundService.instance.setSoundEnabled(val);
+    setState(() {});
+  },
+  isLight: isLight,
+),
 
             const SizedBox(height: 32),
           ],
