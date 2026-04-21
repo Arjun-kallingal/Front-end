@@ -13,6 +13,8 @@ class TransactionModel {
   final String? idempotencyKey;
   final String status; 
    final bool isCancelled;
+   final String? transferGroupId;
+   final String? linkedAccountName;
 
   TransactionModel({
     required this.id,
@@ -28,6 +30,8 @@ class TransactionModel {
     this.idempotencyKey,
     required this.status,
     this.isCancelled = false,
+    this.transferGroupId,
+    this.linkedAccountName,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +60,8 @@ class TransactionModel {
       idempotencyKey: json['idempotencyKey']?.toString(),
       status: (json['status'] ?? 'COMPLETED').toString().toUpperCase(),
        isCancelled: json['isCancelled'] == true,
+       transferGroupId: json['transferGroupId']?.toString(),
+       linkedAccountName: null, 
     );
   }
 }

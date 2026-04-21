@@ -13,17 +13,19 @@ class TransactionService {
     String? accountId,
     String? category,
     String? lastId,
-    DateTime? startDate,     // <-- NEW
-    DateTime? endDate,       // <-- NEW
-    String? searchQuery,     // <-- NEW
-    String? type,            // <-- NEW
+    DateTime? startDate, // <-- NEW
+    DateTime? endDate, // <-- NEW
+    String? searchQuery, // <-- NEW
+    String? type, // <-- NEW
   }) async {
     try {
       final Map<String, String> queryParams = {};
       if (accountId != null && accountId != "All Accounts") {
         queryParams['accountId'] = accountId;
       }
-      if (category != null && category != "All Categories" && category != "All") {
+      if (category != null &&
+          category != "All Categories" &&
+          category != "All") {
         queryParams['category'] = category;
       }
       if (lastId != null) {
@@ -43,14 +45,19 @@ class TransactionService {
         queryParams['type'] = type;
       }
 
-      final uri = Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
+      final uri =
+          Uri.parse('$_baseUrl/history').replace(queryParameters: queryParams);
       final headers = await ApiClient.getHeaders();
-      
-      final response = await http.get(uri, headers: headers);
 
+      final response = await http.get(uri, headers: headers);
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
-        return TransactionHistoryResponse.fromJson(body);
+        final parsed = TransactionHistoryResponse.fromJson(body);
+        return TransactionHistoryResponse(
+          count: parsed.transactions.length,
+          nextCursor: parsed.nextCursor,
+          transactions: _groupTransferLegs(parsed.transactions),
+        );
       } else if (response.statusCode == 401) {
         throw Exception("Unauthorized - Please login again");
       } else {
@@ -118,8 +125,7 @@ class TransactionService {
         "direction": "REVERSAL",
         "category": originalTx.category,
         "description": reason ?? "Reversing ${originalTx.title}",
-        "idempotencyKey":
-            "rev-${originalTx.id}-${DateTime.now().millisecondsSinceEpoch}",
+        "idempotencyKey": "rev-${originalTx.id}",
         "parentTransactionId": originalTx.id,
       });
 
@@ -149,9 +155,11 @@ class TransactionService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> body = jsonDecode(response.body);
-        final List dataList = body['data'] ?? [];
+        final List data = body['data'] ?? [];
 
-        return dataList.map((item) => TransactionModel.fromJson(item)).toList();
+        final txs =
+            data.map((item) => TransactionModel.fromJson(item)).toList();
+        return _groupTransferLegs(txs);
       } else if (response.statusCode == 401) {
         throw Exception("Unauthorized - Please login again");
       } else {
@@ -200,5 +208,58 @@ class TransactionService {
     } catch (e) {
       return {"success": false, "message": "Network Failure: $e"};
     }
+  }
+
+  static List<TransactionModel> _groupTransferLegs(List<TransactionModel> txs) {
+    // Remove REVERSAL entries — isCancelled flag on originals handles the UI
+    final filtered = txs.where((t) => t.direction != 'REVERSAL').toList();
+
+    final seen = <String>{};
+    final result = <TransactionModel>[];
+
+    for (final tx in filtered) {
+      if (tx.transferGroupId != null && tx.transferGroupId!.isNotEmpty) {
+        if (seen.contains(tx.transferGroupId)) continue;
+        seen.add(tx.transferGroupId!);
+
+        final outLeg = filtered
+            .where((t) =>
+                t.transferGroupId == tx.transferGroupId &&
+                t.direction == 'ACCOUNT_TRANSFER_OUT')
+            .firstOrNull;
+
+        final inLeg = filtered
+            .where((t) =>
+                t.transferGroupId == tx.transferGroupId &&
+                t.direction == 'ACCOUNT_TRANSFER_IN')
+            .firstOrNull;
+
+        if (outLeg != null && inLeg != null) {
+          result.add(TransactionModel(
+            id: outLeg.id,
+            accountId: outLeg.accountId,
+            title: outLeg.title,
+            subtitle: outLeg.subtitle.isNotEmpty ? outLeg.subtitle : '',
+            linkedAccountName: inLeg.accountName,
+            amount: outLeg.amount,
+            date: outLeg.date,
+            type: outLeg.type,
+            category: outLeg.category,
+            direction: outLeg.direction,
+            accountName: outLeg.accountName,
+            idempotencyKey: outLeg.idempotencyKey,
+            status: outLeg.status,
+            isCancelled: outLeg.isCancelled || inLeg.isCancelled,
+            transferGroupId: outLeg.transferGroupId,
+          ));
+        } else {
+          result.add(tx);
+        }
+      } else {
+        result.add(tx);
+      }
+    }
+
+    return result;
   }
 }

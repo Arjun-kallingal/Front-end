@@ -108,7 +108,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         setState(() {
           _accounts = fetchedAccounts;
           _transactions = historyData.transactions;
-          _transactions.sort((a, b) => b.date.compareTo(a.date));
           _nextCursor = historyData.nextCursor;
           _isLoading = false;
         });
@@ -148,7 +147,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       if (mounted) {
         setState(() {
           _transactions.addAll(historyData.transactions);
-          _transactions.sort((a, b) => b.date.compareTo(a.date));
           _nextCursor = historyData.nextCursor;
           _isFetchingMore = false;
         });
@@ -206,13 +204,13 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       case "GOAL_ALLOCATION":
         return AppColors.savingsPrimary;
       case "GOAL_DEALLOCATION":
-        return AppColors.progressGreen;
+        return const Color(0xFF8B5CF6); // ← matches home screen
       case "GOAL_COMPLETION":
         return AppColors.chartIncome;
       case "ACCOUNT_TRANSFER_IN":
         return AppColors.incomeAmount;
       case "ACCOUNT_TRANSFER_OUT":
-        return AppColors.dateLabel;
+        return const Color(0xFFA78BFA); // ← matches home screen
       case "RESERVED_IN":
         return AppColors.warning;
       case "RESERVED_OUT":
@@ -220,12 +218,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       case "REVERSAL":
         return AppColors.warning;
     }
-
     if (tx.type == "INCOME") return AppColors.incomeAmount;
     if (tx.type == "EXPENSE") return AppColors.expenseAmount;
     if (tx.type == "REVERSAL") return AppColors.warning;
     if (tx.type == "TRANSFER") return AppColors.dateLabel;
-
     return AppColors.expenseAmount;
   }
 
@@ -238,9 +234,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       case "GOAL_COMPLETION":
         return Icons.task_alt_rounded;
       case "ACCOUNT_TRANSFER_IN":
-        return Icons.call_received_rounded;
+        return Icons.swap_horiz_rounded;
       case "ACCOUNT_TRANSFER_OUT":
-        return Icons.call_made_rounded;
+        return Icons.swap_horiz_rounded;
       case "RESERVED_IN":
         return Icons.lock_outline_rounded;
       case "RESERVED_OUT":
@@ -351,130 +347,181 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       ),
     );
   }
+Widget _buildTransactionTile(
+  TransactionModel tx,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  Color textSec,
+  bool isCash,
+) {
+  final Color moneyColor = _getTransactionColor(tx);
 
-  Widget _buildTransactionTile(
-    TransactionModel tx,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    Color textSec,
-    bool isCash,
-  ) {
-    final Color moneyColor = _getTransactionColor(tx);
+  final bool hasSubtitle = tx.subtitle.isNotEmpty &&
+      !tx.subtitle.toLowerCase().startsWith('to ') &&
+      !tx.subtitle.toLowerCase().startsWith('from ') &&
+      !tx.subtitle.toLowerCase().startsWith('transfer') &&
+      !tx.subtitle.toLowerCase().startsWith('rev-') &&
+      !tx.subtitle.toLowerCase().startsWith('reversing') &&
+      !tx.subtitle.toLowerCase().startsWith('withdrawn') &&
+      tx.subtitle.length < 40;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _getTransactionLeading(tx),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tx.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: tx.isCancelled ? textSec : colorScheme.primary,
-                    decoration: tx.status == "VOIDED"
-                        ? TextDecoration.lineThrough
-                        : null,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (tx.subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 5),
-                  Text(
-                    tx.subtitle,
-                    style: TextStyle(
-                      color: textSec,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _getTransactionLeading(tx),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "₹${tx.amount.abs().toStringAsFixed(2)}",
+                tx.title,
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  color: tx.isCancelled ? textSec : colorScheme.primary,
                   fontSize: 15,
-                  color: tx.isCancelled || tx.status == "VOIDED"
-                      ? textSec
-                      : moneyColor,
+                  fontWeight: FontWeight.w600,
                   decoration: tx.status == "VOIDED"
                       ? TextDecoration.lineThrough
                       : null,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                      isCash
-                          ? Icons.account_balance_wallet_rounded
-                          : Icons.account_balance_rounded,
-                      size: 11,
-                      color: textSec.withOpacity(0.8)),
+                    isCash ? Icons.wallet : Icons.account_balance,
+                    size: 11,
+                    color: textSec,
+                  ),
                   const SizedBox(width: 4),
-                  Text(
-                    tx.accountName,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: textSec.withOpacity(0.8),
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      tx.accountName,
+                      style: TextStyle(
+                        color: textSec,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (tx.linkedAccountName != null) ...[
+                    const SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded,
+                        size: 10, color: textSec),
+                    const SizedBox(width: 4),
+                    Icon(
+                      (tx.linkedAccountName!.toLowerCase().contains('cash') ||
+                              tx.linkedAccountName!
+                                  .toLowerCase()
+                                  .contains('wallet'))
+                          ? Icons.wallet
+                          : Icons.account_balance,
+                      size: 11,
+                      color: textSec,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        tx.linkedAccountName!,
+                        style: TextStyle(
+                          color: textSec,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                  if (hasSubtitle) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(
+                        Icons.circle,
+                        size: 4,
+                        color: textSec.withOpacity(0.5),
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        tx.subtitle,
+                        style: TextStyle(color: textSec, fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ],
               ),
-              // ── Cancelled badge ──
-              if (tx.isCancelled) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.4)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.cancel_outlined, size: 10, color: Colors.red),
-                      SizedBox(width: 4),
-                      Text(
-                        "Cancelled",
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
             ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "₹${tx.amount.abs().toStringAsFixed(2)}",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: tx.isCancelled || tx.status == "VOIDED"
+                    ? textSec
+                    : moneyColor,
+                decoration: tx.status == "VOIDED"
+                    ? TextDecoration.lineThrough
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              DateFormat('dd MMM, yyyy').format(tx.date),
+              style: TextStyle(
+                color: textSec,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (tx.isCancelled) ...[
+              const SizedBox(height: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.4)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cancel_outlined, size: 10, color: Colors.red),
+                    SizedBox(width: 4),
+                    Text(
+                      "Cancelled",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildTransactionList(
       ThemeData theme, ColorScheme colorScheme, bool isDark, Color textSec) {
@@ -490,9 +537,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           Center(
             child: Text("No transactions found",
                 style: TextStyle(
-                    fontSize: 16,
-                    color: textSec,
-                    fontWeight: FontWeight.w500)),
+                    fontSize: 16, color: textSec, fontWeight: FontWeight.w500)),
           ),
         ],
       );
@@ -526,10 +571,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           showHeader = true;
         } else {
           final prevTx = list[i - 1];
-          final currentDay =
-              DateTime(tx.date.year, tx.date.month, tx.date.day);
-          final prevDay = DateTime(
-              prevTx.date.year, prevTx.date.month, prevTx.date.day);
+          final currentDay = DateTime(tx.date.year, tx.date.month, tx.date.day);
+          final prevDay =
+              DateTime(prevTx.date.year, prevTx.date.month, prevTx.date.day);
           if (!currentDay.isAtSameMomentAs(prevDay)) {
             showHeader = true;
           }
@@ -538,8 +582,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         Widget tileContent = Column(
           children: [
             _buildTransactionTile(tx, theme, colorScheme, textSec, isCash),
-            Divider(
-                color: theme.dividerColor.withOpacity(0.05), height: 1),
+            Divider(color: theme.dividerColor.withOpacity(0.05), height: 1),
           ],
         );
 
@@ -548,8 +591,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           final now = DateTime.now();
           final today = DateTime(now.year, now.month, now.day);
           final yesterday = today.subtract(const Duration(days: 1));
-          final txDate =
-              DateTime(tx.date.year, tx.date.month, tx.date.day);
+          final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
 
           if (txDate.isAtSameMomentAs(today)) {
             headerText = "Today";
@@ -565,8 +607,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(
-                    top: 28.0, bottom: 12.0, left: 4),
+                padding:
+                    const EdgeInsets.only(top: 28.0, bottom: 12.0, left: 4),
                 child: Row(
                   children: [
                     Container(
@@ -614,8 +656,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final textSec =
-        isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
+    final textSec = isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted;
     final surfaceAlt =
         theme.inputDecorationTheme.fillColor ?? colorScheme.surface;
 
@@ -660,19 +701,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                               color: surfaceAlt,
                               borderRadius: BorderRadius.circular(12)),
                           child: TextField(
-                            onChanged: (v) =>
-                                setState(() => searchQuery = v),
+                            onChanged: (v) {
+                              setState(() => searchQuery = v);
+                              Future.delayed(const Duration(milliseconds: 500),
+                                  () {
+                                if (searchQuery == v) _fetchData();
+                              });
+                            },
                             style: TextStyle(color: colorScheme.primary),
                             decoration: InputDecoration(
                               hintText: "Search transactions...",
                               hintStyle: TextStyle(color: textSec),
-                              prefixIcon:
-                                  Icon(Icons.search, color: textSec),
+                              prefixIcon: Icon(Icons.search, color: textSec),
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 12),
+                              contentPadding:
+                                  const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ),
@@ -686,8 +731,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                           decoration: BoxDecoration(
                               color: surfaceAlt,
                               borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.tune,
-                              color: colorScheme.primary),
+                          child: Icon(Icons.tune, color: colorScheme.primary),
                         ),
                       ),
                     ],

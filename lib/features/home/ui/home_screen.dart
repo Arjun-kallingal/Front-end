@@ -389,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActiveGoalsSection(BuildContext context, ColorScheme colorScheme,
       ThemeData theme, bool isDark) {
     final goalProvider = context.watch<GoalProvider>();
-    
+
     final activeGoals =
         goalProvider.goals.where((g) => g.status != 'completed').toList();
 
@@ -425,7 +425,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           .fetchGoals(); // FIX: added mounted check
                   });
                 },
-                
                 child: Row(
                   children: [
                     Text(
@@ -558,9 +557,13 @@ class _HomeScreenState extends State<HomeScreen> {
           //       context.read<GoalProvider>().fetchGoals(); // FIX: mounted check
           //   });
           // },
-            onTap: () async {
-            final refresh = await Navigator.push(context, MaterialPageRoute(builder: (_) => GoalDetailsScreen(goal: goal)));
-            if (refresh == true && context.mounted) context.read<GoalProvider>().fetchGoals();
+          onTap: () async {
+            final refresh = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => GoalDetailsScreen(goal: goal)));
+            if (refresh == true && context.mounted)
+              context.read<GoalProvider>().fetchGoals();
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
@@ -1288,7 +1291,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: tx.isCancelled ? textSec : colorScheme.primary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        // 1. Removed tx.isCancelled from the line-through decoration
                         decoration: tx.status == "VOIDED"
                             ? TextDecoration.lineThrough
                             : null,
@@ -1308,13 +1310,46 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: textSec,
                               fontSize: 12,
                               fontWeight: FontWeight.w500),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (tx.subtitle.isNotEmpty) ...[
+                        // 1. Added a check to hide if linked account is the string 'null'
+                        if (tx.linkedAccountName != null && 
+                            tx.linkedAccountName!.isNotEmpty && 
+                            tx.linkedAccountName!.toLowerCase() != 'null') ...[
+                          const SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_rounded,
+                              size: 10, color: textSec),
+                          const SizedBox(width: 4),
+                          Icon(
+                              (tx.linkedAccountName!
+                                          .toLowerCase()
+                                          .contains('cash') ||
+                                      tx.linkedAccountName!
+                                          .toLowerCase()
+                                          .contains('wallet'))
+                                  ? Icons.wallet
+                                  : Icons.account_balance,
+                              size: 11,
+                              color: textSec),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              tx.linkedAccountName!,
+                              style: TextStyle(
+                                  color: textSec,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                        // 2. Added check to hide dot and description if it's the string 'null'
+                        if (tx.subtitle.isNotEmpty && 
+                            tx.subtitle.toLowerCase() != 'null') ...[
                           const SizedBox(width: 6),
-                          Text('·', style: TextStyle(color: textSec)),
+                          Icon(Icons.circle, size: 4, color: textSec),
                           const SizedBox(width: 6),
-                          Expanded(
+                          Flexible(
                             child: Text(
                               tx.subtitle,
                               style: TextStyle(color: textSec, fontSize: 12),
@@ -1341,7 +1376,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           : moneyColor,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      // 1. Removed tx.isCancelled from the line-through decoration here as well
                       decoration: tx.status == "VOIDED"
                           ? TextDecoration.lineThrough
                           : null,
@@ -1361,7 +1395,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        // 2. Changed theme.colorScheme.error to Colors.red
                         color: Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.red.withOpacity(0.4)),
@@ -1369,15 +1402,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 2. Changed icon color to Colors.red
                           const Icon(Icons.cancel_outlined,
                               size: 10, color: Colors.red),
                           const SizedBox(width: 4),
                           const Text(
                             "Cancelled",
                             style: TextStyle(
-                              color: Colors
-                                  .red, // 2. Changed text color to Colors.red
+                              color: Colors.red,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1433,13 +1464,13 @@ class _HomeScreenState extends State<HomeScreen> {
       case "GOAL_ALLOCATION":
         return AppColors.savingsPrimary;
       case "GOAL_DEALLOCATION":
-        return const Color(0xFF8B5CF6); // 👈 purple
+        return const Color(0xFF8B5CF6); 
       case "GOAL_COMPLETION":
         return AppColors.chartIncome;
       case "ACCOUNT_TRANSFER_IN":
         return AppColors.incomeAmount;
       case "ACCOUNT_TRANSFER_OUT":
-        return AppColors.dateLabel;
+        return Color(0xFFA78BFA);
       case "RESERVED_IN":
         return AppColors.warning;
       case "RESERVED_OUT":
@@ -1462,10 +1493,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.savings_outlined;
       case "GOAL_COMPLETION":
         return Icons.task_alt_rounded;
-      case "ACCOUNT_TRANSFER_IN":
-        return Icons.call_received_rounded;
       case "ACCOUNT_TRANSFER_OUT":
-        return Icons.call_made_rounded;
+      case "ACCOUNT_TRANSFER_IN":
+        return Icons.swap_horiz_rounded;
       case "RESERVED_IN":
         return Icons.lock_outline_rounded;
       case "RESERVED_OUT":
