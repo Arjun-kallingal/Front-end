@@ -694,22 +694,20 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       ColorScheme colorScheme,
       Color textSec,
       bool isCash,
-      // ── FIX: isLatest is now determined by createdAt comparison in
-      //         _buildTransactionList, not by list index ──
       {bool isLatest = false}) {
     final Color moneyColor = _getTransactionColor(tx);
 
+    // 1. Removed tx.subtitle.length < 40 restriction
+    // 2. Added null string check
     final bool hasSubtitle = tx.subtitle.isNotEmpty &&
+        tx.subtitle.toLowerCase() != 'null' &&
         !tx.subtitle.toLowerCase().startsWith('to ') &&
         !tx.subtitle.toLowerCase().startsWith('from ') &&
         !tx.subtitle.toLowerCase().startsWith('transfer') &&
         !tx.subtitle.toLowerCase().startsWith('rev-') &&
         !tx.subtitle.toLowerCase().startsWith('reversing') &&
-        !tx.subtitle.toLowerCase().startsWith('withdrawn') &&
-        tx.subtitle.length < 40;
+        !tx.subtitle.toLowerCase().startsWith('withdrawn');
 
-    // Undo button shows only for the single most recent (by createdAt) transaction
-    // that is not already cancelled/voided/a reversal.
     bool canReverse = !tx.isCancelled &&
         tx.type != "REVERSAL" &&
         tx.direction != "REVERSAL" &&
@@ -762,7 +760,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                             child: Text(tx.accountName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis)),
-                        if (tx.linkedAccountName != null) ...[
+                        if (tx.linkedAccountName != null &&
+                            tx.linkedAccountName!.isNotEmpty &&
+                            tx.linkedAccountName!.toLowerCase() != 'null') ...[
                           const SizedBox(width: 4),
                           Icon(Icons.arrow_forward_rounded,
                               size: 10, color: textSec),
@@ -785,18 +785,36 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis)),
                         ],
+                        
+                        // 🔥 Description matching the Home Screen exactly
                         if (hasSubtitle) ...[
-                          Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 6),
-                              child: Icon(Icons.circle,
-                                  size: 4,
-                                  color: textSec.withOpacity(0.5))),
-                          Expanded(
-                              flex: 2,
-                              child: Text(tx.subtitle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis)),
+                          const SizedBox(width: 6),
+                          Icon(Icons.circle,
+                              size: 4,
+                              color: textSec.withOpacity(0.5)),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            flex: 2,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    tx.subtitle.length > 40
+                                        ? '${tx.subtitle.substring(0, 40)}...'
+                                        : tx.subtitle,
+                                    style: TextStyle(color: textSec, fontSize: 12),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (tx.subtitle.length > 40) ...[
+                                  const SizedBox(width: 2),
+                                  Icon(Icons.arrow_outward_rounded, size: 14, color: textSec),
+                                ],
+                              ],
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -884,9 +902,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       );
     }
 
-    // ── FIX: Find the true latest transaction by createdAt timestamp.
-    //         This is safe across pagination and re-sorts because we always
-    //         compare the actual machine timestamp, not the list position. ──
     final latestTxId = list.isNotEmpty
         ? list
             .reduce((a, b) => a.createdAt.isAfter(b.createdAt) ? a : b)
@@ -929,7 +944,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         Widget tileContent = Column(
           key: ValueKey(tx.id),
           children: [
-            // ── FIX: pass isLatest based on createdAt match, not index ──
             _buildTransactionTile(tx, theme, colorScheme, textSec, isCash,
                 isLatest: tx.id == latestTxId),
             Divider(

@@ -18,8 +18,10 @@ import '../../analytics/provider/analytics_provider.dart';
 import '../../goals/provider/goal_provider.dart';
 import 'package:front_end/features/notifications/notification_screen.dart';
 import 'package:front_end/core/providers/notification_provider.dart';
+
 import 'package:front_end/features/goals/ui/financial_goals_screen.dart';
 import 'package:front_end/features/goals/ui/create_new_goal.dart';
+import 'package:front_end/features/goals/data/goal_model.dart';
 import 'package:front_end/features/goals/ui/goal_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -36,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingRecent = true;
   String? _recentError;
 
+  // Cache the provider to safely remove listeners in dispose()
   late TransactionProvider _transactionProvider;
 
   @override
@@ -43,12 +46,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _transactionProvider = context.read<TransactionProvider>();
 
+    // Use post-frame callback for safer provider initialization
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _transactionProvider.fetchTransactions();
       _transactionProvider.addListener(_onTransactionUpdate);
 
+      // Fetch goals for the Active Goals section
       if (mounted) context.read<GoalProvider>().fetchGoals();
 
+      // INITIALIZE NOTIFICATIONS & SOCKET
       if (mounted) {
         final notifProvider = context.read<NotificationProvider>();
         notifProvider.loadNotifications();
@@ -66,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    // Safely remove listener using the cached instance
     _transactionProvider.removeListener(_onTransactionUpdate);
     super.dispose();
   }
@@ -338,16 +345,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // 🔥 1. QUICK ACTIONS
+                      // QUICK ACTIONS
                       _buildActionButtons(context, colorScheme, theme, isDark),
                       const SizedBox(height: 32),
 
-                      // 🔥 2. ACTIVE GOALS
+                      // ACTIVE GOALS
                       _buildActiveGoalsSection(
                           context, colorScheme, theme, isDark),
                       const SizedBox(height: 28),
 
-                      // 🔥 3. RECENT ACTIVITY
+                      // RECENT ACTIVITY
                       _buildRecentHeader(context, colorScheme, theme, isDark),
                       const SizedBox(height: 8),
                       _buildTransactionList(
@@ -373,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ===========================================================================
-  // 🔥 ACTIVE GOALS SECTION
+  // ACTIVE GOALS SECTION
   // ===========================================================================
 
   Widget _buildActiveGoalsSection(BuildContext context, ColorScheme colorScheme,
@@ -409,7 +416,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(
                         builder: (_) => const FinancialGoalsScreen()),
                   ).then((_) {
-                    if (mounted) context.read<GoalProvider>().fetchGoals();
+                    if (mounted) {
+                      context.read<GoalProvider>().fetchGoals();
+                    }
                   });
                 },
                 child: Row(
@@ -469,6 +478,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required BuildContext context,
     required bool isDark,
   }) {
+    // Safe math calculation to prevent DivisionByZero/NaN exceptions
     final double targetAmount =
         (goal.targetAmount != null && goal.targetAmount > 0)
             ? goal.targetAmount
@@ -683,8 +693,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 backgroundColor: isDark
                                     ? Colors.white10
                                     : Colors.black.withOpacity(0.05),
-                                valueColor:
-                                    const AlwaysStoppedAnimation(accentColor),
+                                valueColor: const AlwaysStoppedAnimation(
+                                    accentColor),
                               ),
                             ),
                           ),
@@ -963,7 +973,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ===========================================================================
-  // 🔥 QUICK ACTIONS SECTION
+  // QUICK ACTIONS SECTION
   // ===========================================================================
 
   Widget _buildActionButtons(BuildContext context, ColorScheme colorScheme,
@@ -1232,8 +1242,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-
-  Widget _buildTile(BuildContext context, TransactionModel tx,
+Widget _buildTile(BuildContext context, TransactionModel tx,
       ColorScheme colorScheme, ThemeData theme, bool isDark,
       {bool isLatest = false}) {
     final Color moneyColor = _getTransactionColor(tx);
@@ -1291,8 +1300,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           if (tx.linkedAccountName != null &&
                               tx.linkedAccountName!.isNotEmpty &&
-                              tx.linkedAccountName!.toLowerCase() !=
-                                  'null') ...[
+                              tx.linkedAccountName!.toLowerCase() != 'null') ...[
                             const SizedBox(width: 4),
                             Icon(Icons.arrow_forward_rounded,
                                 size: 10, color: textSec),
@@ -1321,8 +1329,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ],
-
-                          // 🔥 THE UPDATED DESCRIPTION LOGIC
+                          
+                          // 🔥 UPDATED: Description on the same line with 45 char limit and proper icon placement
                           if (tx.subtitle.isNotEmpty &&
                               tx.subtitle.toLowerCase() != 'null') ...[
                             const SizedBox(width: 6),
@@ -1334,17 +1342,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      // Strictly cuts at 20 characters and adds "..."
-                                      tx.subtitle.length > 45
-                                          ? '${tx.subtitle.substring(0, 45)}...'
+                                      // Strictly cuts at 40 characters and adds "..."
+                                      tx.subtitle.length > 40
+                                          ? '${tx.subtitle.substring(0, 40)}...'
                                           : tx.subtitle,
                                       style: TextStyle(
                                           color: textSec, fontSize: 12),
                                       maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  // Shows the expansion arrow if the text was cut
-                                  if (tx.subtitle.length > 45) ...[
+                                  // Shows the extra icon ONLY if the text was cut
+                                  if (tx.subtitle.length > 40) ...[
                                     const SizedBox(width: 2),
                                     Icon(Icons.arrow_outward_rounded,
                                         size: 14, color: textSec),
@@ -1392,8 +1401,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         decoration: BoxDecoration(
                           color: Colors.red.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border:
-                              Border.all(color: Colors.red.withOpacity(0.4)),
+                          border: Border.all(color: Colors.red.withOpacity(0.4)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1428,7 +1436,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
   Color _getTransactionColor(TransactionModel tx) {
     switch (tx.direction) {
       case "GOAL_ALLOCATION":
@@ -1436,7 +1443,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case "GOAL_DEALLOCATION":
         return const Color(0xFF8B5CF6);
       case "GOAL_COMPLETION":
-        return const Color(0xFFF59E0B);
+        return AppColors.chartIncome;
       case "ACCOUNT_TRANSFER_IN":
         return AppColors.incomeAmount;
       case "ACCOUNT_TRANSFER_OUT":
@@ -1462,7 +1469,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case "GOAL_DEALLOCATION":
         return Icons.savings_outlined;
       case "GOAL_COMPLETION":
-        return Icons.emoji_events_rounded;
+        return Icons.task_alt_rounded;
       case "ACCOUNT_TRANSFER_OUT":
       case "ACCOUNT_TRANSFER_IN":
         return Icons.swap_horiz_rounded;
@@ -1497,6 +1504,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Icon(_getTransactionIcon(tx), color: iconColor, size: 20),
     );
   }
+
+  // ===========================================================================
+  // TRANSACTION DETAILS MODAL
+  // ===========================================================================
 
   void _showTransactionDetails(BuildContext context, TransactionModel tx,
       ColorScheme colorScheme, ThemeData theme, bool isDark, bool canReverse) {
