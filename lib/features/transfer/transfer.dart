@@ -75,7 +75,11 @@ class _TransferScreenState extends State<TransferScreen> {
                     _buildLabel(isDark),
 
                     DropdownButtonFormField<AccountModel>(
-                      initialValue: provider.fromAccount,
+                      // ✅ reset value if it matches toAccount
+                      value: provider.fromAccount?.id == provider.toAccount?.id
+                          ? null
+                          : provider.fromAccount,
+                      menuMaxHeight: 200,
                       hint: Text(
                         "Select account",
                         style: TextStyle(
@@ -85,7 +89,10 @@ class _TransferScreenState extends State<TransferScreen> {
                         ),
                       ),
                       decoration: _inputDecoration(isDark),
-                      items: provider.accounts.map((acc) {
+                      // ✅ exclude toAccount from From Account list
+                      items: provider.accounts
+                          .where((acc) => acc.id != provider.toAccount?.id)
+                          .map((acc) {
                         return DropdownMenuItem(
                           value: acc,
                           child: Text(acc.name),
@@ -102,7 +109,11 @@ class _TransferScreenState extends State<TransferScreen> {
                     _buildLabel(isDark, "To Account"),
 
                     DropdownButtonFormField<AccountModel>(
-                      initialValue: provider.toAccount,
+                      // ✅ reset value if it matches fromAccount
+                      value: provider.toAccount?.id == provider.fromAccount?.id
+                          ? null
+                          : provider.toAccount,
+                      menuMaxHeight: 200,
                       hint: Text(
                         "Select account",
                         style: TextStyle(
@@ -112,7 +123,10 @@ class _TransferScreenState extends State<TransferScreen> {
                         ),
                       ),
                       decoration: _inputDecoration(isDark),
-                      items: provider.accounts.map((acc) {
+                      // ✅ exclude fromAccount from To Account list
+                      items: provider.accounts
+                          .where((acc) => acc.id != provider.fromAccount?.id)
+                          .map((acc) {
                         return DropdownMenuItem(
                           value: acc,
                           child: Text(acc.name),
@@ -176,8 +190,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
-                    foregroundColor:
-                        colorScheme.onPrimary, // ✅ fixes text color
+                    foregroundColor: colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -186,11 +199,11 @@ class _TransferScreenState extends State<TransferScreen> {
                       ? null
                       : () async {
                           final error = await provider.submitTransfer(context);
-
                           if (error != null) {
                             showSnackBar(error);
                           } else {
-                            await SoundService.instance.playTransaction(TransactionSound.transfer);
+                            await SoundService.instance
+                                .playTransaction(TransactionSound.transfer);
                             showSnackBar("Transfer Successful", error: false);
                             Navigator.pop(context);
                           }
@@ -201,7 +214,7 @@ class _TransferScreenState extends State<TransferScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: colorScheme.onPrimary, // ✅ correct color
+                            color: colorScheme.onPrimary,
                           ),
                         )
                       : Text(
@@ -209,12 +222,12 @@ class _TransferScreenState extends State<TransferScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: colorScheme.onPrimary, // ✅ correct color
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

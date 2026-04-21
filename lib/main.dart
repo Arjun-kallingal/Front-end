@@ -119,7 +119,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
         ChangeNotifierProvider(create: (_) => TransferProvider()),
       ],
-      child: const WalletCareApp(),
+      child: const GreenPouch(),
     ),
   );
 
@@ -127,8 +127,8 @@ void main() async {
 }
 
 // ── 5. ROOT APP WIDGET ─────────────────────────────────────────────────
-class WalletCareApp extends StatelessWidget {
-  const WalletCareApp({super.key});
+class GreenPouch extends StatelessWidget {
+  const GreenPouch({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +138,7 @@ class WalletCareApp extends StatelessWidget {
       child: MaterialApp(
         navigatorKey: navigatorKey, // <--- Fixed: navigatorKey is now defined!
         debugShowCheckedModeBanner: false,
-        title: 'WalletCare',
+        title: 'GreenPouch',
         theme: LightTheme.theme,
         darkTheme: DarkTheme.theme,
         themeMode: themeProvider.themeMode,

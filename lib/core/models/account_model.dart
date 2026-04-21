@@ -5,7 +5,7 @@ class AccountModel {
   final String availableBalance;
   final String reservedBalance;
   final String totalBalance;
-  final String minBalance;       // Fix #2: was missing
+  final String minBalance; // Fix #2: was missing
   final String currency;
   final bool isDefault;
   final String status;
@@ -31,26 +31,26 @@ class AccountModel {
       availableBalance: json['available']?.toString() ?? '0.00',
       reservedBalance: json['reserved']?.toString() ?? '0.00',
       totalBalance: json['total']?.toString() ?? '0.00',
-      minBalance: json['minBalance']?.toString() ?? '0.00',  // Fix #2
+      minBalance: json['minBalance']?.toString() ?? '0.00', // Fix #2
       currency: json['currency'] ?? 'INR',
-      isDefault: json['isDefault'] == true,                  // Fix #1
+      isDefault: json['isDefault'] == true, // Fix #1
       status: json['status'] ?? 'ACTIVE',
     );
   }
 
   // Fix #3: toJson for caching / state serialization
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'type': type,
-    'available': availableBalance,
-    'reserved': reservedBalance,
-    'total': totalBalance,
-    'minBalance': minBalance,
-    'currency': currency,
-    'isDefault': isDefault,
-    'status': status,
-  };
+        'id': id,
+        'name': name,
+        'type': type,
+        'available': availableBalance,
+        'reserved': reservedBalance,
+        'total': totalBalance,
+        'minBalance': minBalance,
+        'currency': currency,
+        'isDefault': isDefault,
+        'status': status,
+      };
 
   // Fix #4: copyWith for provider state updates
   AccountModel copyWith({
@@ -78,4 +78,10 @@ class AccountModel {
       status: status ?? this.status,
     );
   }
+
+  @override
+  bool operator ==(Object other) => other is AccountModel && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

@@ -17,38 +17,49 @@ class TransferProvider extends ChangeNotifier {
   bool loading = false;
 
   final TextEditingController amountController = TextEditingController();
-
   final TextEditingController descriptionController = TextEditingController();
 
   String idempotencyKey = const Uuid().v4();
 
   /// Load Accounts
   Future<void> loadAccounts() async {
-  try {
-    final result = await AccountService.getAccountDashboard();
-    accounts = result['accounts'] as List<AccountModel>;
+    try {
+      final result = await AccountService.getAccountDashboard();
+      accounts = result['accounts'] as List<AccountModel>;
 
-    // Clear selections — old references are now stale
-    fromAccount = null;
-    toAccount = null;
+      // Clear selections — old references are now stale
+      fromAccount = null;
+      toAccount = null;
 
-    notifyListeners();
-  } catch (e) {
-    debugPrint("Load accounts failed: $e");
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Load accounts failed: $e");
+    }
   }
-}
 
-  /// Select From Account
+  /// Select From Account — clears toAccount if same
   void setFromAccount(AccountModel account) {
     fromAccount = account;
+
+    // ✅ clear toAccount if it matches the new fromAccount
+    if (toAccount?.id == account.id) {
+      toAccount = null;
+    }
+
     notifyListeners();
   }
 
   /// Select To Account
-  void setToAccount(AccountModel account) {
-    toAccount = account;
-    notifyListeners();
+ void setToAccount(AccountModel account) {
+  toAccount = account;
+
+  // ✅ clear fromAccount if it matches the new toAccount
+  if (fromAccount?.id == account.id) {
+    fromAccount = null;
   }
+
+  notifyListeners();
+}
 
   /// Submit Transfer
   Future<String?> submitTransfer(BuildContext context) async {
@@ -85,12 +96,11 @@ class TransferProvider extends ChangeNotifier {
         context.read<TransactionProvider>().fetchTransactions(),
       ]);
 
-      
       /// Reset form
       amountController.clear();
       descriptionController.clear();
-      fromAccount = null; // ADD THIS
-      toAccount = null; // ADD THIS
+      fromAccount = null;
+      toAccount = null;
       idempotencyKey = const Uuid().v4();
       loading = false;
       notifyListeners();
