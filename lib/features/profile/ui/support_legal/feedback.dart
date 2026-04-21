@@ -186,13 +186,26 @@ class _FeedbackScreenState extends State<FeedbackScreen>
     final color = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        label.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.1,
-          color: color.onSurface.withOpacity(0.45),
-        ),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 13,
+            decoration: BoxDecoration(
+              color: color.primary,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(width: 7),
+          Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+              color: color.onSurface.withOpacity(0.45),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -202,8 +215,11 @@ class _FeedbackScreenState extends State<FeedbackScreen>
     final theme = Theme.of(context);
     final color = theme.colorScheme;
 
+    // ─── GreenPouch brand green ───────────────────────────────────
+    const gpGreen = Color(0xFF2E7D32);
+
     return Scaffold(
-      backgroundColor: color.background,
+      backgroundColor: color.surface,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: color.surface,
@@ -227,6 +243,14 @@ class _FeedbackScreenState extends State<FeedbackScreen>
           ),
         ),
         centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(
+            height: 1,
+            thickness: 0.6,
+            color: color.outline.withOpacity(0.15),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
@@ -241,12 +265,22 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [color.primary, color.primary.withOpacity(0.75)],
+                  gradient: const LinearGradient(
+                    colors: [
+                      gpGreen,
+                      Color(0xFF43A047),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gpGreen.withOpacity(0.28),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -257,53 +291,67 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                           Text(
                             "Share Your Experience",
                             style: theme.textTheme.titleMedium?.copyWith(
-                              color: color.onPrimary,
+                              color: Colors.white,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "Your feedback helps us improve",
+                            "Your feedback helps us improve GreenPouch",
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: color.onPrimary.withOpacity(0.85),
+                              color: Colors.white.withOpacity(0.85),
                             ),
                           ),
                         ],
                       ),
                     ),
                     Icon(Icons.rate_review_outlined,
-                        size: 44, color: color.onPrimary.withOpacity(0.8)),
+                        size: 44, color: Colors.white.withOpacity(0.8)),
                   ],
                 ),
               ),
 
               const SizedBox(height: 28),
 
-              // ─── Rating ──────────────────────────────────────────────
-              _sectionLabel("Rate Your Experience"),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (i) => _buildStar(i + 1)),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  child: Text(
-                    _ratingLabel(),
-                    key: ValueKey(_rating),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _rating > 0
-                          ? const Color(0xFFFFC107)
-                          : color.onSurface.withOpacity(0.45),
-                      fontWeight: FontWeight.w600,
-                    ),
+              // ─── Rating Card ─────────────────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: gpGreen.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: gpGreen.withOpacity(0.15),
+                    width: 1,
                   ),
+                ),
+                child: Column(
+                  children: [
+                    _sectionLabel("Rate Your Experience"),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (i) => _buildStar(i + 1)),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: Text(
+                        _ratingLabel(),
+                        key: ValueKey(_rating),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: _rating > 0
+                              ? const Color(0xFFFFC107)
+                              : color.onSurface.withOpacity(0.45),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               const SizedBox(height: 24),
-              Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.2)),
+              Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.15)),
               const SizedBox(height: 24),
 
               // ─── Category ────────────────────────────────────────────
@@ -318,7 +366,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: color.surfaceContainerHighest.withOpacity(0.5),
+                  fillColor: gpGreen.withOpacity(0.04),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
@@ -328,11 +376,11 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: color.outline.withOpacity(0.3), width: 1),
+                        BorderSide(color: gpGreen.withOpacity(0.25), width: 1),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: color.primary, width: 1.5),
+                    borderSide: const BorderSide(color: gpGreen, width: 1.5),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -348,7 +396,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                     value: val,
                     child: Row(
                       children: [
-                        Icon(_categoryIcons[idx], size: 18, color: color.primary),
+                        Icon(_categoryIcons[idx], size: 18, color: gpGreen),
                         const SizedBox(width: 12),
                         Text(val),
                       ],
@@ -360,7 +408,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
               ),
 
               const SizedBox(height: 24),
-              Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.2)),
+              Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.15)),
               const SizedBox(height: 24),
 
               // ─── Feedback ────────────────────────────────────────────
@@ -375,7 +423,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                     color: color.onSurface.withOpacity(0.4),
                   ),
                   filled: true,
-                  fillColor: color.surfaceContainerHighest.withOpacity(0.5),
+                  fillColor: gpGreen.withOpacity(0.04),
                   contentPadding: const EdgeInsets.all(16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -384,11 +432,11 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        BorderSide(color: color.outline.withOpacity(0.3), width: 1),
+                        BorderSide(color: gpGreen.withOpacity(0.25), width: 1),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: color.primary, width: 1.5),
+                    borderSide: const BorderSide(color: gpGreen, width: 1.5),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -408,21 +456,21 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitFeedback,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: color.primary,
-                    foregroundColor: color.onPrimary,
+                    backgroundColor: gpGreen,
+                    foregroundColor: Colors.white,
                     elevation: 2,
-                    shadowColor: color.primary.withOpacity(0.4),
+                    shadowColor: gpGreen.withOpacity(0.4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: _isSubmitting
-                      ? SizedBox(
+                      ? const SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: color.onPrimary,
+                            color: Colors.white,
                           ),
                         )
                       : Row(
@@ -433,7 +481,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                             Text(
                               "Submit Feedback",
                               style: theme.textTheme.bodyLarge?.copyWith(
-                                color: color.onPrimary,
+                                color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.3,
                               ),
