@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
               "password": passwordController.text.trim(),
             }),
           )
-          .timeout(const Duration(seconds: 3));
+          .timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
 

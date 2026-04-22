@@ -3,6 +3,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// ─── Enum ─────────────────────────────────────────────────────────────────────
+
 enum TransactionSound {
   income,
   expense,
@@ -11,6 +13,8 @@ enum TransactionSound {
   goalWithdraw,
   reverse,
 }
+
+// ─── SoundService ─────────────────────────────────────────────────────────────
 
 class SoundService {
   SoundService._();
@@ -21,45 +25,42 @@ class SoundService {
   bool _soundEnabled = true;
   final AudioPlayer _player = AudioPlayer();
 
-  // Map each type to its asset path
+  // Asset path for each transaction type
   static const _soundAssets = {
-    TransactionSound.income:      'sounds/income.mp3',
-    TransactionSound.expense:     'sounds/expense.mp3',
-    TransactionSound.transfer:    'sounds/transfer.mp3',
-    TransactionSound.goalDeposit: 'sounds/goal_deposit.mp3',
-    TransactionSound.goalWithdraw:'sounds/goal_withdraw.mp3',
-    TransactionSound.reverse:     'sounds/reverse.mp3',
+    TransactionSound.income:       'sounds/income.mp3',
+    TransactionSound.expense:      'sounds/expense.mp3',
+    TransactionSound.transfer:     'sounds/transfer.mp3',
+    TransactionSound.goalDeposit:  'sounds/goal_deposit.mp3',
+    TransactionSound.goalWithdraw: 'sounds/goal_withdraw.mp3',
+    TransactionSound.reverse:      'sounds/reverse.mp3',
   };
+
+  // Volume per transaction type (0.0 = mute, 1.0 = full)
+  static const _soundVolumes = {
+    TransactionSound.income:       0.1,
+    TransactionSound.expense:      0.25,
+    TransactionSound.transfer:     0.1,
+    TransactionSound.goalDeposit:  0.2,
+    TransactionSound.goalWithdraw: 0.1,
+    TransactionSound.reverse:      0.25,
+  };
+
+  // ─── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _soundEnabled = prefs.getBool(_prefKey) ?? true;
-
-    // Set low latency mode for snappy playback
     await _player.setPlayerMode(PlayerMode.lowLatency);
   }
 
+  // ─── Public API ────────────────────────────────────────────────────────────
+
   Future<void> playTransaction(TransactionSound type) async {
     if (!_soundEnabled) return;
-
-    // Play sound and haptic at the same time
-    await Future.wait([
+    Future.wait([
       _playSound(type),
       _vibrate(type),
-    ]);
-  }
-
-  Future<void> _playSound(TransactionSound type) async {
-    try {
-      final asset = _soundAssets[type];
-      if (asset == null) return;
-
-      // Stop any currently playing sound first to avoid overlap
-      await _player.stop();
-      await _player.play(AssetSource(asset));
-    } catch (e) {
-      // Fail silently — sound is non-critical
-    }
+    ]).ignore();
   }
 
   Future<void> setSoundEnabled(bool enabled) async {
@@ -69,6 +70,27 @@ class SoundService {
   }
 
   bool get soundEnabled => _soundEnabled;
+
+  Future<void> dispose() async {
+    await _player.dispose();
+  }
+
+  // ─── Private ───────────────────────────────────────────────────────────────
+
+  Future<void> _playSound(TransactionSound type) async {
+    try {
+      final asset = _soundAssets[type];
+      if (asset == null) return;
+
+      final volume = _soundVolumes[type] ?? 0.3;
+
+      await _player.stop();
+      await _player.setVolume(volume); // 🔊 low volume
+      await _player.play(AssetSource(asset));
+    } catch (_) {
+      // Fail silently — sound is non-critical
+    }
+  }
 
   Future<void> _vibrate(TransactionSound type) async {
     try {
@@ -86,9 +108,5 @@ class SoundService {
           HapticFeedback.lightImpact();
       }
     } catch (_) {}
-  }
-
-  Future<void> dispose() async {
-    await _player.dispose();
   }
 }
