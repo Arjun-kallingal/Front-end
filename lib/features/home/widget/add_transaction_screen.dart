@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 import 'package:front_end/core/models/account_model.dart';
 import 'package:front_end/core/services/account_service.dart';
 import 'package:front_end/core/services/transaction_service.dart';
@@ -36,6 +37,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _selectedCategory;
   bool _showAccountOptions = false;
 
+  final TextEditingController _amountController = TextEditingController(); // ✅ FIX 4: controller for amount to clear on toggle
   final TextEditingController descriptionController = TextEditingController();
 
   final List<Map<String, dynamic>> _incomeCategories = [
@@ -109,6 +111,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   void dispose() {
+    _amountController.dispose(); // ✅ FIX 4: dispose amount controller
     descriptionController.dispose();
     super.dispose();
   }
@@ -149,6 +152,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // ✅ FIX 1: Use noon to avoid timezone date shifting
+      final transactedAt = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        12, 0, 0,
+      ).toIso8601String();
+
+      // ✅ FIX 2: Use UUID for idempotency key to avoid collisions
+      final idempotencyKey = const Uuid().v4();
+
       final result = await TransactionService.processTransaction(
         accountId: _selectedAccountId!,
         amount: amount,
@@ -156,23 +170,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         direction: "STANDARD",
         category: _selectedCategory!,
         description: descriptionController.text,
-        idempotencyKey: DateTime.now().millisecondsSinceEpoch.toString(),
-        transactedAt: selectedDate.toIso8601String(),
+        idempotencyKey: idempotencyKey,
+        transactedAt: transactedAt,
       );
 
       if (!mounted) return;
 
       if (result['success'] == true) {
-        
         await context.read<AccountProvider>().loadAccounts();
         await context.read<TransactionProvider>().fetchTransactions();
         await context.read<AnalyticsProvider>().reload();
 
-        Navigator.pop(context,
-            "${_isExpense ? 'Expense' : 'Income'} saved successfully!");
-             await SoundService.instance.playTransaction(
-      _isExpense ? TransactionSound.expense : TransactionSound.income,
-    );
+        // ✅ FIX 3: Play sound BEFORE pop so it doesn't get killed
+        await SoundService.instance.playTransaction(
+          _isExpense ? TransactionSound.expense : TransactionSound.income,
+        );
+
+        Navigator.pop(
+            context, "${_isExpense ? 'Expense' : 'Income'} saved successfully!");
       } else {
         _showSnackBar(result['message'] ?? "Failed to save");
       }
@@ -202,6 +217,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _isExpense = isExpense;
       _selectedCategory = null;
       _showAccountOptions = false;
+      // ✅ FIX 4: Clear amount on type toggle
+      amount = "";
+      _amountController.clear();
     });
   }
 
@@ -225,7 +243,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildLabel("Amount"),
-                          _buildDefaultField(hint: "0.00", isAmount: true),
+                          _buildAmountField(),
                           const SizedBox(height: 16),
                           _buildLabel("Description (Optional)"),
                           _buildDefaultField(
@@ -328,29 +346,51 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  // ✅ FIX 4: Separate amount field using _amountController
+  Widget _buildAmountField() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return TextField(
+      controller: _amountController,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
+      ],
+      style: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: theme.colorScheme.primary,
+      ),
+      decoration: InputDecoration(
+        prefixText: "₹ ",
+        hintText: "0.00",
+        filled: true,
+        fillColor: isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      onChanged: (val) => amount = val,
+    );
+  }
+
   Widget _buildDefaultField({
     TextEditingController? controller,
     required String hint,
-    bool isAmount = false,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return TextField(
       controller: controller,
-      keyboardType: isAmount
-          ? const TextInputType.numberWithOptions(decimal: true)
-          : TextInputType.text,
-      inputFormatters: isAmount
-          ? [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))]
-          : [],
+      keyboardType: TextInputType.text,
       style: TextStyle(
-        fontSize: isAmount ? 22 : 16,
-        fontWeight: isAmount ? FontWeight.bold : FontWeight.normal,
+        fontSize: 16,
         color: theme.colorScheme.primary,
       ),
       decoration: InputDecoration(
-        prefixText: isAmount ? "₹ " : null,
         hintText: hint,
         filled: true,
         fillColor: isDark ? AppColors.darkBgCard : AppColors.lightBgSecondary,
@@ -359,7 +399,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           borderSide: BorderSide.none,
         ),
       ),
-      onChanged: isAmount ? (val) => amount = val : null,
     );
   }
 
@@ -546,7 +585,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary, // ✅ FIX
+            foregroundColor: theme.colorScheme.onPrimary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -557,14 +596,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   height: 20,
                   width: 20,
                   child: CircularProgressIndicator(
-                    color: theme.colorScheme.onPrimary, // ✅ FIX
+                    color: theme.colorScheme.onPrimary,
                     strokeWidth: 2,
                   ),
                 )
               : Text(
                   "Save ${_isExpense ? 'Expense' : 'Income'}",
                   style: TextStyle(
-                    color: theme.colorScheme.onPrimary, // ✅ FIX
+                    color: theme.colorScheme.onPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
