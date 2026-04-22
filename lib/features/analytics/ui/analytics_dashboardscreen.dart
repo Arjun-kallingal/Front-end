@@ -51,8 +51,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
 
     return Scaffold(
       // 🔥 Deepened the light theme background slightly for better contrast against white cards
-      backgroundColor:
-          isDark ? const Color(0xFF0B0F19) : const Color(0xFFE2E8F0),
+      backgroundColor: theme.scaffoldBackgroundColor,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(theme, textPrimary, textSecondary, isDark),
       body: Stack(
@@ -186,7 +185,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         style: TextStyle(
             color: textPrimary,
             fontWeight: FontWeight.w900,
-            fontSize: 24,
+            fontSize: 20,
             letterSpacing: -0.5),
       ),
     );

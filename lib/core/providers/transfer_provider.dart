@@ -50,16 +50,10 @@ class TransferProvider extends ChangeNotifier {
   }
 
   /// Select To Account
- void setToAccount(AccountModel account) {
-  toAccount = account;
-
-  // ✅ clear fromAccount if it matches the new toAccount
-  if (fromAccount?.id == account.id) {
-    fromAccount = null;
+  void setToAccount(AccountModel account) {
+    toAccount = account;
+    notifyListeners();
   }
-
-  notifyListeners();
-}
 
   /// Submit Transfer
   Future<String?> submitTransfer(BuildContext context) async {
