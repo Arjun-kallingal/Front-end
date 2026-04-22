@@ -37,11 +37,11 @@ class SoundService {
 
   // Volume per transaction type (0.0 = mute, 1.0 = full)
   static const _soundVolumes = {
-    TransactionSound.income:       0.3,
+    TransactionSound.income:       0.1,
     TransactionSound.expense:      0.25,
-    TransactionSound.transfer:     0.3,
-    TransactionSound.goalDeposit:  0.4,
-    TransactionSound.goalWithdraw: 0.3,
+    TransactionSound.transfer:     0.1,
+    TransactionSound.goalDeposit:  0.2,
+    TransactionSound.goalWithdraw: 0.1,
     TransactionSound.reverse:      0.25,
   };
 
