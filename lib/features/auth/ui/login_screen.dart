@@ -10,6 +10,9 @@ import 'package:front_end/core/services/auth_storage.dart';
 import 'package:front_end/core/providers/user_profile_provider.dart';
 import 'package:front_end/core/providers/notification_provider.dart';
 import 'package:provider/provider.dart';
+import 'dart:io'; // for SocketException
+import 'dart:async'; // for TimeoutException
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,6 +34,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color premiumGreen = const Color(0xFF10B981); // Rich modern green
   final Color premiumDark = const Color(0xFF0F172A); // Slate dark
 
+  @override
+  void initState() {
+    super.initState();
+    _checkAlreadyLoggedIn();
+  }
+
+  Future<void> _checkAlreadyLoggedIn() async {
+    final token = await AuthStorage.getToken();
+    if (token != null && token.isNotEmpty) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/main');
+    }
+  }
+
   Future<void> loginUser() async {
     if (isLoading) return; // Prevent double-clicking
 
@@ -38,17 +55,33 @@ class _LoginScreenState extends State<LoginScreen> {
       isLoading = true; // 2️⃣ ADDED: Start loading
     });
 
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No internet connection. Please check your network."),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}/api/auth/login');
 
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": emailController.text.trim(),
-          "password": passwordController.text.trim(),
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "email": emailController.text.trim(),
+              "password": passwordController.text.trim(),
+            }),
+          )
+          .timeout(const Duration(seconds: 3));
 
       final data = jsonDecode(response.body);
 
@@ -99,9 +132,18 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (!mounted) return;
+
+      String errorMessage = "Unable to connect to server";
+
+      if (e is SocketException) {
+        errorMessage = "No internet connection. Please check your network.";
+      } else if (e is TimeoutException) {
+        errorMessage = "Connection timed out. Try again.";
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Unable to connect to server"),
+        SnackBar(
+          content: Text(errorMessage),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),

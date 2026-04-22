@@ -21,7 +21,7 @@ dependencies:
   device_info_plus: ^10.1.0
   url_launcher: ^6.2.5
   intl: ^0.18.0
-
+  connectivity_plus: ^6.0.0
   uuid: ^4.3.3
   fl_chart: ^0.66.0
   dio: ^5.4.0
