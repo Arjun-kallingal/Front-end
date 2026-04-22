@@ -86,6 +86,7 @@ class SignOutScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () async {
                   await AuthStorage.logout();
+                  if (!context.mounted) return;
                   context.read<UserProfileProvider>().clearUser();
                   Navigator.pushAndRemoveUntil(
                     context,
