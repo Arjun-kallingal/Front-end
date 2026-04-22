@@ -45,6 +45,97 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     });
   }
 
+  String _themeSubtitle(AppThemeMode mode) {
+    switch (mode) {
+      case AppThemeMode.system:
+        return "System default";
+      case AppThemeMode.light:
+        return "Light";
+      case AppThemeMode.dark:
+        return "Dark";
+    }
+  }
+
+  void _showThemeDialog(BuildContext context) {
+    final themeProvider = context.read<ThemeProvider>();
+    AppThemeMode selected = themeProvider.appThemeMode;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final theme = Theme.of(context);
+            final color = theme.colorScheme;
+
+            return AlertDialog(
+              backgroundColor: color.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                "Choose theme",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: color.onSurface,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: AppThemeMode.values.map((mode) {
+                  final label = switch (mode) {
+                    AppThemeMode.system => "System default",
+                    AppThemeMode.light  => "Light",
+                    AppThemeMode.dark   => "Dark",
+                  };
+                  return RadioListTile<AppThemeMode>(
+                    value: mode,
+                    groupValue: selected,
+                    title: Text(
+                      label,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: color.onSurface,
+                      ),
+                    ),
+                    activeColor: const Color(0xFF1A8C72),
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selected = val);
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: color.onSurface.withOpacity(0.6)),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    themeProvider.setThemeMode(selected);
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(
+                      color: Color(0xFF1A8C72),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -378,15 +469,12 @@ Padding(
               const SizedBox(height: 24),
               // ─── Appearance ───────────────────────────────────────
               _sectionHeader(context, "Appearance"),
-              _switchTile(
+              _navigationTile(
                 context,
-                icon: Icons.dark_mode_outlined,
-                title: "Dark Mode",
-                subtitle: "Switch app theme",
-                value: context.watch<ThemeProvider>().isDark,
-                onChanged: (value) {
-                  context.read<ThemeProvider>().toggleTheme(value);
-                },
+                icon: Icons.palette_outlined,
+                title: "Theme",
+                subtitle: _themeSubtitle(context.watch<ThemeProvider>().appThemeMode),
+                onTap: () => _showThemeDialog(context),
               ),
 
               const SizedBox(height: 8),
