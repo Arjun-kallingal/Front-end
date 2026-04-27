@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // --- PREMIUM FINTECH COLORS ---
   final Color premiumGreen = const Color(0xFF10B981); // Rich modern green
-  final Color premiumDark = const Color(0xFF0F172A); // Slate dark
+  final Color premiumDark = const Color.fromARGB(255, 0, 0, 0); // Slate dark
 
   @override
   void initState() {
@@ -166,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: isLight ? const Color(0xFFF8FAFC) : premiumDark,
+      backgroundColor: isLight ? const Color(0xFFF8FAFC) :premiumDark,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(

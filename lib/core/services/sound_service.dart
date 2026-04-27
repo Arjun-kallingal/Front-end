@@ -22,7 +22,7 @@ class SoundService {
 
   static const _prefKey = 'sound_enabled';
 
-  bool _soundEnabled = true;
+  bool _soundEnabled = false;
   final AudioPlayer _player = AudioPlayer();
 
   // Asset path for each transaction type
@@ -49,7 +49,7 @@ class SoundService {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _soundEnabled = prefs.getBool(_prefKey) ?? true;
+    _soundEnabled = prefs.getBool(_prefKey) ?? false;
     await _player.setPlayerMode(PlayerMode.lowLatency);
   }
 

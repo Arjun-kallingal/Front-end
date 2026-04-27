@@ -24,7 +24,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   // --- PREMIUM FINTECH COLORS (Matching Login) ---
   final Color premiumGreen = const Color(0xFF10B981);
-  final Color premiumDark = const Color(0xFF0F172A);
+  final Color premiumDark = const Color.fromARGB(255, 0, 0, 0);
 
   @override
   void dispose() {
