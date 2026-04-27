@@ -6,7 +6,7 @@ enum AppThemeMode { system, light, dark }
 class ThemeProvider extends ChangeNotifier {
   static const _themeKey = 'app_theme_mode';
 
-  AppThemeMode _appThemeMode = AppThemeMode.dark;
+  AppThemeMode _appThemeMode = AppThemeMode.system;
 
   AppThemeMode get appThemeMode => _appThemeMode;
 

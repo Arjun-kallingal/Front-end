@@ -251,6 +251,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: color.onSurface),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           "OTP Verification",
           style: theme.textTheme.titleLarge?.copyWith(
@@ -266,7 +271,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-
               // ─── Icon ────────────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(20),

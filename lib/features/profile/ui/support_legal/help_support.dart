@@ -10,13 +10,14 @@ class HelpSupportScreen extends StatefulWidget {
 
 class _HelpSupportScreenState extends State<HelpSupportScreen> {
   int? expandedIndex;
+  late bool _showAll;
   final GlobalKey faqKey = GlobalKey();
   final TextEditingController _searchController = TextEditingController();
 
   final List<Map<String, String>> _faqList = [
     {
       "q": "How do I reset my password?",
-      "a": "Go to Settings > Account > Reset Password."
+      "a": "Go to Settings > Change Password."
     },
     {
       "q": "How do I edit my profile?",
@@ -26,21 +27,54 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       "q": "Is my data secure?",
       "a": "Yes, we use industry-standard encryption."
     },
+    {
+      "q": "How to add Income?",
+      "a": "Go to Home > Income > Fill the fields > Save Income."
+    },
+    {
+      "q": "How to add Expense?",
+      "a": "Go to Home > Expense > Fill the fields > Save Expense."
+    },
+    {
+      "q": "How to create a Goal?",
+      "a":
+          "Go to Goals page > Click the New Goal > Fill the fields > Click Save Goal."
+    },
+    {
+      "q": "How do I create a new account?",
+      "a": "Go to Assets page > Click the Add button > New Account."
+    },
+    {
+      "q": "How do I deposit to a goal?",
+      "a": "Go to the Goals page > Tap the goal you needed to deposit > Click the deposit button > Enter the amount > Confirm deposit."
+    },
+    {
+      "q": "How do I withdraw from a goal?",
+      "a": "Go to the Goals page > Tap the goal you needed to withdraw > Click the withdraw button > Enter the amount > Confirm withdraw."
+    },
+    {
+      "q": "How can I see all the transaction history?",
+      "a": "Go to Home page > In Recent Activity click See All."
+    },
+    {
+      "q": "How can I see my analytics?",
+      "a": "Go to Analytics page."
+    },
   ];
-
   List<Map<String, String>> _filteredFaqs = [];
 
   @override
   void initState() {
     super.initState();
+    _showAll = false;
     _filteredFaqs = _faqList;
   }
 
   Future<void> _launchEmail() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'support@yourapp.com',
-      queryParameters: {'subject': 'App Support Request'},
+      path: 'support@greenpouch.com',
+      queryParameters: {'subject': 'Green Pouch Support Request'},
     );
     try {
       await launchUrl(emailUri);
@@ -56,13 +90,13 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     final results = _faqList.where((faq) {
       final q = faq["q"]!.toLowerCase();
       final a = faq["a"]!.toLowerCase();
-      return q.contains(query.toLowerCase()) ||
-          a.contains(query.toLowerCase());
+      return q.contains(query.toLowerCase()) || a.contains(query.toLowerCase());
     }).toList();
 
     setState(() {
       _filteredFaqs = results;
       expandedIndex = null;
+      _showAll = false;
     });
   }
 
@@ -74,34 +108,33 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     return Scaffold(
       backgroundColor: color.surface,
       appBar: AppBar(
-  backgroundColor: color.surface,
-  elevation: 0,
-  surfaceTintColor: Colors.transparent,
-  automaticallyImplyLeading: false,
-  titleSpacing: 0,
-  leading: IconButton(
-    onPressed: () => Navigator.pop(context),
-    padding: EdgeInsets.zero,
-    icon: Icon(
-      Icons.arrow_back_ios_new,
-      size: 18,
-      color: color.onSurface,
-    ),
-  ),
-  title: Text(
-    "Help & Support",
-    style: theme.textTheme.titleLarge?.copyWith(
-      fontWeight: FontWeight.w700,
-      color: color.onSurface,
-    ),
-  ),
-),
+        backgroundColor: color.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: color.onSurface,
+          ),
+        ),
+        title: Text(
+          "Help & Support",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // ─── Contact Support ────────────────────────────────────
             _sectionLabel(context, "Contact"),
             const SizedBox(height: 10),
@@ -132,8 +165,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     size: 20, color: color.onSurface.withOpacity(0.45)),
                 filled: true,
                 fillColor: color.surfaceContainerHighest.withOpacity(0.5),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -150,6 +183,27 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               ),
             ),
 
+            if (_filteredFaqs.length > 4) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAll = !_showAll;
+                  });
+                },
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    _showAll ? "Show Less" : "See All",
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: color.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
 
             if (_filteredFaqs.isEmpty)
@@ -159,8 +213,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   child: Column(
                     children: [
                       Icon(Icons.search_off_rounded,
-                          size: 40,
-                          color: color.onSurface.withOpacity(0.25)),
+                          size: 40, color: color.onSurface.withOpacity(0.25)),
                       const SizedBox(height: 10),
                       Text(
                         "No results found",
@@ -173,26 +226,32 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 ),
               )
             else
-              ...List.generate(
-                _filteredFaqs.length,
-                (index) {
-                  final faq = _filteredFaqs[index];
-                  final isLast = index == _filteredFaqs.length - 1;
-                  return Column(
-                    children: [
-                      _faqItem(context, index, faq["q"]!, faq["a"]!),
-                      if (!isLast)
-                        Divider(
-                          height: 1,
-                          thickness: 0.5,
-                          indent: 16,
-                          endIndent: 16,
-                          color: color.outline.withOpacity(0.2),
-                        ),
-                    ],
-                  );
-                },
-              ),
+              ...() {
+                final visibleFaqs =
+                    _showAll ? _filteredFaqs : _filteredFaqs.take(4).toList();
+                return [
+                  ...List.generate(
+                    visibleFaqs.length,
+                    (index) {
+                      final faq = visibleFaqs[index];
+                      final isLast = index == visibleFaqs.length - 1;
+                      return Column(
+                        children: [
+                          _faqItem(context, index, faq["q"]!, faq["a"]!),
+                          if (!isLast)
+                            Divider(
+                              height: 1,
+                              thickness: 0.5,
+                              indent: 16,
+                              endIndent: 16,
+                              color: color.outline.withOpacity(0.2),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ];
+              }(),
           ],
         ),
       ),
@@ -280,8 +339,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         key: PageStorageKey(index),
         initiallyExpanded: isExpanded,
         tilePadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        childrenPadding:
-            const EdgeInsets.only(left: 4, right: 4, bottom: 12),
+        childrenPadding: const EdgeInsets.only(left: 4, right: 4, bottom: 12),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         onExpansionChanged: (value) {
           setState(() {
