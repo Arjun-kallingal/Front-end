@@ -24,7 +24,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   // --- PREMIUM FINTECH COLORS (Matching Login) ---
   final Color premiumGreen = const Color(0xFF10B981);
-  final Color premiumDark = const Color(0xFF0F172A);
+ final Color premiumDark = const Color.fromARGB(255, 0, 0, 0);
 
   @override
   void dispose() {
@@ -149,6 +149,18 @@ class _SignupScreenState extends State<SignupScreen> {
 
     return Scaffold(
       backgroundColor: isLight ? const Color(0xFFF8FAFC) : premiumDark,
+      // ── BACK BUTTON ──────────────────────────────────────────────────
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isLight ? premiumDark : Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(

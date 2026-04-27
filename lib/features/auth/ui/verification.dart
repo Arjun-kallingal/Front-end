@@ -138,7 +138,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
         _focusNodes.first.requestFocus();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data["message"] ?? "OTP resent")),
+          SnackBar(
+            content: Text(data["message"] ?? "OTP resent"),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
         );
       } else {
         setState(() =>
@@ -155,13 +160,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- PREMIUM FINTECH COLORS (Matching Login & Signup) ---
+    const Color premiumGreen = Color(0xFF10B981);
+    const Color premiumDark = Color.fromARGB(255, 0, 0, 0);
+
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final isLight = theme.brightness == Brightness.light;
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: isLight ? Colors.white : Colors.black,
+      backgroundColor: isLight ? const Color(0xFFF8FAFC) : premiumDark,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
@@ -176,37 +185,53 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 children: [
                   SizedBox(height: size.height * 0.06),
 
-                  // ── ICON & HEADING ───────────────────────────────
+                  // ── LOGO & HEADING ───────────────────────────────
                   Center(
                     child: Column(
                       children: [
                         Container(
-                          width: 68,
-                          height: 68,
+                          width: 110,
+                          height: 110,
                           decoration: BoxDecoration(
-                            color: isLight ? Colors.black : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            color: isLight ? Colors.white : Colors.grey[800],
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: premiumGreen.withOpacity(0.25),
+                                blurRadius: 24,
+                                offset: const Offset(0, 12),
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            Icons.verified_user_outlined,
-                            size: 34,
-                            color: isLight ? Colors.white : Colors.black,
+                          padding: const EdgeInsets.all(2),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/GrassHopper.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.eco_rounded,
+                                color: premiumGreen,
+                                size: 50,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 24),
                         Text(
                           'Verify Your Email',
                           style: textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
-                            color: isLight ? Colors.black : Colors.white,
+                            color: isLight ? premiumDark : Colors.white,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Enter the 6-digit OTP sent to',
                           style: textTheme.bodyMedium?.copyWith(
-                            color: isLight ? Colors.black45 : Colors.white54,
+                            color: isLight ? Colors.grey[600] : Colors.grey[400],
+                            letterSpacing: 0.3,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -214,7 +239,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           widget.email,
                           style: textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isLight ? Colors.black : Colors.white,
+                            color: isLight ? premiumDark : Colors.white,
                           ),
                         ),
                       ],
@@ -251,34 +276,33 @@ class _VerificationScreenState extends State<VerificationScreen> {
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w700,
-                                color: isLight ? Colors.black : Colors.white,
+                                color: isLight ? premiumDark : Colors.white,
                               ),
                               decoration: InputDecoration(
                                 counterText: '',
                                 filled: true,
                                 fillColor: isLight
-                                    ? Colors.grey[100]
+                                    ? Colors.white
                                     : Colors.grey[900],
                                 contentPadding: const EdgeInsets.symmetric(
                                     vertical: 14),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide.none,
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
                                     color: isLight
-                                        ? Colors.black12
-                                        : Colors.white12,
-                                    width: 1,
+                                        ? Colors.grey.shade200
+                                        : Colors.transparent,
+                                    width: 1.5,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: BorderSide(
-                                    color:
-                                        isLight ? Colors.black : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(
+                                    color: premiumGreen,
                                     width: 2,
                                   ),
                                 ),
@@ -322,7 +346,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       Text(
                         "Didn't receive the code?",
                         style: textTheme.bodySmall?.copyWith(
-                          color: isLight ? Colors.black45 : Colors.white54,
+                          color: isLight ? Colors.grey[600] : Colors.grey[400],
                         ),
                       ),
                       TextButton(
@@ -333,9 +357,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         child: Text(
                           'Resend',
                           style: textTheme.bodySmall?.copyWith(
-                            color: isLight ? Colors.black : Colors.white,
+                            color: premiumGreen,
                             fontWeight: FontWeight.w700,
                             decoration: TextDecoration.underline,
+                            decorationColor: premiumGreen,
                           ),
                         ),
                       ),
@@ -345,70 +370,79 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   const SizedBox(height: 20),
 
                   // ── VERIFY BUTTON ────────────────────────────────
-                  SizedBox(
-                    height: 54,
-                    child: _isLoading
-                        ? Center(
-                            child: SizedBox(
+                  Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: premiumGreen.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _verifyCode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: premiumGreen,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        disabledBackgroundColor: premiumGreen.withOpacity(0.6),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                color: isLight ? Colors.black : Colors.white,
+                                color: Colors.white,
                               ),
-                            ),
-                          )
-                        : ElevatedButton(
-                            onPressed: _isLoading ? null : _verifyCode,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  isLight ? Colors.black : Colors.white,
-                              foregroundColor:
-                                  isLight ? Colors.white : Colors.black,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: const Text(
+                            )
+                          : const Text(
                               'Verify & Continue',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.3,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
                               ),
                             ),
-                          ),
+                    ),
                   ),
 
                   const SizedBox(height: 14),
 
                   // ── BACK BUTTON ──────────────────────────────────
                   SizedBox(
-                    height: 54,
+                    height: 56,
                     child: OutlinedButton.icon(
                       onPressed: () => Navigator.pop(context),
                       icon: Icon(
                         Icons.arrow_back_rounded,
-                        size: 18,
-                        color: isLight ? Colors.black : Colors.white,
+                        size: 20,
+                        color: isLight ? premiumDark : Colors.white,
                       ),
                       label: Text(
                         'Back',
                         style: TextStyle(
-                          color: isLight ? Colors.black : Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          color: isLight ? premiumDark : Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: isLight ? Colors.black26 : Colors.white24,
-                          width: 1.5,
+                          color: isLight
+                              ? Colors.grey.shade300
+                              : Colors.grey.shade700,
+                          width: 2,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                     ),
@@ -423,13 +457,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       Icon(
                         Icons.access_time_rounded,
                         size: 13,
-                        color: isLight ? Colors.black38 : Colors.white38,
+                        color: isLight ? Colors.grey[500] : Colors.grey[400],
                       ),
                       const SizedBox(width: 6),
                       Text(
                         'OTP expires in 1 minute',
                         style: textTheme.bodySmall?.copyWith(
-                          color: isLight ? Colors.black38 : Colors.white38,
+                          color: isLight ? Colors.grey[500] : Colors.grey[400],
                         ),
                       ),
                     ],

@@ -46,30 +46,32 @@ class AboutGreenPouchScreen extends StatelessWidget {
 
             // ─── App Icon ─────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.all(22),
+              width: 90,
+              height: 90,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color.primary,
-                    color.primary.withOpacity(0.75),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: theme.brightness == Brightness.light
+                    ? Colors.white
+                    : Colors.grey[800],
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: color.primary.withOpacity(0.3),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 8),
+                    color: color.primary.withOpacity(0.25),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.savings_outlined,
-                size: 48,
-                color: Colors.white,
+              padding: const EdgeInsets.all(2),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/login.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.eco_rounded,
+                    color: color.primary,
+                    size: 40,
+                  ),
+                ),
               ),
             ),
 
@@ -137,7 +139,7 @@ class AboutGreenPouchScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Column(
                 children: [
-                  _infoRow(context, Icons.person_outline, "Developer", "Syamjith"),
+                  _infoRow(context, Icons.person_outline, "Developer", "----"),
                   Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.12)),
                   _infoRow(context, Icons.email_outlined, "Support",
                       "support@greenpouch.app"),

@@ -122,32 +122,33 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = theme.colorScheme;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: color.surface,
       appBar: AppBar(
-  backgroundColor: color.surface,
-  elevation: 0,
-  surfaceTintColor: Colors.transparent,
-  automaticallyImplyLeading: false,
-  titleSpacing: 0,
-  leading: IconButton(
-    onPressed: () => Navigator.pop(context),
-    padding: EdgeInsets.zero,
-    icon: Icon(
-      Icons.arrow_back_ios_new,
-      size: 18,
-      color: color.onSurface,
-    ),
-  ),
-  title: Text(
-    "Change Password",
-    style: theme.textTheme.titleLarge?.copyWith(
-      fontWeight: FontWeight.w700,
-      color: color.onSurface,
-    ),
-  ),
-),
+        backgroundColor: color.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.zero,
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: color.onSurface,
+          ),
+        ),
+        title: Text(
+          "Change Password",
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color.onSurface,
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Form(
@@ -156,9 +157,64 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // ─── Intro ────────────────────────────────────────────
+              // ─── Header Card ──────────────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: color.primary.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: color.primary.withOpacity(0.12),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.primary.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.lock_outline_rounded,
+                        size: 22,
+                        color: color.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Update your password",
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: color.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            "Choose a strong password to keep your account secure",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: color.onSurface.withOpacity(0.5),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // ─── Section Label ────────────────────────────────────
               Text(
-                "Update your credentials",
+                "CURRENT PASSWORD",
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.1,
@@ -166,7 +222,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               // ─── Current Password ─────────────────────────────────
               _passwordField(
@@ -241,9 +297,27 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-              Divider(height: 1, thickness: 0.5, color: color.outline.withOpacity(0.2)),
               const SizedBox(height: 20),
+
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                color: color.outline.withOpacity(0.2),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ─── Section Label ────────────────────────────────────
+              Text(
+                "NEW PASSWORD",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: color.onSurface.withOpacity(0.45),
+                ),
+              ),
+
+              const SizedBox(height: 10),
 
               // ─── New Password ─────────────────────────────────────
               _passwordField(
@@ -265,7 +339,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               const SizedBox(height: 16),
 
               // ─── Confirm Password ─────────────────────────────────
-             _passwordField(
+              _passwordField(
                 controller: confirmPasswordController,
                 label: "Confirm Password",
                 obscure: obscureConfirm,
@@ -283,7 +357,27 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 },
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 12),
+
+              // ─── Password Hint ────────────────────────────────────
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 13,
+                    color: color.onSurface.withOpacity(0.4),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Must be at least 8 characters long",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.onSurface.withOpacity(0.4),
+                    ),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: size.height * 0.06),
 
               // ─── Submit Button ────────────────────────────────────
               SizedBox(
@@ -317,13 +411,37 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // ─── Security Note ────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 13,
+                    color: color.onSurface.withOpacity(0.35),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Your password is encrypted and stored securely",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color.onSurface.withOpacity(0.35),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
             ],
           ),
         ),
       ),
     );
   }
-Widget _passwordField({
+
+  Widget _passwordField({
     required TextEditingController controller,
     required String label,
     required bool obscure,

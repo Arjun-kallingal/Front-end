@@ -65,13 +65,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- PREMIUM FINTECH COLORS (Matching Login & Signup) ---
+    const Color premiumGreen = Color(0xFF10B981);
+    const Color premiumDark = Color.fromARGB(255, 0, 0, 0);
+
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final isLight = theme.brightness == Brightness.light;
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: isLight ? Colors.white : Colors.black,
+      backgroundColor: isLight ? const Color(0xFFF8FAFC) : premiumDark,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -95,25 +99,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       child: Column(
                         children: [
                           Container(
-                            width: 68,
-                            height: 68,
+                            width: 110,
+                            height: 110,
                             decoration: BoxDecoration(
-                              color: isLight ? Colors.black : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
+                              color: isLight ? Colors.white : Colors.grey[800],
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: premiumGreen.withOpacity(0.25),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 12),
+                                ),
+                              ],
                             ),
-                            child: Icon(
-                              Icons.shield_outlined,
-                              size: 34,
-                              color: isLight ? Colors.white : Colors.black,
+                            padding: const EdgeInsets.all(2),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/GrassHopper.png',
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  Icons.eco_rounded,
+                                  color: premiumGreen,
+                                  size: 50,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 24),
                           Text(
                             'Forgot Password?',
                             style: textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.5,
-                              color: isLight ? Colors.black : Colors.white,
+                              color: isLight ? premiumDark : Colors.white,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -121,7 +139,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             'No worries, we\'ll send you a 6-digit OTP',
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(
-                              color: isLight ? Colors.black45 : Colors.white54,
+                              color: isLight ? Colors.grey[600] : Colors.grey[400],
+                              letterSpacing: 0.3,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -135,8 +155,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       style: TextStyle(
-                        color: isLight ? Colors.black : Colors.white,
+                        color: isLight ? premiumDark : Colors.white,
                         fontSize: 15,
+                        fontWeight: FontWeight.w500,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -150,116 +171,127 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       decoration: InputDecoration(
                         hintText: 'Enter your email address',
                         hintStyle: TextStyle(
-                          color: isLight ? Colors.black38 : Colors.white38,
-                          fontSize: 14,
+                          color: isLight ? Colors.grey[400] : Colors.grey[600],
+                          fontSize: 15,
                         ),
                         prefixIcon: Icon(
                           Icons.mail_outline_rounded,
-                          color: isLight ? Colors.black45 : Colors.white54,
-                          size: 20,
+                          color: isLight ? Colors.grey[500] : Colors.grey[400],
+                          size: 22,
                         ),
                         filled: true,
-                        fillColor:
-                            isLight ? Colors.grey[100] : Colors.grey[900],
+                        fillColor: isLight ? Colors.white : Colors.grey[900],
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
+                          horizontal: 20,
+                          vertical: 18,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
-                            color: isLight ? Colors.black : Colors.white,
+                            color: isLight ? Colors.grey.shade200 : Colors.transparent,
                             width: 1.5,
                           ),
                         ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: const BorderSide(
-                              color: Colors.redAccent, width: 1),
+                            color: premiumGreen,
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                              color: Colors.redAccent, width: 1.5),
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: const BorderSide(
                               color: Colors.redAccent, width: 1.5),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
                     // ── SEND OTP BUTTON ──────────────────────────────
-                    SizedBox(
-                      height: 54,
-                      child: isLoading
-                          ? Center(
-                              child: SizedBox(
+                    Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: premiumGreen.withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _sendOtp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: premiumGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          disabledBackgroundColor: premiumGreen.withOpacity(0.6),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: isLight ? Colors.black : Colors.white,
+                                  color: Colors.white,
                                 ),
-                              ),
-                            )
-                          : ElevatedButton(
-                              onPressed: _sendOtp,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    isLight ? Colors.black : Colors.white,
-                                foregroundColor:
-                                    isLight ? Colors.white : Colors.black,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              child: const Text(
+                              )
+                            : const Text(
                                 'Send OTP',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.3,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
-                            ),
+                      ),
                     ),
 
                     const SizedBox(height: 14),
 
                     // ── BACK TO SIGN IN ──────────────────────────────
                     SizedBox(
-                      height: 54,
+                      height: 56,
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
                         icon: Icon(
                           Icons.arrow_back_rounded,
-                          size: 18,
-                          color: isLight ? Colors.black : Colors.white,
+                          size: 20,
+                          color: isLight ? premiumDark : Colors.white,
                         ),
                         label: Text(
                           'Back to Sign In',
                           style: TextStyle(
-                            color: isLight ? Colors.black : Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            color: isLight ? premiumDark : Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                             letterSpacing: 0.3,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
-                            color: isLight ? Colors.black26 : Colors.white24,
-                            width: 1.5,
+                            color: isLight
+                                ? Colors.grey.shade300
+                                : Colors.grey.shade700,
+                            width: 2,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                       ),
@@ -274,13 +306,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         Icon(
                           Icons.access_time_rounded,
                           size: 13,
-                          color: isLight ? Colors.black38 : Colors.white38,
+                          color: isLight ? Colors.grey[500] : Colors.grey[400],
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'OTP will be valid for 15 minutes',
                           style: textTheme.bodySmall?.copyWith(
-                            color: isLight ? Colors.black38 : Colors.white38,
+                            color: isLight ? Colors.grey[500] : Colors.grey[400],
                           ),
                         ),
                       ],
